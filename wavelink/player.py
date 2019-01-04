@@ -67,6 +67,30 @@ class Player:
         self._voice_state = {}
 
         self.volume = 40
+        self.paused = False
+        self.current = None
+        self.channel_id = None
+
+    @property
+    def is_connected(self):
+        """ Returns whether the player is connected to a voicechannel or not """
+        return self.channel_id is not None
+
+    @property
+    def is_playing(self):
+        """ Returns the player's track state. """
+        return self.is_connected and self.current is not None
+
+    @property
+    def position(self):
+        if not self.is_playing:
+            return 0
+
+        if self.paused:
+            return min(self.last_position, self.current.duration)
+
+        difference = time.time() * 1000 - self.last_update
+        return min(self.last_position + difference, self.current.duration)
 
     async def update_state(self, state: dict):
         self.last_update = time.time() * 1000
@@ -111,6 +135,7 @@ class Player:
         if not guild:
             raise InvalidIDProvided(f'No guild found for id <{self.guild_id}>')
 
+        self.channel_id = channel_id
         await self._get_shard_socket(guild.shard_id).voice_state(self.guild_id, str(channel_id))
 
     async def disconnect(self):
@@ -118,6 +143,7 @@ class Player:
         if not guild:
             raise InvalidIDProvided(f'No guild found for id <{self.guild_id}>')
 
+        self.channel_id = None
         await self._get_shard_socket(guild.shard_id).voice_state(self.guild_id, None)
 
     async def play(self, track):
@@ -128,7 +154,8 @@ class Player:
 
     async def set_pause(self, pause: bool):
         await self.node._send(op='pause', guildId=str(self.guild_id), pause=pause)
+        self.paused = pause
 
     async def set_volume(self, vol: int):
-        self.volume = vol
+        self.volume = max(min(vol, 1000), 0)
         await self.node._send(op='volume', guildId=str(self.guild_id), volume=self.volume)
