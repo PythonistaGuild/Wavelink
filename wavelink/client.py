@@ -1,3 +1,25 @@
+"""MIT License
+
+Copyright (c) 2019 EvieePy(MysterialPy)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
 import aiohttp
 import asyncio
 import logging
@@ -35,6 +57,11 @@ class Client:
     def players(self) -> dict:
         return self._get_players()
 
+    async def get_tracks(self, query: str) -> Optional[list]:
+        node = self.get_best_node()
+
+        return await node.get_tracks(query)
+
     def _get_players(self) -> dict:
         players = []
 
@@ -42,6 +69,26 @@ class Client:
             players.extend(node.players.values())
 
         return {player.guild_id: player for player in players}
+
+    def get_node(self, identifier: str) -> Optional[Node]:
+        return self.nodes.get(identifier, None)
+
+    def get_best_node(self) -> Node:
+        return sorted(self.nodes.values(), key=lambda n: len(n.players))[0]
+
+    def get_node_by_region(self, region: str) -> Optional[Node]:
+        nodes = [n for n in self.nodes.values() if n.region.lower() == region.lower()]
+        if not nodes:
+            return None
+
+        return sorted(nodes, key=lambda n: len(n.players))[0]
+
+    def get_node_by_shard(self, shard_id: int) -> Optional[Node]:
+        nodes = [n for n in self.nodes.values() if n.shard_id == shard_id]
+        if not nodes:
+            return None
+
+        return sorted(nodes, key=lambda n: len(n.players))[0]
 
     def get_player(self, guild_id: int) -> Optional[Player]:
         players = self.players
