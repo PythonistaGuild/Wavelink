@@ -20,6 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import inspect
 import logging
 from discord.ext import commands
 from typing import Optional, Union
@@ -51,6 +52,7 @@ class Node:
 
         self.session = session
         self._websocket = None
+        self.hook = None
 
     def __repr__(self):
         return f'{self.identifier}-{self.host}:{self.port}|{self.region}(Shard: {self.shard_id})'
@@ -84,6 +86,20 @@ class Node:
     async def on_event(self, event):
         __log__.info(f'NODE | Event dispatched:: <{str(event)}>')
         await event.player.hook(event)
+
+        if not self.hook:
+            return
+
+        if inspect.iscoroutinefunction(self.hook):
+            await self.hook(event)
+        else:
+            self.hook(event)
+
+    def set_hook(self, func):
+        if not callable(func):
+            raise RuntimeWarning  # todo Proper raise
+
+        self.hook = func
 
     async def _send(self, **data):
         __log__.debug(f'NODE | Sending payload:: <{data}>')
