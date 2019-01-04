@@ -139,6 +139,8 @@ class Client:
 
     async def initiate_node(self, host: str, port: int, *, rest_uri: str, password: str, region: str, identifier: str,
                             shard_id: int=None) -> Node:
+        await self.bot.wait_until_ready()
+
         if identifier in self.nodes:
             node = self.nodes[identifier]
             raise NodeOccupied(f'Node with identifier ({identifier}) already exists >> {node.__repr__()}')
