@@ -20,12 +20,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import logging
 import time
 from discord.ext import commands
 from discord.gateway import DiscordWebSocket
 from typing import Optional, Union
 
 from .errors import *
+
+
+__log__ = logging.getLogger(__name__)
 
 
 class Track:
@@ -118,6 +122,7 @@ class Player:
         await self._dispatch_voice_update()
 
     async def _dispatch_voice_update(self):
+        __log__.debug('PLAYER | Dispatching voice update.')
         if {'sessionId', 'event'} == self._voice_state.keys():
             await self.node._send(op='voiceUpdate', guildId=str(self.guild_id), **self._voice_state)
 
@@ -137,25 +142,33 @@ class Player:
 
         self.channel_id = channel_id
         await self._get_shard_socket(guild.shard_id).voice_state(self.guild_id, str(channel_id))
+        __log__.info(f'PLAYER | Connected to voice channel:: {self.channel_id}')
 
     async def disconnect(self):
         guild = self.bot.get_guild(self.guild_id)
         if not guild:
             raise InvalidIDProvided(f'No guild found for id <{self.guild_id}>')
 
+        __log__.info(f'PLAYER | Disconnected from voice channel:: {self.channel_id}')
         self.channel_id = None
         await self._get_shard_socket(guild.shard_id).voice_state(self.guild_id, None)
 
     async def play(self, track):
         await self.node._send(op='play', guildId=str(self.guild_id), track=track.id)
+        __log__.debug(f'PLAYER | Started playing track:: {str(track)}')
+        self.current = track
 
     async def stop(self):
         await self.node._send(op='stop', guildId=str(self.guild_id))
+        __log__.debug(f'PLAYER | Current track stopped:: {str(self.current)}')
+        self.current = None
 
     async def set_pause(self, pause: bool):
         await self.node._send(op='pause', guildId=str(self.guild_id), pause=pause)
         self.paused = pause
+        __log__.debug(f'PLAYER | Set pause:: {self.paused}')
 
     async def set_volume(self, vol: int):
         self.volume = max(min(vol, 1000), 0)
         await self.node._send(op='volume', guildId=str(self.guild_id), volume=self.volume)
+        __log__.debug(f'PLAYER | Set volume:: {self.volume}')
