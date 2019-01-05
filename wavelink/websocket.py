@@ -100,14 +100,21 @@ class WebSocket:
             if op == 'stats':
                 self._node.stats = Stats(self._node, data)
             if op == 'event':
-                data['player'] = self._node.players[int(data['guildId'])]
+                try:
+                    data['player'] = self._node.players[int(data['guildId'])]
+                except KeyError:
+                    return await self._send(op='destroy', guildId=str(data['guildId']))
+
                 event = self._get_event(data['type'], data)
 
                 __log__.debug(f'WEBSOCKET | op: event:: {data}')
                 await self._node.on_event(event)
             elif op == 'playerUpdate':
                 __log__.debug(f'WEBSOCKET | op: playerUpdate:: {data}')
-                await self._node.players[int(data['guildId'])].update_state(data)
+                try:
+                    await self._node.players[int(data['guildId'])].update_state(data)
+                except KeyError:
+                    pass
 
     def _get_event(self, name: str, data) -> Union[TrackEnd, TrackException, TrackStuck]:
         if name == 'TrackEndEvent':
