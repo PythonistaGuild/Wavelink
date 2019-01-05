@@ -98,7 +98,7 @@ class WebSocket:
                 continue
 
             if op == 'stats':
-                self._node.stats = Stats(data)
+                self._node.stats = Stats(self._node, data)
             if op == 'event':
                 data['player'] = self._node.players[int(data['guildId'])]
                 event = self._get_event(data['type'], data)
