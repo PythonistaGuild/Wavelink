@@ -29,6 +29,7 @@ from typing import Union
 
 from .backoff import ExponentialBackoff
 from .events import *
+from .stats import Stats
 
 
 __log__ = logging.getLogger(__name__)
@@ -96,6 +97,8 @@ class WebSocket:
             if not op:
                 continue
 
+            if op == 'stats':
+                self._node.stats = Stats(data)
             if op == 'event':
                 data['player'] = self._node.players[int(data['guildId'])]
                 event = self._get_event(data['type'], data)

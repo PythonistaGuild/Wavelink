@@ -53,8 +53,11 @@ class Node:
 
         self.session = session
         self._websocket = None
+
         self.hook = None
         self.available = True
+
+        self.stats = None
 
     def __repr__(self):
         return f'{self.identifier} - ({self.host}:{self.port}) | {self.region} | (Shard: {self.shard_id})'
