@@ -36,7 +36,7 @@ __log__ = logging.getLogger(__name__)
 
 class Node:
 
-    def __init__(self, host: str, port: int, shards: int, user_id: int, *, session, rest_uri: str, password: str,
+    def __init__(self, host: str, port: int, shards: int, user_id: int, *, client, session, rest_uri: str, password: str,
                  region: str, identifier: str, shard_id: int=None):
         self.host = host
         self.port = port
@@ -53,6 +53,7 @@ class Node:
 
         self.session = session
         self._websocket = None
+        self._client = client
 
         self.hook = None
         self.available = True
@@ -71,6 +72,14 @@ class Node:
 
     def open(self):
         self.available = True
+
+    @property
+    def penalty(self):
+        """Returns the load-balancing penalty for this node."""
+        if not self.available or not self.stats:
+            return 9e30
+
+        return self.stats.penalty.total
 
     async def connect(self, bot: Union[commands.Bot, commands.AutoShardedBot]):
         self._websocket = WebSocket(bot, self, self.host, self.port, self.password, self.shards, self.uid)
