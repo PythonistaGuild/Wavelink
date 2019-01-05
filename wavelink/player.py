@@ -34,7 +34,7 @@ __log__ = logging.getLogger(__name__)
 
 class Track:
 
-    __slots__ = ('id', 'info', 'query', 'title', 'ytid', 'length', 'uri', 'is_stream', 'dead')
+    __slots__ = ('id', 'info', 'query', 'title', 'ytid', 'length', 'duration', 'uri', 'is_stream', 'dead')
 
     def __init__(self, id_, info, query=None):
         self.id = id_
@@ -44,6 +44,7 @@ class Track:
         self.title = info.get('title')
         self.ytid = info.get('identifier')
         self.length = info.get('length')
+        self.duration = self.length
         self.uri = info.get('uri')
 
         self.is_stream = info.get('isStream')
@@ -93,7 +94,7 @@ class Player:
         if self.paused:
             return min(self.last_position, self.current.duration)
 
-        difference = time.time() * 1000 - self.last_update
+        difference = (time.time() * 1000) - self.last_update
         return min(self.last_position + difference, self.current.duration)
 
     async def update_state(self, state: dict):
@@ -177,3 +178,52 @@ class Player:
         self.volume = max(min(vol, 1000), 0)
         await self.node._send(op='volume', guildId=str(self.guild_id), volume=self.volume)
         __log__.debug(f'PLAYER | Set volume:: {self.volume} ({self.channel_id})')
+
+    async def change_node(self, identifier: str=None):
+        client = self.node._client
+
+        if identifier:
+            node = client.get_node(identifier)
+
+            if not node:
+                raise WavelinkException(f'No Nodes matching identifier:: {identifier}')
+            elif node == self.node:
+                raise WavelinkException('Node identifiers must not be the same while changing')
+        else:
+            self.node.close()
+            node = None
+
+            if self.node.region:
+                node = client.get_node_by_region(self.node.region)
+
+            if not node and self.node.shard_id:
+                node = client.get_node_by_shard(self.node.shard_id)
+
+            if not node:
+                node = client.get_best_node()
+
+            if not node:
+                self.node.open()
+                raise WavelinkException('No Nodes available for changeover.')
+
+        self.node.open()
+
+        old = self.node
+
+        self.node = node
+        self.node.players[int(self.guild_id)] = self
+
+        if self._voice_state:
+            await self._dispatch_voice_update()
+
+        if self.current:
+            await self.node._send(op='play', guildId=str(self.guild_id), track=self.current.id, startTime=int(self.position))
+            self.last_update = time.time() * 1000
+
+            if self.paused:
+                await self.node._send(op='pause', guildId=str(self.guild_id), pause=self.paused)
+
+        if self.volume != 100:
+            await self.node._send(op='volume', guildId=str(self.guild_id), volume=self.volume)
+
+        del old.players[self.guild_id]
