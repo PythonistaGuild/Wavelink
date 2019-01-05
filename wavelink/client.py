@@ -73,18 +73,22 @@ class Client:
     def get_node(self, identifier: str) -> Optional[Node]:
         return self.nodes.get(identifier, None)
 
-    def get_best_node(self) -> Node:
-        return sorted(self.nodes.values(), key=lambda n: len(n.players))[0]
+    def get_best_node(self) -> Optional[Node]:
+        nodes = [n for n in self.nodes.values() if n.is_available]
+        if not nodes:
+            return None
+
+        return sorted(nodes, key=lambda n: len(n.players))[0]
 
     def get_node_by_region(self, region: str) -> Optional[Node]:
-        nodes = [n for n in self.nodes.values() if n.region.lower() == region.lower()]
+        nodes = [n for n in self.nodes.values() if n.region.lower() == region.lower() and n.is_available]
         if not nodes:
             return None
 
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
     def get_node_by_shard(self, shard_id: int) -> Optional[Node]:
-        nodes = [n for n in self.nodes.values() if n.shard_id == shard_id]
+        nodes = [n for n in self.nodes.values() if n.shard_id == shard_id and n.is_available]
         if not nodes:
             return None
 
@@ -153,7 +157,8 @@ class Client:
                     region=region,
                     identifier=identifier,
                     shard_id=shard_id,
-                    session=self.session)
+                    session=self.session,
+                    client=self)
 
         await node.connect(bot=self.bot)
         self.nodes[identifier] = node
