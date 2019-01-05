@@ -70,7 +70,7 @@ class Player:
 
         self._voice_state = {}
 
-        self.volume = 40
+        self.volume = 100
         self.paused = False
         self.current = None
         self.channel_id = None
@@ -122,7 +122,7 @@ class Player:
         await self._dispatch_voice_update()
 
     async def _dispatch_voice_update(self):
-        __log__.debug('PLAYER | Dispatching voice update.')
+        __log__.debug(f'PLAYER | Dispatching voice update:: {self.channel_id}')
         if {'sessionId', 'event'} == self._voice_state.keys():
             await self.node._send(op='voiceUpdate', guildId=str(self.guild_id), **self._voice_state)
 
@@ -154,21 +154,26 @@ class Player:
         await self._get_shard_socket(guild.shard_id).voice_state(self.guild_id, None)
 
     async def play(self, track):
+        self.last_update = 0
+        self.last_position = 0
+        self.position_timestamp = 0
+        self.paused = False
+
         await self.node._send(op='play', guildId=str(self.guild_id), track=track.id)
-        __log__.debug(f'PLAYER | Started playing track:: {str(track)}')
+        __log__.debug(f'PLAYER | Started playing track:: {str(track)} ({self.channel_id})')
         self.current = track
 
     async def stop(self):
         await self.node._send(op='stop', guildId=str(self.guild_id))
-        __log__.debug(f'PLAYER | Current track stopped:: {str(self.current)}')
+        __log__.debug(f'PLAYER | Current track stopped:: {str(self.current)} ({self.channel_id})')
         self.current = None
 
     async def set_pause(self, pause: bool):
         await self.node._send(op='pause', guildId=str(self.guild_id), pause=pause)
         self.paused = pause
-        __log__.debug(f'PLAYER | Set pause:: {self.paused}')
+        __log__.debug(f'PLAYER | Set pause:: {self.paused} ({self.channel_id})')
 
     async def set_volume(self, vol: int):
         self.volume = max(min(vol, 1000), 0)
         await self.node._send(op='volume', guildId=str(self.guild_id), volume=self.volume)
-        __log__.debug(f'PLAYER | Set volume:: {self.volume}')
+        __log__.debug(f'PLAYER | Set volume:: {self.volume} ({self.channel_id})')
