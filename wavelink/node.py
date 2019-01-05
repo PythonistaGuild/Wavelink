@@ -26,6 +26,7 @@ from discord.ext import commands
 from typing import Optional, Union
 from urllib.parse import quote
 
+from .errors import *
 from .player import Player, Track
 from .websocket import WebSocket
 
@@ -53,9 +54,20 @@ class Node:
         self.session = session
         self._websocket = None
         self.hook = None
+        self.available = True
 
     def __repr__(self):
-        return f'{self.identifier}-{self.host}:{self.port}|{self.region}(Shard: {self.shard_id})'
+        return f'{self.identifier} - ({self.host}:{self.port}) | {self.region} | (Shard: {self.shard_id})'
+
+    @property
+    def is_available(self) -> bool:
+        return self._websocket.is_connected and self.available
+
+    def close(self):
+        self.available = False
+
+    def open(self):
+        self.available = True
 
     async def connect(self, bot: Union[commands.Bot, commands.AutoShardedBot]):
         self._websocket = WebSocket(bot, self, self.host, self.port, self.password, self.shards, self.uid)
@@ -76,7 +88,7 @@ class Node:
             for track in data['tracks']:
                 tracks.append(Track(id_=track['track'], info=track['info']))
 
-            __log__.debug(f'REST | Found <{len(tracks)}> tracks with query:: <{query}>')
+            __log__.debug(f'REST | Found <{len(tracks)}> tracks with query:: <{query}> ({self.__repr__()})')
 
             return tracks
 
@@ -84,7 +96,7 @@ class Node:
         return self.players.get(guild_id, None)
 
     async def on_event(self, event):
-        __log__.info(f'NODE | Event dispatched:: <{str(event)}>')
+        __log__.info(f'NODE | Event dispatched:: <{str(event)}> ({self.__repr__()})')
         await event.player.hook(event)
 
         if not self.hook:
@@ -97,10 +109,10 @@ class Node:
 
     def set_hook(self, func):
         if not callable(func):
-            raise RuntimeWarning  # todo Proper raise
+            raise WavelinkException('Node hook must be a callable.')
 
         self.hook = func
 
     async def _send(self, **data):
-        __log__.debug(f'NODE | Sending payload:: <{data}>')
+        __log__.debug(f'NODE | Sending payload:: <{data}> ({self.__repr__()})')
         await self._websocket._send(**data)

@@ -112,9 +112,11 @@ class Client:
         nodes = self.nodes.values()
 
         for node in nodes:
+            if not node.is_available:
+                continue
             if node.shard_id == guild.shard_id:
                 shard_options.append(node)
-            elif node.region.lower() == str(guild.region).lower():
+            if node.region.lower() == str(guild.region).lower():
                 region_options.append(node)
 
         if not shard_options or region_options:
