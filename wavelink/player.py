@@ -98,6 +98,8 @@ class Player:
         return min(self.last_position + difference, self.current.duration)
 
     async def update_state(self, state: dict):
+        state = state['state']
+
         self.last_update = time.time() * 1000
         self.last_position = state.get('position', 0)
         self.position_timestamp = state.get('time', 0)
