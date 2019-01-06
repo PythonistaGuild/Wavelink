@@ -2,7 +2,7 @@ __title__ = 'WaveLink'
 __author__ = 'EvieePy'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2019 (c) EvieePy'
-__version__ = '0.0.2a'
+__version__ = '0.0.63a'
 
 from .client import Client
 from .errors import *
