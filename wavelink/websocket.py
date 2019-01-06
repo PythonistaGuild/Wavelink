@@ -23,6 +23,7 @@ SOFTWARE.
 import asyncio
 import json
 import logging
+import traceback
 import websockets
 from discord.ext import commands
 from typing import Union
@@ -48,6 +49,7 @@ class WebSocket:
 
         self._websocket = None
         self._last_exc = None
+        self._task = None
 
         self._node = node
 
@@ -69,11 +71,13 @@ class WebSocket:
         except Exception as e:
             self._last_exc = e
 
-        asyncio.create_task(self._listen())
+        if not self._task:
+            self._task = asyncio.create_task(self._listen())
+
         self._closed = False
 
     async def _listen(self):
-        backoff = ExponentialBackoff()
+        backoff = ExponentialBackoff(base=7)
 
         if not self.is_connected and self._last_exc:
             __log__.error(f'WEBSOCKET | Connection failure:: {self._last_exc}')
@@ -83,7 +87,13 @@ class WebSocket:
             try:
                 data = json.loads(await self._websocket.recv())
                 __log__.debug(f'WEBSOCKET | Received Payload:: <{data}>')
-            except websockets.ConnectionClosed:
+            except websockets.ConnectionClosed as e:
+                self._last_exc = e
+
+                if e.code == 4001:
+                    traceback.print_exc()
+                    break
+
                 self._closed = True
                 retry = backoff.delay()
 

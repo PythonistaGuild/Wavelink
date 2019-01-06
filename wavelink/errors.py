@@ -12,3 +12,7 @@ class InvalidIDProvided(WavelinkException):
 
 class ZeroConnectedNodes(WavelinkException):
     """Exception raised when an operation is attempted with nodes, when there are None connected."""
+
+
+class AuthorizationFailure(WavelinkException):
+    """Exception raised when an invalid password is provided toa node."""
