@@ -23,7 +23,7 @@ SOFTWARE.
 import asyncio
 import json
 import logging
-import traceback
+import sys
 import websockets
 from discord.ext import commands
 from typing import Union
@@ -91,7 +91,7 @@ class WebSocket:
                 self._last_exc = e
 
                 if e.code == 4001:
-                    traceback.print_exc()
+                    print(f'\nAuthorization Failed for Node:: {self._node}\n', file=sys.stderr)
                     break
 
                 self._closed = True
