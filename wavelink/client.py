@@ -79,8 +79,8 @@ class Client:
         return self._get_players()
 
     async def get_tracks(self, query: str) -> Optional[list]:
-        """
-        |coro|
+        """|coro|
+        
         Search for and return a list of Tracks for the given query.
 
         Parameters
@@ -247,6 +247,7 @@ class Client:
     async def initiate_node(self, host: str, port: int, *, rest_uri: str, password: str, region: str, identifier: str,
                             shard_id: int=None) -> Node:
         """|coro|
+
         Initiate a Node and connect to the provided server.
 
         Parameters
