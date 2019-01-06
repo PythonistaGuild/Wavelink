@@ -9,7 +9,15 @@ Client
 
 Events
 ----------------------------
-.. automodule:: wavelink.events
+.. autoclass:: wavelink.events.TrackEnd
+    :members:
+
+.. autoclass:: wavelink.events.TrackException
+    :members:
+
+.. autoclass:: wavelink.events.TrackStuck
+    :members:
+
 
 
 Errors
