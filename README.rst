@@ -23,7 +23,6 @@ For support using WaveLink, please join the official `support server
 
 Installation
 ---------------------------
-WaveLink is currently not on PyPI and thus needs to be installed using git.
 The following commands are currently the valid ways of installing WaveLink.
 
 **WaveLink requires Python 3.7**
@@ -32,13 +31,13 @@ The following commands are currently the valid ways of installing WaveLink.
 
 .. code:: sh
 
-    py -version -m pip install git+https://github.com/EvieePy/Wavelink.git
+    py -3.7 -m pip install Wavelink
 
 **Linux**
 
 .. code:: sh
 
-    python3 -m pip install git+https://github.com/EvieePy/Wavelink.git
+    python3.7 -m pip install Wavelink
 
 Getting Started
 ----------------------------
