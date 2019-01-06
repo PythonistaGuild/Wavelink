@@ -19,11 +19,3 @@ Errors
 .. autoexception:: wavelink.errors.ZeroConnectedNodes
 
 .. autoexception:: wavelink.errors.AuthorizationFailure
-
-
-Module Contents
----------------
-
-.. automodule:: wavelink
-    :members:
-    :show-inheritance:
