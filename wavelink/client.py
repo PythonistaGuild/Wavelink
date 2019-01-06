@@ -35,6 +35,7 @@ __log__ = logging.getLogger(__name__)
 
 
 class Client:
+    """The WaveLink client."""
 
     def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot]):
         self.bot = bot
@@ -47,17 +48,53 @@ class Client:
 
     @property
     def shard_count(self) -> int:
+        """Return the bots Shard Count as an int.
+
+        Returns
+        ---------
+        int:
+            An int of the bots shard count.
+        """
         return self.bot.shard_count or 1
 
     @property
     def user_id(self) -> int:
+        """Return the Bot users ID.
+
+        Returns
+        ---------
+        int:
+            The bots user ID.
+        """
         return self.bot.user.id
 
     @property
     def players(self) -> dict:
+        """Return the WaveLink clients current players across all nodes.
+
+        Returns
+        ---------
+        dict:
+            A dict of the current WaveLink players.
+        """
         return self._get_players()
 
     async def get_tracks(self, query: str) -> Optional[list]:
+        """
+        |coro|
+        Search for and return a list of Tracks for the given query.
+
+        Parameters
+        ------------
+        query: str
+            The query to use to search for tracks. If a valid URL is not provided, it's best to default to
+            "ytsearch:query", which allows the REST server to search YouTube for Tracks.
+
+        Returns
+        ---------
+        Optional[list]:
+            A list of :class:`wavelink.player.Track` objects. This could be None if no tracks were found.
+        """
         node = self.get_best_node()
 
         return await node.get_tracks(query)
@@ -71,9 +108,28 @@ class Client:
         return {player.guild_id: player for player in players}
 
     def get_node(self, identifier: str) -> Optional[Node]:
+        """Retrieve a Node with the given identifier.
+
+        Parameters
+        ------------
+        identifier: str
+            The unique identifier to search for.
+
+        Returns
+        ---------
+        Optional[:class:`wavelink.node.Node`]
+            The Node matching the given identifier. This could be None if no :class:`wavelink.node.Node` could be found.
+        """
         return self.nodes.get(identifier, None)
 
     def get_best_node(self) -> Optional[Node]:
+        """Return the best available :class:`wavelink.node.Node` across the :class:`.Client`.
+
+        Returns
+        ---------
+        Optional[:class:`wavelink.node.Node`]
+            The best available :class:`wavelink.node.Node` available to the :class:`.Client`.
+        """
         nodes = [n for n in self.nodes.values() if n.is_available]
         if not nodes:
             return None
@@ -81,6 +137,19 @@ class Client:
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
     def get_node_by_region(self, region: str) -> Optional[Node]:
+        """Retrieve the best available Node with the given region.
+
+        Parameters
+        ------------
+        region: str
+            The region to search for.
+
+        Returns
+        ---------
+        Optional[:class:`wavelink.node.Node`]
+            The best available Node matching the given region.
+            This could be None if no :class:`wavelink.node.Node` could be found.
+        """
         nodes = [n for n in self.nodes.values() if n.region.lower() == region.lower() and n.is_available]
         if not nodes:
             return None
@@ -88,6 +157,19 @@ class Client:
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
     def get_node_by_shard(self, shard_id: int) -> Optional[Node]:
+        """Retrieve the best available Node with the given shard ID.
+
+        Parameters
+        ------------
+        shard_id: int
+            The shard ID to search for.
+
+        Returns
+        ---------
+        Optional[:class:`wavelink.node.Node`]
+            The best available Node matching the given Shard ID.
+            This could be None if no :class:`wavelink.node.Node` could be found.
+        """
         nodes = [n for n in self.nodes.values() if n.shard_id == shard_id and n.is_available]
         if not nodes:
             return None
@@ -95,6 +177,26 @@ class Client:
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
     def get_player(self, guild_id: int) -> Optional[Player]:
+        """Retrieve a player for the given guild ID. If None, a player will be created and returned.
+
+        Parameters
+        ------------
+        guild_id:
+            The guild ID to retrieve a player for.
+
+        Returns
+        ---------
+        Optional[:class:`wavelink.player.Player`]
+            The :class:`wavelink.player.Player` associated with the given guild ID.
+
+        Raises
+        --------
+        InvalidIDProvided
+            The given ID does not yield a valid guild.
+        ZeroConnectedNodes
+            There are no :class:`wavelink.node.Node`'s currently connected.
+        """
+
         players = self.players
 
         try:
@@ -145,6 +247,31 @@ class Client:
 
     async def initiate_node(self, host: str, port: int, *, rest_uri: str, password: str, region: str, identifier: str,
                             shard_id: int=None) -> Node:
+        """|coro|
+        Initiate a Node and connect to the provided server.
+
+        Parameters
+        ------------
+        host: str
+            The host address to connect to.
+        port: int
+            The port to connect to.
+        rest_uri: str
+            The URI to use to connect to the REST server.
+        password: str
+            The password to authenticate on the server.
+        region: str
+            The region as a valid discord.py guild.region to associate the :class:`wavelink.node.Node` with.
+        identifier: str
+            A unique identifier for the :class:`wavelink.node.Node`
+        shard_id: Optional[int]
+            An optional Shard ID to associate with the :class:`wavelink.node.Node`. Could be None.
+
+        Returns
+        ---------
+        :class:`wavelink.node.Node`
+            Returns the initiated Node in a connected state.
+        """
         await self.bot.wait_until_ready()
 
         if identifier in self.nodes:
