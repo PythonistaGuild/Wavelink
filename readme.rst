@@ -36,3 +36,5 @@ A quick and easy bot example:
 
 .. code:: py
     ...
+
+:)
