@@ -80,7 +80,7 @@ class Client:
 
     async def get_tracks(self, query: str) -> Optional[list]:
         """|coro|
-        
+
         Search for and return a list of Tracks for the given query.
 
         Parameters

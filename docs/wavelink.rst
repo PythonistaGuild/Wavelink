@@ -6,6 +6,12 @@ Client
 .. autoclass:: wavelink.client.Client
     :members:
 
+
+Events
+----------------------------
+.. automodule:: wavelink.events
+
+
 Errors
 -----------------------
 .. autoexception:: wavelink.errors.WavelinkException
