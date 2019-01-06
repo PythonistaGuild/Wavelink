@@ -43,6 +43,7 @@ Getting Started
 A quick and easy bot example:
 
 .. code:: py
+
     import discord
     import wavelink
     from discord.ext import commands
