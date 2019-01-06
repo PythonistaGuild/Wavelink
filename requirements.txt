@@ -1,3 +1,2 @@
 aiohttp>=3.3.0,<3.5.0
-discord.py @ git+https://github.com/Rapptz/discord.py@7f4c57d
 websockets>=6.0,<7.0
