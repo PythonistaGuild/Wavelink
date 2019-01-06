@@ -4,6 +4,9 @@
 .. image:: https://img.shields.io/badge/Python-3.7-blue.svg
     :target: https://www.python.org
 
+.. image:: https://api.codacy.com/project/badge/Grade/d020ed97fd2a46fcb1f42bd3bc397e63
+   :target: https://app.codacy.com/app/mysterialpy/Wavelink?utm_source=github.com&utm_medium=referral&utm_content=EvieePy/Wavelink&utm_campaign=Badge_Grade_Dashboard
+
 .. image:: https://img.shields.io/github/license/EvieePy/Wavelink.svg
     :target: LICENSE
 
