@@ -1,3 +1,6 @@
+.. image:: logo.png?raw=true
+    :align: center
+
 A robust and powerful Lavalink wrapper for discord.py@rewrite!
 
 Documentation
