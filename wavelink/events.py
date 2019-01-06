@@ -1,4 +1,10 @@
 class TrackEnd:
+    """Event dispatched on TrackEnd.
+
+    :ivar player: The :class:`wavelink.player.Player` associated with the event.
+    :ivar track: The :class:`wavelink.player.Trck` associated with the event.
+    :ivar reason: The reason the TrackEnd event was dispatched.
+    """
 
     __slots__ = ('player', 'track', 'reason')
 
@@ -12,6 +18,12 @@ class TrackEnd:
 
 
 class TrackException:
+    """Event dispatched on TrackException.
+
+    :ivar player: The :class:`wavelink.player.Player` associated with the event.
+    :ivar track: The :class:`wavelink.player.Trck` associated with the event.
+    :ivar error: The error associated with the event.
+    """
 
     __slots__ = ('player', 'track', 'error')
 
@@ -25,6 +37,12 @@ class TrackException:
 
 
 class TrackStuck:
+    """Event dispatched on TrackStuck.
+
+    :ivar player: The :class:`wavelink.player.Player` associated with the event.
+    :ivar track: The :class:`wavelink.player.Trck` associated with the event.
+    :ivar threshold: The threshold associated with the event.
+    """
 
     __slots__ = ('player', 'track', 'threshold')
 
