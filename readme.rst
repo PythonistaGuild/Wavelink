@@ -1,6 +1,12 @@
 .. image:: logo.png?raw=true
     :align: center
 
+.. image:: https://img.shields.io/badge/Python-3.7-blue.svg
+    :target: https://www.python.org
+
+.. image:: https://img.shields.io/github/license/EvieePy/Wavelink.svg
+    :target: LICENSE
+
 A robust and powerful Lavalink wrapper for discord.py@rewrite!
 
 Documentation
