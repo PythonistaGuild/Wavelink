@@ -23,6 +23,7 @@ import discord
 import humanize
 import itertools
 import re
+import sys
 import traceback
 import wavelink
 from discord.ext import commands
