@@ -35,7 +35,6 @@ __log__ = logging.getLogger(__name__)
 
 
 class Client:
-    """The WaveLink client."""
 
     def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot]):
         self.bot = bot
