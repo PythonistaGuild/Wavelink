@@ -3,13 +3,11 @@ Wavelink
 
 Client
 ----------------------------
-
-.. automodule:: Client
+.. autoclass:: wavelink.client.Client
     :members:
 
 Errors
 -----------------------
-
 .. autoexception:: wavelink.errors.WavelinkException
 
 .. autoexception:: wavelink.errors.NodeOccupied
