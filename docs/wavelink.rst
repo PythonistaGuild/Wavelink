@@ -4,7 +4,7 @@ Wavelink
 Client
 ----------------------------
 
-.. automodule:: .wavelink.client.Client
+.. automodule:: Client
     :members:
 
 Errors
