@@ -11,7 +11,7 @@ A robust and powerful Lavalink wrapper for discord.py@rewrite!
 
 Documentation
 ---------------------------
-Official Documentation: *Coming Soon*
+`Official Documentation <https://wavelink.readthedocs.io/en/latest/wavelink.html#>`_.
 
 Support
 ---------------------------
