@@ -107,6 +107,13 @@ Client
     :members:
 
 
+Node
+----------------------------
+
+.. autoclass:: wavelink.node.Node
+    :members:
+
+
 Events
 ----------------------------
 
