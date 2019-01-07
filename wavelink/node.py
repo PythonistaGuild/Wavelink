@@ -35,6 +35,11 @@ __log__ = logging.getLogger(__name__)
 
 
 class Node:
+    """A WaveLink Node instance.
+
+    .. warning::
+        You should not create :class:`Node` objects manually. Instead you should use, :func:`Client.initiate_node`.
+    """
 
     def __init__(self, host: str, port: int, shards: int, user_id: int, *, client, session, rest_uri: str, password: str,
                  region: str, identifier: str, shard_id: int=None):
@@ -65,12 +70,15 @@ class Node:
 
     @property
     def is_available(self) -> bool:
+        """Return whether the Node is available."""
         return self._websocket.is_connected and self.available
 
     def close(self):
+        """Close the node and make it unavailable."""
         self.available = False
 
     def open(self):
+        """Open the node and make it available."""
         self.available = True
 
     @property
@@ -88,6 +96,21 @@ class Node:
         __log__.info(f'NODE | {self.identifier} connected:: {self.__repr__()}')
 
     async def get_tracks(self, query: str) -> Optional[list]:
+        """|coro|
+
+        Search for and return a list of Tracks for the given query.
+
+        Parameters
+        ------------
+        query: str
+            The query to use to search for tracks. If a valid URL is not provided, it's best to default to
+            "ytsearch:query", which allows the REST server to search YouTube for Tracks.
+
+        Returns
+        ---------
+        Optional[list]:
+            A list of :class:`wavelink.player.Track` objects. This could be None if no tracks were found.
+        """
         async with self.session.get(f'{self.rest_uri}/loadtracks?identifier={quote(query)}',
                                     headers={'Authorization': self.password}) as resp:
             data = await resp.json()
@@ -105,9 +128,20 @@ class Node:
             return tracks
 
     def get_player(self, guild_id: int) -> Optional[Player]:
+        """Retrieve a player object associated with the Node.
+
+        Parameters
+        ------------
+        guild_id: int
+            The guild id belonging to the player.
+
+        Returns
+        Optional[Player]
+        """
         return self.players.get(guild_id, None)
 
     async def on_event(self, event):
+        """Function which dispatches events when triggered on the Node."""
         __log__.info(f'NODE | Event dispatched:: <{str(event)}> ({self.__repr__()})')
         await event.player.hook(event)
 
@@ -120,6 +154,12 @@ class Node:
             self.hook(event)
 
     def set_hook(self, func):
+        """Set the Node Event Hook.
+
+        The event hook will be dispatched when an Event occurs.
+
+        Maybe a coroutine.
+        """
         if not callable(func):
             raise WavelinkException('Node hook must be a callable.')
 
