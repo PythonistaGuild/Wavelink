@@ -72,7 +72,7 @@ class WebSocket:
             self._last_exc = e
 
         if not self._task:
-            self._task = asyncio.create_task(self._listen())
+            self._task = self.bot.loop.create_task(self._listen())
 
         self._closed = False
 
