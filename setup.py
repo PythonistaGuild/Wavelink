@@ -40,7 +40,7 @@ if on_rtd:
     requirements.append('sphinxcontrib-websupport')
     requirements.append('Pygments')
 
-version = '0.1.70'
+version = '0.1.80'
 
 readme = ''
 with open('README.rst') as f:
@@ -61,6 +61,7 @@ setup(name='wavelink',
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Operating System :: OS Independent',
+        'Programming Language :: Python :: 3.6'
         'Programming Language :: Python :: 3.7',
         'Topic :: Internet',
         'Topic :: Software Development :: Libraries',
