@@ -57,7 +57,7 @@ class MusicController:
         self.volume = 40
         self.now_playing = None
 
-        asyncio.create_task(self.controller_loop())
+        self.bot.loop.create_task(self.controller_loop())
 
     async def controller_loop(self):
         await self.bot.wait_until_ready()
