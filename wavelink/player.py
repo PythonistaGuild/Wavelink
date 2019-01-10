@@ -33,6 +33,17 @@ __log__ = logging.getLogger(__name__)
 
 
 class Track:
+    """Wavelink Tack object.
+
+    :ivar id: The Base64 Track ID.
+    :ivar info: The raw track as a dict.
+    :ivar title: The track title.
+    :ivar ytid: The YouTube video ID. Could be None if ytsearch was not used.
+    :ivar length: The duration of the track.
+    :ivar duration: The duration of the track.
+    :ivar uri: The track URI. Could be None.
+    :ivar is_stream: Bool indicating whether the track is a stream.
+    """
 
     __slots__ = ('id', 'info', 'query', 'title', 'ytid', 'length', 'duration', 'uri', 'is_stream', 'dead')
 
@@ -139,6 +150,15 @@ class Player:
         return self.bot.shards[shard_id].ws
 
     async def connect(self, channel_id: int):
+        """|coro|
+
+        Connect to a Discord Voice Channel.
+
+        Parameters
+        ------------
+        channel_id: int
+            The channel ID to connect to.
+        """
         guild = self.bot.get_guild(self.guild_id)
         if not guild:
             raise InvalidIDProvided(f'No guild found for id <{self.guild_id}>')
@@ -148,6 +168,10 @@ class Player:
         __log__.info(f'PLAYER | Connected to voice channel:: {self.channel_id}')
 
     async def disconnect(self):
+        """|coro|
+
+        Disconnect from a Discord Voice Channel.
+        """
         guild = self.bot.get_guild(self.guild_id)
         if not guild:
             raise InvalidIDProvided(f'No guild found for id <{self.guild_id}>')
@@ -157,6 +181,16 @@ class Player:
         await self._get_shard_socket(guild.shard_id).voice_state(self.guild_id, None)
 
     async def play(self, track):
+        """|coro|
+
+        Play a WaveLink Track.
+
+        Parameters
+        ------------
+        track: :class:`Track`
+            The :class:`Track` to initiate playing. If a song is already playing it will be stopped,
+            and the new track will begin.
+        """
         self.last_update = 0
         self.last_position = 0
         self.position_timestamp = 0
@@ -167,21 +201,53 @@ class Player:
         self.current = track
 
     async def stop(self):
+        """|coro|
+
+        Stop the Player's currently playing song.
+        """
         await self.node._send(op='stop', guildId=str(self.guild_id))
         __log__.debug(f'PLAYER | Current track stopped:: {str(self.current)} ({self.channel_id})')
         self.current = None
 
     async def set_pause(self, pause: bool):
+        """|coro|
+
+        Set the players paused state.
+
+        Parameters
+        ------------
+        pause: bool
+            A bool indicating if the player's paused state should be set to True or False.
+        """
         await self.node._send(op='pause', guildId=str(self.guild_id), pause=pause)
         self.paused = pause
         __log__.debug(f'PLAYER | Set pause:: {self.paused} ({self.channel_id})')
 
     async def set_volume(self, vol: int):
+        """|coro|
+
+        Set the player's volume, between 0 and 1000.
+
+        Parameters
+        ------------
+        vol: int
+            The volume to set the player to.
+        """
         self.volume = max(min(vol, 1000), 0)
         await self.node._send(op='volume', guildId=str(self.guild_id), volume=self.volume)
         __log__.debug(f'PLAYER | Set volume:: {self.volume} ({self.channel_id})')
 
     async def change_node(self, identifier: str=None):
+        """|coro|
+
+        Change the players current :class:`wavelink.node.Node`. Useful when a Node fails or when changing regions.
+        The change Node behaviour allows fornear seamless fallbacks and changeovers to occur.
+
+        Parameters
+        ------------
+        Optional[identifier: str]
+            An optional Node identifier to change to. If None, the next best available Node will be found.
+        """
         client = self.node._client
 
         if identifier:

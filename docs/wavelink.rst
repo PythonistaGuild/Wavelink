@@ -114,6 +114,18 @@ Node
     :members:
 
 
+Player
+----------------------------
+.. autoclass:: wavelink.player.Player
+    :members:
+
+
+Track
+----------------------------
+.. autoclass:: wavelink.player.Track
+    :members:
+
+
 Events
 ----------------------------
 
@@ -125,7 +137,6 @@ Events
 
 .. autoclass:: wavelink.events.TrackStuck
     :members:
-
 
 
 Errors
