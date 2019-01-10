@@ -175,13 +175,16 @@ class Client:
 
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
-    def get_player(self, guild_id: int) -> Optional[Player]:
+    def get_player(self, guild_id: int, cls=None) -> Optional[Player]:
         """Retrieve a player for the given guild ID. If None, a player will be created and returned.
 
         Parameters
         ------------
         guild_id:
             The guild ID to retrieve a player for.
+        Optional[cls: class]
+            An optional class to pass to build from, overriding the default :class:`Player` class.
+            This must be similar to :class:`Player`. E.g a subclass.
 
         Returns
         ---------
@@ -195,7 +198,6 @@ class Client:
         ZeroConnectedNodes
             There are no :class:`wavelink.node.Node`'s currently connected.
         """
-
         players = self.players
 
         try:
@@ -212,6 +214,9 @@ class Client:
         if not self.nodes:
             raise ZeroConnectedNodes('There are not any currently connected nodes.')
 
+        if not cls:
+            cls = Player
+
         shard_options = []
         region_options = []
         nodes = self.nodes.values()
@@ -226,7 +231,7 @@ class Client:
 
         if not shard_options or region_options:
             node = sorted(nodes, key=lambda n: len(n.players))[0]
-            player = Player(self.bot, guild_id, node)
+            player = cls(self.bot, guild_id, node)
             node.players[guild_id] = player
 
             return player
@@ -239,7 +244,7 @@ class Client:
         else:
             node = sorted(region_options, key=lambda n: len(n.players))[0]
 
-        player = Player(self.bot, guild_id, node)
+        player = cls(self.bot, guild_id, node)
         node.players[guild_id] = player
 
         return player
