@@ -43,9 +43,10 @@ class Track:
     :ivar duration: The duration of the track.
     :ivar uri: The track URI. Could be None.
     :ivar is_stream: Bool indicating whether the track is a stream.
+    :ivar thumb: The thumbnail associated with this track. Could be None.
     """
 
-    __slots__ = ('id', 'info', 'query', 'title', 'ytid', 'length', 'duration', 'uri', 'is_stream', 'dead')
+    __slots__ = ('id', 'info', 'query', 'title', 'ytid', 'length', 'duration', 'uri', 'is_stream', 'dead', 'thumb')
 
     def __init__(self, id_, info, query=None):
         self.id = id_
@@ -61,12 +62,29 @@ class Track:
         self.is_stream = info.get('isStream')
         self.dead = False
 
+        if self.ytid:
+            self.thumb = f"https://img.youtube.com/vi/{self.ytid}/default.jpg"
+        else:
+            self.thumb = None
+
     def __str__(self):
         return self.title
 
     @property
     def is_dead(self):
         return self.dead
+
+
+class TrackPlaylist:
+    """Track Playlist object.
+
+    :ivar data: The raw playlist info data dict.
+    :ivar tracks: The individual :class:`Track` objects from the playlist.
+    """
+
+    def __init__(self, data: dict):
+        self.data = data
+        self.tracks = [Track(id_=track['track'], info=track['info']) for track in data['tracks']]
 
 
 class Player:

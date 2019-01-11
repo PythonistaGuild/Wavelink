@@ -27,7 +27,7 @@ from typing import Optional, Union
 from urllib.parse import quote
 
 from .errors import *
-from .player import Player, Track
+from .player import Player, Track, TrackPlaylist
 from .websocket import WebSocket
 
 
@@ -95,7 +95,7 @@ class Node:
 
         __log__.info(f'NODE | {self.identifier} connected:: {self.__repr__()}')
 
-    async def get_tracks(self, query: str) -> Optional[list]:
+    async def get_tracks(self, query: str) -> Union[list, TrackPlaylist, None]:
         """|coro|
 
         Search for and return a list of Tracks for the given query.
@@ -120,6 +120,8 @@ class Node:
                 return None
 
             tracks = []
+            if data['playlistInfo']:
+                return TrackPlaylist(data=data)
             for track in data['tracks']:
                 tracks.append(Track(id_=track['track'], info=track['info']))
 
