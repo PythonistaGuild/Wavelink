@@ -3,25 +3,9 @@ Myst Open License - Version 0.1.
 =====================================
 Copyright (c) 2019 EvieePy(MysterialPy)
 
-Exhibit A - Source Code Form License Notice
--------------------------------------------
-
  This Source Code Form is subject to the terms of the Myst Open License, v. 0.1.
  If a copy of the MOL was not distributed with this file, You can obtain one at
  https://gist.github.com/EvieePy/bfe0332ad7bff98691f51686ded083ea.
-
-If it is not possible or desirable to put the notice in a particular
-file, then You may include the notice in a location (such as a LICENSE
-file in a relevant directory) where a recipient would be likely to look
-for such a notice.
-
-You may add additional accurate notices of copyright ownership.
-
-Exhibit B - "Incompatible With Secondary Licenses" Notice
----------------------------------------------------------
-
- This Source Code Form is "Incompatible With Secondary Licenses", as
- defined by the Myst Open License, v. 0.1.
 """
 import asyncio
 import datetime
