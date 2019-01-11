@@ -108,8 +108,9 @@ class Node:
 
         Returns
         ---------
-        Optional[list]:
-            A list of :class:`wavelink.player.Track` objects. This could be None if no tracks were found.
+        Union[list, TrackPlaylist, None]:
+            A list of or TrackPlaylist instance of :class:`wavelink.player.Track` objects.
+            This could be None if no tracks were found.
         """
         async with self.session.get(f'{self.rest_uri}/loadtracks?identifier={quote(query)}',
                                     headers={'Authorization': self.password}) as resp:

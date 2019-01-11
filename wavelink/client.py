@@ -91,8 +91,9 @@ class Client:
 
         Returns
         ---------
-        Optional[list]:
-            A list of :class:`wavelink.player.Track` objects. This could be None if no tracks were found.
+        Union[list, TrackPlaylist, None]:
+            A list of or :class:`TrackPlaylist` instance of :class:`Track` objects.
+            This could be None if no tracks were found.
         """
         node = self.get_best_node()
 

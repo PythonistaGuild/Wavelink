@@ -125,6 +125,9 @@ Track
 .. autoclass:: wavelink.player.Track
     :members:
 
+.. autoclass:: wavelink.player.TrackPlaylist
+    :members:
+
 
 Events
 ----------------------------
