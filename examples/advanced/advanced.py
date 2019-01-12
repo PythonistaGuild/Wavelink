@@ -438,6 +438,11 @@ class Music:
                 raise discord.DiscordException('No channel to join. Please either specify a valid channel or join one.')
 
         player = self.bot.wavelink.get_player(ctx.guild.id, cls=Player)
+
+        if player.is_connected:
+            if ctx.author.voice.channel == ctx.guild.me.voice.channel:
+                return
+
         await player.connect(channel.id)
 
     @commands.command(name='play', aliases=['sing'])
