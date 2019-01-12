@@ -282,7 +282,7 @@ class Music:
     def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot]):
         self.bot = bot
 
-        if not hasattr(bot, 'waveliink'):
+        if not hasattr(bot, 'wavelink'):
             self.bot.wavelink = wavelink.Client(bot)
 
         bot.loop.create_task(self.initiate_nodes())
