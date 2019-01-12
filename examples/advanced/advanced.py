@@ -804,7 +804,7 @@ class Music:
     @commands.command()
     async def info(self, ctx):
         """Retrieve various Node/Server/Player information."""
-        player = self.bot.wavelink.get_player(ctx.guild.id)
+        player = self.bot.wavelink.get_player(ctx.guild.id, cls=Player)
         node = player.node
 
         used = humanize.naturalsize(node.stats.memory_used)
