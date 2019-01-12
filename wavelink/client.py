@@ -294,6 +294,8 @@ class Client:
                     client=self)
 
         await node.connect(bot=self.bot)
+
+        node.available = True
         self.nodes[identifier] = node
 
         __log__.info(f'CLIENT | New node initiated:: {node.__repr__()} ')
