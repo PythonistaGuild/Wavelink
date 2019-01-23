@@ -34,45 +34,6 @@ class Bot(commands.Bot):
         print(f'Logged in as {self.user.name} | {self.user.id}')
 
 
-class Queue:
-
-    def __init__(self, limit: int = None):
-        self._queue = deque(maxlen=limit)
-
-    @property
-    def entries(self):
-        return list(self._queue)
-
-    def put(self, item: object):
-        self._queue.append(item)
-
-    def put_iterable(self, iterable):
-        self._queue.extend(iterable)
-
-    def put_left(self, item):
-        self._queue.appendleft(item)
-
-    def pop(self):
-        return self._queue.popleft()
-
-    def pop_index(self, index: int):
-        return self._queue.pop(index)
-
-    async def find_next(self):
-        while True:
-            try:
-                item = self._queue.popleft()
-            except IndexError:
-                await asyncio.sleep(0)
-                continue
-            else:
-                if item.is_dead:
-                    await asyncio.sleep(0)
-                    continue
-
-            return item
-
-
 class Track(wavelink.Track):
     __slots__ = ('requester', 'channel', 'message')
 
@@ -93,7 +54,7 @@ class Player(wavelink.Player):
     def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot], guild_id: int, node: wavelink.Node):
         super(Player, self).__init__(bot, guild_id, node)
 
-        self.queue = Queue()
+        self.queue = asyncio.Queue()
         self.next_event = asyncio.Event()
 
         self.volume = 40
@@ -123,6 +84,10 @@ class Player(wavelink.Player):
         bot.loop.create_task(self.player_loop())
         bot.loop.create_task(self.updater())
 
+    @property
+    def entries(self):
+        return list(self.queue._queue)
+
     async def updater(self):
         while not self.bot.is_closed():
             if self.update and not self.updating:
@@ -142,7 +107,7 @@ class Player(wavelink.Player):
 
             self.inactive = False
 
-            song = await self.queue.find_next()
+            song = await self.queue.get()
             if not song:
                 continue
 
@@ -184,12 +149,12 @@ class Player(wavelink.Player):
         embed.add_field(name='Video URL', value=f'[Click Here!]({track.uri})')
         embed.add_field(name='Requested By', value=track.requester.mention)
         embed.add_field(name='Current DJ', value=self.dj.mention)
-        embed.add_field(name='Queue Length', value=str(len(self.queue.entries)))
+        embed.add_field(name='Queue Length', value=str(len(self.entries)))
         embed.add_field(name='Volume', value=f'**`{self.volume}%`**')
 
-        if len(self.queue.entries) > 0:
+        if len(self.entries) > 0:
             data = '\n'.join(f'**-** `{t.title[0:45]}{"..." if len(t.title) > 45 else ""}`\n{"-"*10}'
-                             for t in itertools.islice([e for e in self.queue.entries if not e.is_dead], 0, 3, None))
+                             for t in itertools.islice([e for e in self.entries if not e.is_dead], 0, 3, None))
             embed.add_field(name='Coming Up:', value=data, inline=False)
 
         if not await self.is_current_fresh(track.channel) and self.controller_message:
@@ -488,14 +453,14 @@ class Music:
 
         if isinstance(tracks, wavelink.TrackPlaylist):
             for t in tracks.tracks:
-                player.queue.put(Track(t.id, t.info, ctx=ctx))
+                await player.queue.put(Track(t.id, t.info, ctx=ctx))
 
             await ctx.send(f'```ini\nAdded the playlist {tracks.data["playlistInfo"]["name"]}'
                            f' with {len(tracks.tracks)} songs to the queue.\n```')
         else:
             track = tracks[0]
             await ctx.send(f'```ini\nAdded {track.title} to the Queue\n```', delete_after=15)
-            player.queue.put(Track(track.id, track.info, ctx=ctx))
+            await player.queue.put(Track(track.id, track.info, ctx=ctx))
 
         if player.controller_message and player.is_playing:
             await player.invoke_controller()
@@ -702,7 +667,7 @@ class Music:
         if not player.is_connected:
             return await ctx.send('I am not currently connected to voice!')
 
-        upcoming = list(itertools.islice(player.queue.entries, 0, 10))
+        upcoming = list(itertools.islice(player.entries, 0, 10))
 
         if not upcoming:
             return await ctx.send('```\nNo more songs in the Queue!\n```', delete_after=15)
@@ -730,7 +695,7 @@ class Music:
         if not player.is_connected:
             return await ctx.send('I am not currently connected to voice!')
 
-        if len(player.queue.entries) < 3:
+        if len(player.entries) < 3:
             return await ctx.send('Please add more songs to the queue before trying to shuffle.', delete_after=10)
 
         if await self.has_perms(ctx, manage_guild=True):
@@ -767,10 +732,10 @@ class Music:
     async def do_repeat(self, ctx):
         player = self.bot.wavelink.get_player(ctx.guild.id, cls=Player)
 
-        if not player.queue.entries:
-            player.queue.put(player.current)
+        if not player.entries:
+            await player.queue.put(player.current)
         else:
-            player.queue.put_left(player.current)
+            player.queue._queue.appendleft(player.current)
 
         player.update = True
 
