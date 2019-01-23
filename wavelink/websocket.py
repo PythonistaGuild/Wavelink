@@ -85,7 +85,7 @@ class WebSocket:
 
         while True:
             try:
-                data = json.loads(await self._websocket.recv())
+                data = await self._websocket.recv()
                 __log__.debug(f'WEBSOCKET | Received Payload:: <{data}>')
             except websockets.ConnectionClosed as e:
                 self._last_exc = e
@@ -102,6 +102,9 @@ class WebSocket:
                 await self._connect()
                 await asyncio.sleep(retry)
                 continue
+
+            if data:
+                data = json.loads(data)
 
             op = data.get('op', None)
             if not op:
