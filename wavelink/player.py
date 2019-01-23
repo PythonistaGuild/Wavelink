@@ -227,6 +227,14 @@ class Player:
         __log__.debug(f'PLAYER | Current track stopped:: {str(self.current)} ({self.channel_id})')
         self.current = None
 
+    async def destroy(self):
+        """|coro|
+
+        Stop the player, and remove any internal references to it.
+        """
+        await self.node._send(op='destroy', guildId=str(self.guild_id))
+        del self.node.players[self.guild_id]
+
     async def set_pause(self, pause: bool):
         """|coro|
 
