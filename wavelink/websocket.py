@@ -131,7 +131,7 @@ class WebSocket:
 
     def _get_event(self, name: str, data) -> Union[TrackEnd, TrackException, TrackStuck]:
         if name == 'TrackEndEvent':
-            return TrackEnd(data['player'], data['track'], data['reason'])
+            return TrackEnd(data['player'], data.get('track', None), data.get('reason', None))
         elif name == 'TrackExceptionEvent':
             return TrackException(data['player'], data['track'], data['error'])
         elif name == 'TrackStuckEvent':
