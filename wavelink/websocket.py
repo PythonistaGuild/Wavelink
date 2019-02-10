@@ -39,13 +39,14 @@ __log__ = logging.getLogger(__name__)
 class WebSocket:
 
     def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot], node, host: str, port: int,
-                 password: str, shard_count: int, user_id: int):
+                 password: str, shard_count: int, user_id: int, secure: bool):
         self.bot = bot
         self.host = host
         self.port = port
         self.password = password
         self.shard_count = shard_count
         self.user_id = user_id
+        self.secure = secure
 
         self._websocket = None
         self._last_exc = None
@@ -67,7 +68,11 @@ class WebSocket:
         await self.bot.wait_until_ready()
 
         try:
-            self._websocket = await websockets.connect(uri=f'ws://{self.host}:{self.port}', extra_headers=self.headers)
+            if self.secure is True:
+                uri = f'wss://{self.host}:{self.port}'
+            else:
+                uri = f'ws://{self.host}:{self.port}'
+            self._websocket = await websockets.connect(uri=uri, extra_headers=self.headers)
         except Exception as e:
             self._last_exc = e
 

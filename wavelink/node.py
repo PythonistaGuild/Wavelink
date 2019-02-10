@@ -42,7 +42,7 @@ class Node:
     """
 
     def __init__(self, host: str, port: int, shards: int, user_id: int, *, client, session, rest_uri: str, password: str,
-                 region: str, identifier: str, shard_id: int=None):
+                 region: str, identifier: str, shard_id: int=None, secure: bool=False):
         self.host = host
         self.port = port
         self.rest_uri = rest_uri
@@ -51,6 +51,7 @@ class Node:
         self.password = password
         self.region = region
         self.identifier = identifier
+        self.secure = secure
 
         self.shard_id = shard_id
 
@@ -93,7 +94,7 @@ class Node:
         return self.stats.penalty.total
 
     async def connect(self, bot: Union[commands.Bot, commands.AutoShardedBot]):
-        self._websocket = WebSocket(bot, self, self.host, self.port, self.password, self.shards, self.uid)
+        self._websocket = WebSocket(bot, self, self.host, self.port, self.password, self.shards, self.uid, self.secure)
         await self._websocket._connect()
 
         __log__.info(f'NODE | {self.identifier} connected:: {self.__repr__()}')
@@ -142,6 +143,7 @@ class Node:
             The guild id belonging to the player.
 
         Returns
+        ---------
         Optional[Player]
         """
         return self.players.get(guild_id, None)

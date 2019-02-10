@@ -251,7 +251,7 @@ class Client:
         return player
 
     async def initiate_node(self, host: str, port: int, *, rest_uri: str, password: str, region: str, identifier: str,
-                            shard_id: int=None) -> Node:
+                            shard_id: int=None, secure: bool=False) -> Node:
         """|coro|
 
         Initiate a Node and connect to the provided server.
@@ -272,6 +272,8 @@ class Client:
             A unique identifier for the :class:`wavelink.node.Node`
         shard_id: Optional[int]
             An optional Shard ID to associate with the :class:`wavelink.node.Node`. Could be None.
+        secure: bool
+            Whether the websocket should be started with the secure wss protocol.
 
         Returns
         ---------
@@ -291,7 +293,8 @@ class Client:
                     identifier=identifier,
                     shard_id=shard_id,
                     session=self.session,
-                    client=self)
+                    client=self,
+                    secure=secure)
 
         await node.connect(bot=self.bot)
 
