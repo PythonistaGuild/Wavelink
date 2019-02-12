@@ -24,6 +24,7 @@ import asyncio
 import json
 import logging
 import sys
+import traceback
 import websockets
 from discord.ext import commands
 from typing import Union
@@ -126,7 +127,12 @@ class WebSocket:
                 event = self._get_event(data['type'], data)
 
                 __log__.debug(f'WEBSOCKET | op: event:: {data}')
-                await self._node.on_event(event)
+
+                try:
+                    await self._node.on_event(event)
+                except Exception as e:
+                    traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
+
             elif op == 'playerUpdate':
                 __log__.debug(f'WEBSOCKET | op: playerUpdate:: {data}')
                 try:
