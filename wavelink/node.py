@@ -151,7 +151,6 @@ class Node:
     async def on_event(self, event):
         """Function which dispatches events when triggered on the Node."""
         __log__.info(f'NODE | Event dispatched:: <{str(event)}> ({self.__repr__()})')
-        await event.player.hook(event)
 
         if not self.hook:
             return
