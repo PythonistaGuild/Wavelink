@@ -296,7 +296,7 @@ class Music:
     async def initiate_nodes(self):
         nodes = {'MAIN': {'host': 'xxx.xxx.xxx.xxx',
                           'port': 2333,
-                          'rest_url': 'xxx.xxx.xxx.xxx:2333',
+                          'rest_url': 'http://xxx.xxx.xxx.xxx:2333',
                           'password': "youshallnotpass",
                           'identifier': 'MAIN',
                           'region': 'us_central'}}
