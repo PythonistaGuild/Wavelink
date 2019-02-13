@@ -106,7 +106,8 @@ class Player:
         self.current = None
         self.channel_id = None
 
-        self.equalizers = {'BASE': Equalizer.flat(), 'BOOST': Equalizer.boost(), 'METAL': Equalizer.metal()}
+        self.equalizers = {'FLAT': Equalizer.flat(), 'BOOST': Equalizer.boost(), 'METAL': Equalizer.metal(),
+                           'PIANO': Equalizer.piano()}
 
     @property
     def is_connected(self):
