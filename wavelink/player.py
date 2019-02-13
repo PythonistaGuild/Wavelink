@@ -166,7 +166,7 @@ class Player:
         pass
 
     def _get_shard_socket(self, shard_id: int) -> Optional[DiscordWebSocket]:
-        if self.bot.shard_id is None:
+        if self.bot.shard_id is None and not shard_id == 0:
             return self.bot.ws
 
         return self.bot.shards[shard_id].ws
