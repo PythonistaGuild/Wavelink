@@ -239,7 +239,7 @@ class Player:
         await self.node._send(op='destroy', guildId=str(self.guild_id))
         del self.node.players[self.guild_id]
 
-    async def set_preq(self, mode: str):
+    async def set_preq(self, mode: str) -> str:
         """|coro|
 
         Set the Players Equalizer from a Pre-made list. If no/invalid mode is provided, the EQ will be reset.
@@ -253,9 +253,11 @@ class Player:
         Metal:
             A metal/metal rock boost.
         """
-        mode = self.equalizers.get(mode.upper(), Equalizer.flat())
 
+        mode = self.equalizers.get(mode.upper(), Equalizer.flat())
         await self.node._send(op='equalizer', guildId=str(self.guild_id), bands=mode.eq)
+
+        return mode.capitalize()
 
     async def set_eq(self, *, levels: list):
         """|coro|
