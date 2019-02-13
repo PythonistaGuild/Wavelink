@@ -20,7 +20,7 @@ from collections import deque
 from discord.ext import commands
 from typing import Union
 
-RURL = re.compile('https?:\/\/(?:www\.)?.+')
+RURL = re.compile(r'https?:\/\/(?:www\.)?.+')
 
 
 class Bot(commands.Bot):
@@ -81,6 +81,8 @@ class Player(wavelink.Player):
         self.skips = set()
         self.repeats = set()
 
+        self.eq = 'Flat'
+
         bot.loop.create_task(self.player_loop())
         bot.loop.create_task(self.updater())
 
@@ -99,6 +101,7 @@ class Player(wavelink.Player):
     async def player_loop(self):
         await self.bot.wait_until_ready()
 
+        await self.set_preq('Flat')
         # We can do any pre loop prep here...
         await self.set_volume(self.volume)
 
@@ -116,7 +119,7 @@ class Player(wavelink.Player):
 
             await self.play(song)
 
-            # Invoke our controller if we aren't alredy...
+            # Invoke our controller if we aren't already...
             if not self.update:
                 await self.invoke_controller()
 
@@ -138,8 +141,11 @@ class Player(wavelink.Player):
 
         self.updating = True
 
-        embed = discord.Embed(title='Music Controller', description=f'Now Playing:```\n{track.title}\n```',
-                              colour=0x36393E)
+        embed = discord.Embed(title='Music Controller',
+                              description=f'<a:eq:545194963810648077>Now Playing:```ini\n{track.title}\n\n'
+                              f'[EQ]: {self.eq}\n'
+                              f'[Presets]: Flat/Boost/Piano/Metal```',
+                              colour=0xffb347)
         embed.set_thumbnail(url=track.thumb)
 
         if track.is_stream:
@@ -179,11 +185,11 @@ class Player(wavelink.Player):
         self.updating = False
 
     async def add_reactions(self):
-        """Add reactions to our controler."""
+        """Add reactions to our controller."""
         for reaction in self.controls:
             try:
                 await self.controller_message.add_reaction(str(reaction))
-            except Exception:
+            except discord.HTTPException:
                 return
 
     async def reaction_controller(self):
@@ -288,18 +294,12 @@ class Music:
         bot.loop.create_task(self.initiate_nodes())
 
     async def initiate_nodes(self):
-        nodes = {'MAIN': {'host': 'x.x.x.x',
-                          'port': 80,
-                          'rest_url': 'http://x.x.x.x:2333',
-                          'password': 'youshallnotpass',
+        nodes = {'MAIN': {'host': 'xxx.xxx.xxx.xxx',
+                          'port': 2333,
+                          'rest_url': 'xxx.xxx.xxx.xxx:2333',
+                          'password': "youshallnotpass",
                           'identifier': 'MAIN',
-                          'region': 'us_central'},
-                 'FALLBACK': {'host': 'x.x.x.x',
-                              'port': 80,
-                              'rest_url': 'http://x.x.x.x:2333',
-                              'password': 'youshallnotpass',
-                              'identifier': 'FALLBACK',
-                              'region': 'Sydney'}}
+                          'region': 'us_central'}}
 
         for n in nodes.values():
             node = await self.bot.wavelink.initiate_node(host=n['host'],
@@ -307,7 +307,8 @@ class Music:
                                                          rest_uri=n['rest_url'],
                                                          password=n['password'],
                                                          identifier=n['identifier'],
-                                                         region=n['region'])
+                                                         region=n['region'],
+                                                         secure=False)
 
             node.set_hook(self.event_hook)
 
@@ -487,7 +488,7 @@ class Music:
         if not player.is_connected:
             return
 
-        if player.updating:
+        if player.updating or player.update:
             return
 
         await player.invoke_controller()
@@ -598,20 +599,8 @@ class Music:
 
     async def do_stop(self, ctx):
         player = self.bot.wavelink.get_player(ctx.guild.id, cls=Player)
+
         await player.destroy_controller()
-
-        """
-        try:
-            player.player_loop.cancel()
-        except Exception:
-            pass
-
-        try:
-            queue.updater_task.cancel()
-        except Exception:
-            pass
-        """
-
         await player.disconnect()
 
     @commands.command(name='volume', aliases=['vol'])
@@ -770,6 +759,16 @@ class Music:
 
         await player.set_volume(vol)
         player.update = True
+
+    @commands.command(name='seteq')
+    async def set_eq(self, ctx, *, eq: str):
+        player = self.bot.wavelink.get_player(ctx.guild.id, cls=Player)
+
+        if eq.upper() not in player.equalizers:
+            return await ctx.send(f'`{eq}` - Is not a valid equalizer!\nTry Flat, Boost, Metal, Piano.')
+
+        player.eq = await player.set_preq(eq).capitalize()
+        await ctx.send(f'The player Equalizer was set to - {eq.capitalize()}')
 
     @commands.command()
     async def info(self, ctx):

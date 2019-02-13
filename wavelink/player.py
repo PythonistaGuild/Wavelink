@@ -253,11 +253,12 @@ class Player:
         Metal:
             A metal/metal rock boost.
         """
+        name = mode
 
         mode = self.equalizers.get(mode.upper(), Equalizer.flat())
         await self.node._send(op='equalizer', guildId=str(self.guild_id), bands=mode.eq)
 
-        return mode.capitalize()
+        return name
 
     async def set_eq(self, *, levels: list):
         """|coro|
