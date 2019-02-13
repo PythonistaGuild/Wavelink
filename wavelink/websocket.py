@@ -73,21 +73,31 @@ class WebSocket:
                 uri = f'wss://{self.host}:{self.port}'
             else:
                 uri = f'ws://{self.host}:{self.port}'
-            self._websocket = await websockets.connect(uri=uri, extra_headers=self.headers)
-        except Exception as e:
-            self._last_exc = e
+
+            if not self.is_connected:
+                self._websocket = await websockets.connect(uri=uri, extra_headers=self.headers)
+
+        except Exception as error:
+            self._last_exc = error
+            self._node.available = False
+
+            __log__.error(f'WEBSOCKET | Connection Failure:: {error}')
+            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+            return
 
         if not self._task:
             self._task = self.bot.loop.create_task(self._listen())
 
+        self._last_exc = None
         self._closed = False
+        self._node.available = True
+
+        if self.is_connected:
+            print(f'\nWAVELINK:WEBSOCKET | Connection established::{self._node.__repr__()}\n')
+            __log__.debug('WEBSOCKET | Connection established...%', self._node.__repr__())
 
     async def _listen(self):
         backoff = ExponentialBackoff(base=7)
-
-        if not self.is_connected and self._last_exc:
-            __log__.error(f'WEBSOCKET | Connection failure:: {self._last_exc}')
-            raise websockets.ConnectionClosed(reason=f'Websocket connection failure:\n\n{self._last_exc}', code=1006)
 
         while True:
             try:
@@ -103,10 +113,12 @@ class WebSocket:
                 self._closed = True
                 retry = backoff.delay()
 
-                __log__.warning(f'WEBSOCKET | Connection closed:: Retrying connection in <{retry}> seconds')
+                __log__.warning(f'\nWEBSOCKET | Connection closed:: Retrying connection in <{retry}> seconds\n')
 
-                await self._connect()
                 await asyncio.sleep(retry)
+                if not self.is_connected:
+                    self.bot.loop.create_task(self._connect())
+
                 continue
 
             if data:
