@@ -173,6 +173,16 @@ class Node:
 
         self.hook = func
 
+    async def destroy(self):
+        """Destroy the node and it's players."""
+        players = self.players.copy()
+
+        for _, player in players.items():
+            await player.destroy()
+
+        self._websocket._task.cancel()
+        del self._client.nodes[self.identifier]
+
     async def _send(self, **data):
         __log__.debug(f'NODE | Sending payload:: <{data}> ({self.__repr__()})')
         await self._websocket._send(**data)

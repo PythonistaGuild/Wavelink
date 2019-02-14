@@ -321,13 +321,7 @@ class Client:
         except KeyError:
             raise WavelinkException(f'A node with identifier:: {identifier}, does not exist.')
 
-        players = node.players.copy()
-
-        for _, player in players.items():
-            await player.destroy()
-
-        node._websocket._task.cancel()
-        del self.nodes[identifier]
+        await node.destroy()
 
     async def update_handler(self, data):
         if not data or 't' not in data:
