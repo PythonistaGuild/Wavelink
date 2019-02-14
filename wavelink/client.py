@@ -304,7 +304,30 @@ class Client:
         __log__.info(f'CLIENT | New node initiated:: {node.__repr__()} ')
         return node
 
-        # todo Connection logic, Unload Logic
+    async def destroy_node(self, *, identifier: str=None):
+        """Destroy the node and it's players.
+
+        Parameters
+        ------------
+        identifier: str
+            The identifier belonging to the node. Required to destroy the Node.
+        """
+
+        if not identifier:
+            raise WavelinkException('You must provide an identifier to remove a Node.')
+
+        try:
+            node = self.nodes[identifier]
+        except KeyError:
+            raise WavelinkException(f'A node with identifier:: {identifier}, does not exist.')
+
+        players = node.players.copy()
+
+        for _, player in players.items():
+            await player.destroy()
+
+        node._websocket._task.cancel()
+        del self.nodes[identifier]
 
     async def update_handler(self, data):
         if not data or 't' not in data:

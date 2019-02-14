@@ -236,6 +236,9 @@ class Player:
 
         Stop the player, and remove any internal references to it.
         """
+        await self.stop()
+        await self.disconnect()
+
         await self.node._send(op='destroy', guildId=str(self.guild_id))
         del self.node.players[self.guild_id]
 
