@@ -767,7 +767,8 @@ class Music:
         if eq.upper() not in player.equalizers:
             return await ctx.send(f'`{eq}` - Is not a valid equalizer!\nTry Flat, Boost, Metal, Piano.')
 
-        player.eq = await player.set_preq(eq)
+        await player.set_preq(eq)
+        player.eq = eq.capitalize()
         await ctx.send(f'The player Equalizer was set to - {eq.capitalize()}')
 
     @commands.command()
