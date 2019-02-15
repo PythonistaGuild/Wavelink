@@ -94,7 +94,7 @@ class WebSocket:
 
         if self.is_connected:
             print(f'\nWAVELINK:WEBSOCKET | Connection established::{self._node.__repr__()}\n')
-            __log__.debug('WEBSOCKET | Connection established...%', self._node.__repr__())
+            __log__.debug('WEBSOCKET | Connection established...%s', self._node.__repr__())
 
     async def _listen(self):
         backoff = ExponentialBackoff(base=7)
