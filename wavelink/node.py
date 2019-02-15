@@ -180,7 +180,11 @@ class Node:
         for _, player in players.items():
             await player.destroy()
 
-        self._websocket._task.cancel()
+        try:
+            self._websocket._task.cancel()
+        except Exception:
+            pass
+        
         del self._client.nodes[self.identifier]
 
     async def _send(self, **data):
