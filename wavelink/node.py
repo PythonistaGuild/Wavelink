@@ -184,7 +184,7 @@ class Node:
             self._websocket._task.cancel()
         except Exception:
             pass
-        
+
         del self._client.nodes[self.identifier]
 
     async def _send(self, **data):

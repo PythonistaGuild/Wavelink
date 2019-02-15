@@ -307,11 +307,22 @@ class Player:
         await self.node._send(op='volume', guildId=str(self.guild_id), volume=self.volume)
         __log__.debug(f'PLAYER | Set volume:: {self.volume} ({self.channel_id})')
 
+    async def seek(self, position: int=0):
+        """Seek to the given position in the song.
+
+        Parameters
+        ------------
+        position: int
+            The position as an int in milliseconds to seek to. Could be None to seek to beginning.
+        """
+
+        await self.node._websocket.send(op='seek', guildId=str(self.guild_id), position=position)
+
     async def change_node(self, identifier: str=None):
         """|coro|
 
         Change the players current :class:`wavelink.node.Node`. Useful when a Node fails or when changing regions.
-        The change Node behaviour allows fornear seamless fallbacks and changeovers to occur.
+        The change Node behaviour allows for near seamless fallbacks and changeovers to occur.
 
         Parameters
         ------------
