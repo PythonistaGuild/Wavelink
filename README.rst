@@ -65,7 +65,7 @@ A quick and easy bot example:
             print(f'Logged in as {self.user.name} | {self.user.id}')
 
 
-    class Music:
+    class Music(commands.Cog):
 
         def __init__(self, bot):
             self.bot = bot
