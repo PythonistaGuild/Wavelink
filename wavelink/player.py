@@ -317,7 +317,7 @@ class Player:
             The position as an int in milliseconds to seek to. Could be None to seek to beginning.
         """
 
-        await self.node._websocket.send(op='seek', guildId=str(self.guild_id), position=position)
+        await self.node._send(op='seek', guildId=str(self.guild_id), position=position)
 
     async def change_node(self, identifier: str=None):
         """|coro|
