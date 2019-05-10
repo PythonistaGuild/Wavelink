@@ -82,7 +82,7 @@ A quick and easy bot example:
             # Region should be a discord.py guild.region e.g sydney or us_central (Though this is not technically required)
             await self.bot.wavelink.initiate_node(host='0.0.0.0',
                                                   port=2333,
-                                                  rest_uri='http://0.0.0.0:2333',
+                                                  rest_uri='http://127.0.0.1:2333',
                                                   password='youshallnotpass',
                                                   identifier='TEST',
                                                   region='us_central')
