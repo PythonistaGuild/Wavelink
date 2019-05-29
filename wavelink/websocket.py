@@ -134,7 +134,6 @@ class WebSocket:
                 try:
                     data['player'] = self._node.players[int(data['guildId'])]
                 except KeyError:
-                    await self._send(op='destroy', guildId=str(data['guildId']))
                     continue
 
                 event = self._get_event(data['type'], data)
