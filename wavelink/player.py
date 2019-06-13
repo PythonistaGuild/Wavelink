@@ -117,7 +117,16 @@ class Player:
     @property
     def is_playing(self):
         """ Returns the player's track state. """
-        return self.is_connected and self.current is not None
+        if not self.is_connected:
+            return False
+
+        if not self.last_position:
+            return False
+
+        if self.last_position > 0 and self.last_position < self.current.duration:
+            return True
+
+        return False
 
     @property
     def position(self):
