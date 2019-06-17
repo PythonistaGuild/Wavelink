@@ -22,7 +22,7 @@ Documentation
 Support
 ---------------------------
 For support using WaveLink, please join the official `support server
-<http://discord.gg/JhW28zp>`_ on `Discord <https://discordapp.com/>`_.
+<https://discord.gg/RAKc3HF>`_ on `Discord <https://discordapp.com/>`_.
 
 Installation
 ---------------------------
