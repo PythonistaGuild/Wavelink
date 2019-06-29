@@ -2,7 +2,7 @@ class TrackEnd:
     """Event dispatched on TrackEnd.
 
     :ivar player: The :class:`wavelink.player.Player` associated with the event.
-    :ivar track: The :class:`wavelink.player.Trck` associated with the event.
+    :ivar track: The :class:`wavelink.player.Track` associated with the event.
     :ivar reason: The reason the TrackEnd event was dispatched.
     """
 
