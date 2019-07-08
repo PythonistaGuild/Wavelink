@@ -282,7 +282,7 @@ class Player(wavelink.Player):
         return False
 
 
-class Music:
+class Music(commands.Cog):
     """Our main Music Cog."""
 
     def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot]):
