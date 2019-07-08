@@ -78,7 +78,7 @@ class MusicController:
             await self.next.wait()
 
 
-class Music:
+class Music(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
@@ -124,13 +124,13 @@ class Music:
 
         return controller
 
-    async def __local_check(self, ctx):
+    async def cog_check(self, ctx):
         """A local check which applies to all commands in this cog."""
         if not ctx.guild:
             raise commands.NoPrivateMessage
         return True
 
-    async def __error(self, ctx, error):
+    async def cog_command_error(self, ctx, error):
         """A local error handler for all errors arising from commands in this cog."""
         if isinstance(error, commands.NoPrivateMessage):
             try:
