@@ -68,7 +68,11 @@ class Node:
 
     def __repr__(self):
         host = self.host.split('.')
-        host = f'{host[0]}.{host[1]}.xxx.xxx:{self.port}'
+        if len(host) == 1:
+            # if the hostname does not contain dots, there's no need to censor it as it's most likely an internal one
+            host = f'{self.host}:{self.port}'
+        else:
+            host = f'{host[0]}.{host[1]}.xxx.xxx:{self.port}'
 
         return f'{self.identifier} - ({host}) | {self.region} | (Shard: {self.shard_id})'
 
