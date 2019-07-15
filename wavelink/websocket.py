@@ -118,39 +118,39 @@ class WebSocket:
                 await asyncio.sleep(retry)
                 if not self.is_connected:
                     self.bot.loop.create_task(self._connect())
+            else:
+                self.bot.loop.create_task(self.process_data(data))
 
-                continue
+    async def process_data(self, data: str):
+        data = json.loads(data)
 
-            if data:
-                data = json.loads(data)
+        op = data.get('op', None)
+        if not op:
+            return
 
-            op = data.get('op', None)
-            if not op:
-                continue
+        if op == 'stats':
+            self._node.stats = Stats(self._node, data)
+        if op == 'event':
+            try:
+                data['player'] = self._node.players[int(data['guildId'])]
+            except KeyError:
+                return
 
-            if op == 'stats':
-                self._node.stats = Stats(self._node, data)
-            if op == 'event':
-                try:
-                    data['player'] = self._node.players[int(data['guildId'])]
-                except KeyError:
-                    continue
+            event = self._get_event(data['type'], data)
 
-                event = self._get_event(data['type'], data)
+            __log__.debug(f'WEBSOCKET | op: event:: {data}')
 
-                __log__.debug(f'WEBSOCKET | op: event:: {data}')
+            try:
+                await self._node.on_event(event)
+            except Exception as e:
+                traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
 
-                try:
-                    await self._node.on_event(event)
-                except Exception as e:
-                    traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
-
-            elif op == 'playerUpdate':
-                __log__.debug(f'WEBSOCKET | op: playerUpdate:: {data}')
-                try:
-                    await self._node.players[int(data['guildId'])].update_state(data)
-                except KeyError:
-                    pass
+        elif op == 'playerUpdate':
+            __log__.debug(f'WEBSOCKET | op: playerUpdate:: {data}')
+            try:
+                await self._node.players[int(data['guildId'])].update_state(data)
+            except KeyError:
+                pass
 
     def _get_event(self, name: str, data) -> Union[TrackEnd, TrackException, TrackStuck]:
         if name == 'TrackEndEvent':
