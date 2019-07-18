@@ -28,6 +28,7 @@ from typing import Optional, Union
 
 from .errors import *
 from .eqs import *
+from .events import TrackStart
 
 
 __log__ = logging.getLogger(__name__)
@@ -221,6 +222,7 @@ class Player:
         await self.node._send(op='play', guildId=str(self.guild_id), track=track.id)
         __log__.debug(f'PLAYER | Started playing track:: {str(track)} ({self.channel_id})')
         self.current = track
+        await self.node.on_event(TrackStart(self, track))
 
     async def stop(self):
         """|coro|

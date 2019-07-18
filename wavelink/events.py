@@ -1,3 +1,20 @@
+class TrackStart:
+    """Event dispatched on TrackStart.
+
+    :ivar player: The :class:`wavelink.player.Player` associated with the event.
+    :ivar track: The :class:`wavelink.player.Track` associated with the event.
+    """
+
+    __slots__ = ('player', 'track')
+
+    def __init__(self, player, track):
+        self.player = player
+        self.track = track
+
+    def __str__(self):
+        return 'TrackStart'
+
+
 class TrackEnd:
     """Event dispatched on TrackEnd.
 
