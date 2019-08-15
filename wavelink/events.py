@@ -21,7 +21,7 @@ class TrackException:
     """Event dispatched on TrackException.
 
     :ivar player: The :class:`wavelink.player.Player` associated with the event.
-    :ivar track: The :class:`wavelink.player.Trck` associated with the event.
+    :ivar track: The :class:`wavelink.player.Track` associated with the event.
     :ivar error: The error associated with the event.
     """
 
