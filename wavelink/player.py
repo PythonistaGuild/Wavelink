@@ -116,7 +116,7 @@ class Player:
 
     @property
     def is_playing(self):
-        raise NotImplementedError
+        return self.is_connected and self.current is not None
 
     @property
     def position(self):
