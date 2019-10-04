@@ -67,10 +67,7 @@ class Node:
         self.stats = None
 
     def __repr__(self):
-        host = self.host.split('.')
-        host = f'{host[0]}.{host[1]}.xxx.xxx:{self.port}'
-
-        return f'{self.identifier} - ({host}) | {self.region} | (Shard: {self.shard_id})'
+        return f'{self.identifier} | {self.region} | (Shard: {self.shard_id})'
 
     @property
     def is_available(self) -> bool:
