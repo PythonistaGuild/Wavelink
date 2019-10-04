@@ -24,6 +24,11 @@ Support
 For support using WaveLink, please join the official `support server
 <https://discord.gg/RAKc3HF>`_ on `Discord <https://discordapp.com/>`_.
 
+|Discord|
+
+.. |Discord| image:: https://img.shields.io/discord/490948346773635102?color=%237289DA&label=Pythonista&logo=discord&logoColor=white
+   :target: https://discord.gg/RAKc3HF
+
 Installation
 ---------------------------
 The following commands are currently the valid ways of installing WaveLink.
