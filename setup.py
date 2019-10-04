@@ -40,7 +40,7 @@ if on_rtd:
     requirements.append('sphinxcontrib-websupport')
     requirements.append('Pygments')
 
-version = '0.2.08'
+version = '0.2.09'
 
 readme = ''
 with open('README.rst') as f:
