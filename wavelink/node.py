@@ -121,9 +121,10 @@ class Node:
                 __log__.info(f'REST | No tracks with query:: <{query}> found.')
                 return None
 
-            tracks = []
             if data['playlistInfo']:
                 return TrackPlaylist(data=data)
+
+            tracks = []
             for track in data['tracks']:
                 tracks.append(Track(id_=track['track'], info=track['info']))
 
