@@ -40,7 +40,7 @@ class TrackStuck:
     """Event dispatched on TrackStuck.
 
     :ivar player: The :class:`wavelink.player.Player` associated with the event.
-    :ivar track: The :class:`wavelink.player.Trck` associated with the event.
+    :ivar track: The :class:`wavelink.player.Track` associated with the event.
     :ivar threshold: The threshold associated with the event.
     """
 
