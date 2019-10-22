@@ -247,7 +247,8 @@ class Client:
             if node.region.lower() == str(guild.region).lower():
                 region_options.append(node)
 
-        if not shard_options or region_options:
+        if not shard_options and not region_options:
+            # Sort by len of node players
             node = sorted(nodes, key=lambda n: len(n.players))[0]
             player = cls(self.bot, guild_id, node)
             node.players[guild_id] = player
@@ -256,7 +257,7 @@ class Client:
 
         best = [n for n in shard_options if n in region_options]
         if best:
-            node = sorted(best, key=lambda _: len(_.players))[0]
+            node = sorted(best, key=lambda n: len(n.players))[0]
         elif shard_options:
             node = sorted(shard_options, key=lambda n: len(n.players))[0]
         else:
