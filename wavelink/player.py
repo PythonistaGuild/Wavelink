@@ -204,7 +204,7 @@ class Player:
         self.channel_id = None
         await self._get_shard_socket(guild.shard_id).voice_state(self.guild_id, None)
 
-    async def play(self, track):
+    async def play(self, track: Track, *, replace: bool=True):
         """|coro|
 
         Play a WaveLink Track.
@@ -212,15 +212,18 @@ class Player:
         Parameters
         ------------
         track: :class:`Track`
-            The :class:`Track` to initiate playing. If a song is already playing it will be stopped,
-            and the new track will begin.
+            The :class:`Track` to initiate playing.
+        replace: bool
+            Whether or not the current track, if there is one, should be replaced or not. Defaults to True.
         """
         self.last_update = 0
         self.last_position = 0
         self.position_timestamp = 0
         self.paused = False
 
-        await self.node._send(op='play', guildId=str(self.guild_id), track=track.id)
+        no_replace = not replace
+
+        await self.node._send(op='play', guildId=str(self.guild_id), track=track.id, noReplace=no_replace)
         __log__.debug(f'PLAYER | Started playing track:: {str(track)} ({self.channel_id})')
         self.current = track
 
