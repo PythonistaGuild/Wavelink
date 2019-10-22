@@ -179,6 +179,9 @@ class Client:
     def get_player(self, guild_id: int, *, cls=None, node_id=None) -> Player:
         """Retrieve a player for the given guild ID. If None, a player will be created and returned.
 
+        .. versionchanged:: 0.3.0
+            cls is now a keyword only argument.
+
         Parameters
         ------------
         guild_id: int
@@ -201,9 +204,6 @@ class Client:
             The given ID does not yield a valid guild or Node.
         ZeroConnectedNodes
             There are no :class:`wavelink.node.Node`'s currently connected.
-
-        .. versionchanged:: 0.3.0
-            cls is now a keyword only argument.
         """
         players = self.players
 
