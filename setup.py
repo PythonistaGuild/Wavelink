@@ -24,39 +24,47 @@ SOFTWARE.
 """
 
 import os
+import pathlib
 import re
-from setuptools import setup
+
+import setuptools
 
 
-on_rtd = os.getenv('READTHEDOCS') == 'True'
+ROOT = pathlib.Path(__file__).parent
+ON_RTD = os.getenv('READTHEDOCS') == 'True'
 
-with open('requirements.txt') as f:
-    requirements = f.read().splitlines()
 
-if on_rtd:
-    requirements.append('sphinx==1.7.4')
-    requirements.append('sphinxcontrib-napoleon')
-    requirements.append('sphinxcontrib-asyncio')
-    requirements.append('sphinxcontrib-websupport')
-    requirements.append('Pygments')
+with open(ROOT / 'requirements.txt', encoding='utf-8') as f:
+    REQUIREMENTS = f.readlines()
 
-version = '0.3.02'
+if ON_RTD:
+    REQUIREMENTS.extend((
+        'pygments',
+        'sphinx==1.7.4',
+        'sphinxcontrib-asyncio',
+        'sphinxcontrib-napoleon',
+        'sphinxcontrib-websupport',
+    ))
 
-readme = ''
-with open('README.rst') as f:
-    readme = f.read()
+with open(ROOT / 'README.rst', encoding='utf-8') as f:
+    README = f.read()
 
-setup(name='wavelink',
-      author='EvieePy',
-      url='https://github.com/EvieePy/Wavelink',
-      version=version,
-      packages=['wavelink'],
-      license='MIT',
-      description='A versatile LavaLink wrapper for Discord.py',
-      long_description=readme,
-      include_package_data=True,
-      install_requires=requirements,
-      classifiers=[
+with open(ROOT / 'wavelink' / '__init__.py', encoding='utf-8') as f:
+    VERSION = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE).group(1)
+
+
+setuptools.setup(
+    name='wavelink',
+    author='EvieePy',
+    url='https://github.com/EvieePy/Wavelink',
+    version=VERSION,
+    packages=['wavelink'],
+    license='MIT',
+    description='A versatile LavaLink wrapper for Discord.py',
+    long_description=README,
+    include_package_data=True,
+    install_requires=REQUIREMENTS,
+    classifiers=[
         'License :: OSI Approved :: MIT License',
         'Intended Audience :: Developers',
         'Natural Language :: English',
@@ -67,5 +75,5 @@ setup(name='wavelink',
         'Topic :: Software Development :: Libraries',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Utilities',
-      ]
+    ]
 )
