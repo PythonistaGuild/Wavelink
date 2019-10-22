@@ -43,11 +43,12 @@ class Track:
     :ivar length: The duration of the track.
     :ivar duration: The duration of the track.
     :ivar uri: The track URI. Could be None.
+    :ivar author: The author of the track.
     :ivar is_stream: Bool indicating whether the track is a stream.
     :ivar thumb: The thumbnail associated with this track. Could be None.
     """
 
-    __slots__ = ('id', 'info', 'query', 'title', 'ytid', 'length', 'duration', 'uri', 'is_stream', 'dead', 'thumb')
+    __slots__ = ('id', 'info', 'query', 'title', 'ytid', 'length', 'duration', 'uri', 'author', 'is_stream', 'dead', 'thumb')
 
     def __init__(self, id_, info, query=None):
         self.id = id_
@@ -59,6 +60,7 @@ class Track:
         self.length = info.get('length')
         self.duration = self.length
         self.uri = info.get('uri')
+        self.author = info.get('author')
 
         self.is_stream = info.get('isStream')
         self.dead = False
