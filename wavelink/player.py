@@ -125,6 +125,9 @@ class Player:
         if not self.is_playing:
             return 0
 
+        if not self.current:
+            return 0
+
         if self.paused:
             return min(self.last_position, self.current.duration)
 
@@ -223,9 +226,9 @@ class Player:
 
         no_replace = not replace
 
+        self.current = track
         await self.node._send(op='play', guildId=str(self.guild_id), track=track.id, noReplace=no_replace)
         __log__.debug(f'PLAYER | Started playing track:: {str(track)} ({self.channel_id})')
-        self.current = track
 
     async def stop(self):
         """|coro|
