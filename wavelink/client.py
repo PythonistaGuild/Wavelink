@@ -94,8 +94,16 @@ class Client:
         Union[list, TrackPlaylist, None]:
             A list of or :class:`TrackPlaylist` instance of :class:`Track` objects.
             This could be None if no tracks were found.
+
+        Raises
+        --------
+        ZeroConnectedNodes
+            There are no :class:`wavelink.node.Node`s currently connected.
         """
         node = self.get_best_node()
+        
+        if node is None:
+            raise ZeroConnectedNodes
 
         return await node.get_tracks(query)
 
