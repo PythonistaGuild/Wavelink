@@ -219,7 +219,7 @@ class Player:
         replace: bool
             Whether or not the current track, if there is one, should be replaced or not. Defaults to True.
         start: int
-            The position to start the player from in milliseconds
+            The position to start the player from in milliseconds. Defaults to 0.
         """
         self.last_update = 0
         self.last_position = 0
