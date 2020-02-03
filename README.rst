@@ -1,7 +1,7 @@
 .. image:: logo.png?raw=true
     :align: center
 
-.. image:: https://img.shields.io/badge/Python-3.6%20%7C%203.7-blue.svg
+.. image:: https://img.shields.io/badge/Python-3.7%20%7C%203.8-blue.svg
     :target: https://www.python.org
 
 .. image:: https://api.codacy.com/project/badge/Grade/d020ed97fd2a46fcb1f42bd3bc397e63
@@ -33,19 +33,19 @@ Installation
 ---------------------------
 The following commands are currently the valid ways of installing WaveLink.
 
-**WaveLink requires Python 3.6+**
+**WaveLink requires Python 3.7+**
 
 **Windows**
 
 .. code:: sh
 
-    py -3.6 -m pip install Wavelink
+    py -3.7 -m pip install Wavelink
 
 **Linux**
 
 .. code:: sh
 
-    python3.6 -m pip install Wavelink
+    python3.7 -m pip install Wavelink
 
 Getting Started
 ----------------------------
