@@ -28,6 +28,7 @@ from typing import Optional, Union
 
 from .errors import *
 from .eqs import *
+from .events import TrackStart
 
 
 __log__ = logging.getLogger(__name__)
@@ -243,6 +244,8 @@ class Player:
             payload['endTime'] = str(end)
 
         await self.node._send(**payload)
+        self.bot.loop.create_task(self.node.on_event(TrackStart(player=self, track=track)))
+
         __log__.debug(f'PLAYER | Started playing track:: {str(track)} ({self.channel_id})')
 
     async def stop(self):

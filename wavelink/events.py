@@ -20,11 +20,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from .player import Player
-from .player import Track
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .player import Player
+    from .player import Track
 
 
-__all__ = ('WavelinkEvent', 'TrackEnd', 'TrackException', 'TrackStuck')
+__all__ = ('WavelinkEvent', 'TrackEnd', 'TrackException', 'TrackStuck', 'TrackStart')
 
 
 class WavelinkEvent:
@@ -89,3 +92,19 @@ class TrackStuck(WavelinkEvent):
 
     def __str__(self):
         return 'TrackStuck'
+
+
+class TrackStart(WavelinkEvent):
+    """Event dispatched on TrackStart.
+
+    :ivar player: The :class:`wavelink.player.Player` associated with the event.
+    :ivar track: The :class:`wavelink.player.Track` associated with the event.
+    """
+
+    __slots__ = ()
+
+    def __init__(self, player: Player, track: Track):
+        super().__init__(player, track)
+
+    def __str__(self):
+        return 'TrackStart'
