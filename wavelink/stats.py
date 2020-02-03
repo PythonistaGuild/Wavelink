@@ -28,11 +28,11 @@ class Penalty:
         self.null_frame_penalty = 0
         self.deficit_frame_penalty = 0
 
-        if stats.frames_nulled is not -1:
+        if stats.frames_nulled != -1:
             self.null_frame_penalty = (1.03 ** (500 * (stats.frames_nulled / 3000))) * 300 - 300
             self.null_frame_penalty *= 2
 
-        if stats.frames_deficit is not -1:
+        if stats.frames_deficit != -1:
             self.deficit_frame_penalty = (1.03 ** (500 * (stats.frames_deficit / 3000))) * 600 - 600
 
         self.total = self.player_penalty + self.cpu_penalty + self.null_frame_penalty + self.deficit_frame_penalty
