@@ -207,7 +207,7 @@ class Player:
         self.channel_id = None
         await self._get_shard_socket(guild.shard_id).voice_state(self.guild_id, None)
 
-    async def play(self, track: Track, *, replace: bool = True, start: int = 0):
+    async def play(self, track: Track, *, replace: bool = True, start: int = 0, end: int = 0):
         """|coro|
 
         Play a WaveLink Track.
@@ -220,6 +220,9 @@ class Player:
             Whether or not the current track, if there is one, should be replaced or not. Defaults to True.
         start: int
             The position to start the player from in milliseconds. Defaults to 0.
+        end: int
+            The position to end the track on in milliseconds. By default this always allows the current
+            song to finish playing.
         """
         self.last_update = 0
         self.last_position = 0
@@ -229,11 +232,17 @@ class Player:
         no_replace = not replace
 
         self.current = track
-        await self.node._send(op='play',
-                              guildId=str(self.guild_id),
-                              track=track.id,
-                              noReplace=no_replace,
-                              startTime=str(start))
+
+        payload = {'op': 'play',
+                   'guildId': str(self.guild_id),
+                   'track': track.id,
+                   'noReplace': no_replace,
+                   'startTime': str(start)
+                   }
+        if end > 0:
+            payload['endTime'] = str(end)
+
+        await self.node._send(**payload)
         __log__.debug(f'PLAYER | Started playing track:: {str(track)} ({self.channel_id})')
 
     async def stop(self):
