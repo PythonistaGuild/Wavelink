@@ -160,7 +160,7 @@ class WebSocket:
         elif name == 'TrackStuckEvent':
             return TrackStuck(data['player'], data['track'], int(data['threshold']))
         elif name == 'WebSocketClosedEvent':
-            return WebsocketClosed(data['reason'], data['code'], data['guildId'])
+            return WebsocketClosed(data['player'], data['reason'], data['code'], data['guildId'])
 
     async def _send(self, **data):
         if self.is_connected:

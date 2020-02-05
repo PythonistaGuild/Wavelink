@@ -113,12 +113,14 @@ class TrackStart(WavelinkEvent):
 class WebsocketClosed:
     """Event dispatched when a player disconnects from a Guild.
 
+    :ivar player: The :class:`wavelink.player.Player` associated with the event.
     :ivar reason: The reason the event was dispatched.
     :ivar code: The websocket reason code.
     :ivar guild_id: The guild ID associated with the disconnect.
     """
 
-    def __init__(self, reason: str, code: int, guild_id: int):
+    def __init__(self, player: Player, reason: str, code: int, guild_id: int):
+        self.player = player
         self.reason = reason
         self.code = code
         self.guild_id = guild_id
