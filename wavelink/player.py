@@ -28,7 +28,7 @@ from typing import Optional, Union
 
 from .errors import *
 from .eqs import *
-from .events import TrackStart
+from .events import *
 
 
 __log__ = logging.getLogger(__name__)
@@ -168,7 +168,8 @@ class Player:
             await self.node._send(op='voiceUpdate', guildId=str(self.guild_id), **self._voice_state)
 
     async def hook(self, event):
-        pass
+        if isinstance(event, (TrackEnd, TrackException, TrackStuck)):
+            self.current = None
 
     def _get_shard_socket(self, shard_id: int) -> Optional[DiscordWebSocket]:
         if isinstance(self.bot, commands.AutoShardedBot):
@@ -225,10 +226,13 @@ class Player:
             The position to end the track on in milliseconds. By default this always allows the current
             song to finish playing.
         """
-        self.last_update = 0
-        self.last_position = 0
-        self.position_timestamp = 0
-        self.paused = False
+        if replace or not self.is_playing:
+            self.last_update = 0
+            self.last_position = 0
+            self.position_timestamp = 0
+            self.paused = False
+        else:
+            return
 
         no_replace = not replace
 
