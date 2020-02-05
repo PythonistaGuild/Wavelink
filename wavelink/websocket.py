@@ -152,13 +152,15 @@ class WebSocket:
             except KeyError:
                 pass
 
-    def _get_event(self, name: str, data) -> Union[TrackEnd, TrackException, TrackStuck]:
+    def _get_event(self, name: str, data) -> Union[TrackEnd, TrackException, TrackStuck, WebsocketClosed]:
         if name == 'TrackEndEvent':
             return TrackEnd(data['player'], data.get('track', None), data.get('reason', None))
         elif name == 'TrackExceptionEvent':
             return TrackException(data['player'], data['track'], data['error'])
         elif name == 'TrackStuckEvent':
             return TrackStuck(data['player'], data['track'], int(data['threshold']))
+        elif name == 'WebSocketClosedEvent':
+            return WebsocketClosed(data['reason'], data['code'], data['guildId'])
 
     async def _send(self, **data):
         if self.is_connected:

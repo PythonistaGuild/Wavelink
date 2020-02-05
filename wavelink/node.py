@@ -27,6 +27,7 @@ from typing import Optional, Union
 from urllib.parse import quote
 
 from .errors import *
+from .events import WebsocketClosed
 from .player import Player, Track, TrackPlaylist
 from .websocket import WebSocket
 
@@ -149,7 +150,8 @@ class Node:
     async def on_event(self, event):
         """Function which dispatches events when triggered on the Node."""
         __log__.info(f'NODE | Event dispatched:: <{str(event)}> ({self.__repr__()})')
-        await event.player.hook(event)
+        if not isinstance(event, WebsocketClosed):
+            await event.player.hook(event)
 
         if not self.hook:
             return

@@ -27,11 +27,11 @@ if TYPE_CHECKING:
     from .player import Track
 
 
-__all__ = ('WavelinkEvent', 'TrackEnd', 'TrackException', 'TrackStuck', 'TrackStart')
+__all__ = ('WavelinkEvent', 'TrackEnd', 'TrackException', 'TrackStuck', 'TrackStart', 'WebsocketClosed')
 
 
 class WavelinkEvent:
-    """Base Wavelink event class. All events derive from this class."""
+    """Base Wavelink event class. Most events derive from this class."""
 
     __slots__ = ('player', 'track')
 
@@ -108,3 +108,17 @@ class TrackStart(WavelinkEvent):
 
     def __str__(self):
         return 'TrackStart'
+
+
+class WebsocketClosed:
+    """Event dispatched when a player disconnects from a Guild.
+
+    :ivar reason: The reason the event was dispatched.
+    :ivar code: The websocket reason code.
+    :ivar guild_id: The guild ID associated with the disconnect.
+    """
+
+    def __init__(self, reason: str, code: int, guild_id: int):
+        self.reason = reason
+        self.code = code
+        self.guild_id = guild_id
