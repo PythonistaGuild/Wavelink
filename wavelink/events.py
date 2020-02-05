@@ -124,3 +124,6 @@ class WebsocketClosed:
         self.reason = reason
         self.code = code
         self.guild_id = guild_id
+
+    def __str__(self):
+        return 'WebsocketClosed'
