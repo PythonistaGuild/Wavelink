@@ -5,25 +5,25 @@ Welcome to WaveLink's Documentation. WaveLink is a robust and powerful Lavalink 
 Support
 ---------------------------
 For support using WaveLink, please join the official `support server
-<http://discord.gg/JhW28zp>`_ on `Discord <https://discordapp.com/>`_.
+<http://discord.gg/RAKc3HF>`_ on `Discord <https://discordapp.com/>`_.
 
 Installation
 ---------------------------
 The following commands are currently the valid ways of installing WaveLink.
 
-**WaveLink requires Python 3.6+**
+**WaveLink requires Python 3.7+**
 
 **Windows**
 
 .. code:: sh
 
-    py -3.6 -m pip install Wavelink
+    py -3.7 -m pip install Wavelink
 
 **Linux**
 
 .. code:: sh
 
-    python3.6 -m pip install Wavelink
+    python3.7 -m pip install Wavelink
 
 Getting Started
 ----------------------------
@@ -131,6 +131,12 @@ Track
 
 Events
 ----------------------------
+
+.. autoclass:: wavelink.events.WavelinkEvent
+    :members:
+
+.. autoclass:: wavelink.events.TrackStart
+    :members:
 
 .. autoclass:: wavelink.events.TrackEnd
     :members:
