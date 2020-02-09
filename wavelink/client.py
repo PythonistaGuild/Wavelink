@@ -35,6 +35,7 @@ __log__ = logging.getLogger(__name__)
 
 
 class Client:
+    """The main WaveLink client."""
 
     def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot]):
         self.bot = bot
@@ -277,7 +278,7 @@ class Client:
         return player
 
     async def initiate_node(self, host: str, port: int, *, rest_uri: str, password: str, region: str, identifier: str,
-                            shard_id: int=None, secure: bool=False) -> Node:
+                            shard_id: int = None, secure: bool = False) -> Node:
         """|coro|
 
         Initiate a Node and connect to the provided server.
@@ -305,6 +306,11 @@ class Client:
         ---------
         :class:`wavelink.node.Node`
             Returns the initiated Node in a connected state.
+
+        Raises
+        --------
+        NodeOccupied
+            A node with provided identifier already exists.
         """
         await self.bot.wait_until_ready()
 
@@ -330,26 +336,27 @@ class Client:
         __log__.info(f'CLIENT | New node initiated:: {node.__repr__()} ')
         return node
 
-    async def destroy_node(self, *, identifier: str=None):
+    async def destroy_node(self, *, identifier: str) -> None:
         """Destroy the node and it's players.
 
         Parameters
         ------------
         identifier: str
-            The identifier belonging to the node. Required to destroy the Node.
+            The identifier belonging to the node you wish to destroy.
+
+        Raises
+        --------
+        ZeroConnectedNodes
+            The provided identifier does not belong to any connected nodes.
         """
-
-        if not identifier:
-            raise WavelinkException('You must provide an identifier to remove a Node.')
-
         try:
             node = self.nodes[identifier]
         except KeyError:
-            raise WavelinkException(f'A node with identifier:: {identifier}, does not exist.')
+            raise ZeroConnectedNodes(f'A node with identifier:: {identifier}, does not exist.')
 
         await node.destroy()
 
-    async def update_handler(self, data):
+    async def update_handler(self, data) -> None:
         if not data or 't' not in data:
             return
 

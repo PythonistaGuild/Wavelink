@@ -24,7 +24,15 @@ import collections
 
 
 class Equalizer:
+    """Class representing a usuable equalizer.
 
+    Attributes
+    ------------
+    eq: list
+        A list of {'band': int, 'gain': float}
+    raw: list
+        A list of tuple pairs containing a band int and gain float.
+    """
     def __init__(self, levels: list):
         _dict = collections.defaultdict(int)
 
@@ -36,6 +44,13 @@ class Equalizer:
 
     @classmethod
     def build(cls, *, levels: list):
+        """Build an Equalizer class with the provided levels.
+
+        Parameters
+        ------------
+        levels: List[Tuple[int, float]]
+            A list of tuple pairs containing a band int and gain float.
+        """
         return cls(levels)
 
     @classmethod

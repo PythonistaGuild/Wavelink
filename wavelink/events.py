@@ -31,7 +31,15 @@ __all__ = ('WavelinkEvent', 'TrackEnd', 'TrackException', 'TrackStuck', 'TrackSt
 
 
 class WavelinkEvent:
-    """Base Wavelink event class. Most events derive from this class."""
+    """Base Wavelink event class. Most events derive from this class.
+
+    Attributes
+    ------------
+    player: :class:`wavelink.player.Player`
+        The player associated with the event.
+    track: :class:`wavelink.player.Track`
+        The track associated with the event.
+    """
 
     __slots__ = ('player', 'track')
 
@@ -43,9 +51,14 @@ class WavelinkEvent:
 class TrackEnd(WavelinkEvent):
     """Event dispatched on TrackEnd.
 
-    :ivar player: The :class:`wavelink.player.Player` associated with the event.
-    :ivar track: The :class:`wavelink.player.Track` associated with the event.
-    :ivar reason: The reason the TrackEnd event was dispatched.
+    Attributes
+    ------------
+    player: :class:`wavelink.player.Player`
+        The player associated with the event.
+    track: :class:`wavelink.player.Track`
+        The track associated with the event.
+    reason: str
+        The reason the TrackEnd event was dispatched.
     """
 
     __slots__ = ('reason', )
@@ -61,14 +74,19 @@ class TrackEnd(WavelinkEvent):
 class TrackException(WavelinkEvent):
     """Event dispatched on TrackException.
 
-    :ivar player: The :class:`wavelink.player.Player` associated with the event.
-    :ivar track: The :class:`wavelink.player.Track` associated with the event.
-    :ivar error: The error associated with the event.
+    Attributes
+    ------------
+    player: :class:`wavelink.player.Player`
+        The player associated with the event.
+    track: :class:`wavelink.player.Track`
+        The track associated with the event.
+    error: str
+        The error reason dispatched with the event.
     """
 
     __slots__ = ('error', )
 
-    def __init__(self, player: Player, track: Track, error: Exception):
+    def __init__(self, player: Player, track: Track, error: str):
         super().__init__(player, track)
         self.error = error
 
@@ -79,9 +97,14 @@ class TrackException(WavelinkEvent):
 class TrackStuck(WavelinkEvent):
     """Event dispatched on TrackStuck.
 
-    :ivar player: The :class:`wavelink.player.Player` associated with the event.
-    :ivar track: The :class:`wavelink.player.Track` associated with the event.
-    :ivar threshold: The threshold associated with the event.
+    Attributes
+    ------------
+    player: :class:`wavelink.player.Player`
+        The player associated with the event.
+    track: :class:`wavelink.player.Track`
+        The track associated with the event.
+    threshold: int
+        The threshold associated with the event.
     """
 
     __slots__ = ('threshold', )
@@ -97,8 +120,12 @@ class TrackStuck(WavelinkEvent):
 class TrackStart(WavelinkEvent):
     """Event dispatched on TrackStart.
 
-    :ivar player: The :class:`wavelink.player.Player` associated with the event.
-    :ivar track: The :class:`wavelink.player.Track` associated with the event.
+    Attributes
+    ------------
+    player: :class:`wavelink.player.Player`
+        The player associated with the event.
+    track: :class:`wavelink.player.Track`
+        The track associated with the event.
     """
 
     __slots__ = ()
@@ -113,10 +140,16 @@ class TrackStart(WavelinkEvent):
 class WebsocketClosed:
     """Event dispatched when a player disconnects from a Guild.
 
-    :ivar player: The :class:`wavelink.player.Player` associated with the event.
-    :ivar reason: The reason the event was dispatched.
-    :ivar code: The websocket reason code.
-    :ivar guild_id: The guild ID associated with the disconnect.
+    Attributes
+    ------------
+    player: :class:`wavelink.player.Player`
+        The player associated with the event.
+    reason: str
+        The reason the event was dispatched.
+    code: int
+        The websocket reason code.
+    guild_id: int
+        The guild ID associated with the disconnect.
     """
 
     def __init__(self, player: Player, reason: str, code: int, guild_id: int):

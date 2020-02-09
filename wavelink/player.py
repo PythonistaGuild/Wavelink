@@ -38,21 +38,44 @@ __log__ = logging.getLogger(__name__)
 class Track:
     """Wavelink Tack object.
 
-    :ivar id: The Base64 Track ID.
-    :ivar info: The raw track as a dict.
-    :ivar title: The track title.
-    :ivar ytid: The YouTube video ID. Could be None if ytsearch was not used.
-    :ivar length: The duration of the track.
-    :ivar duration: The duration of the track.
-    :ivar uri: The track URI. Could be None.
-    :ivar author: The author of the track.
-    :ivar is_stream: Bool indicating whether the track is a stream.
-    :ivar thumb: The thumbnail associated with this track. Could be None.
+    Attributes
+    ------------
+    id: str
+        The Base64 Track ID.
+    info: dict
+        The raw track info.
+    title: str
+        The track title.
+    ytid: Optional[str]
+        The tracks YouTube ID. Could be None if ytsearch was not used.
+    length:
+        The duration of the track.
+    duration:
+        Alias to length.
+    uri: Optional[str]
+        The tracks URI. Could be None.
+    author: Optional[str]
+        The author of the track. Could be None
+    is_stream: bool
+        Indicated whether the track is a stream or not.
+    thumb: Optional[str]
+        The thumbnail URL associated with the track. Could be None.
     """
 
-    __slots__ = ('id', 'info', 'query', 'title', 'ytid', 'length', 'duration', 'uri', 'author', 'is_stream', 'dead', 'thumb')
+    __slots__ = ('id',
+                 'info',
+                 'query',
+                 'title',
+                 'ytid',
+                 'length',
+                 'duration',
+                 'uri',
+                 'author',
+                 'is_stream',
+                 'dead',
+                 'thumb')
 
-    def __init__(self, id_, info, query=None):
+    def __init__(self, id_, info: dict, query: str = None):
         self.id = id_
         self.info = info
         self.query = query
@@ -83,8 +106,12 @@ class Track:
 class TrackPlaylist:
     """Track Playlist object.
 
-    :ivar data: The raw playlist info data dict.
-    :ivar tracks: The individual :class:`Track` objects from the playlist.
+    Attributes
+    ------------
+    data: dict
+        The raw playlist info dict.
+    tracks: list
+        A list of individual :class:`Track` objects from the playlist.
     """
 
     def __init__(self, data: dict):
@@ -93,6 +120,21 @@ class TrackPlaylist:
 
 
 class Player:
+    """Wavelink Player class.
+
+    Attributes
+    ------------
+    bot: Union[discord.ext.commands.Bot, discord.ext.commands.AutoShardedBot]
+        The discord Bot instance.
+    guild_id: int
+        The guild ID the player is connected to.
+    node: :class:`wavelink.node.Node`
+        The node the player belongs to.
+    volume: int
+        The players volume.
+    channel_id: int
+        The channel the player is connected to. Could be None if the player is not connected.
+    """
 
     def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot], guild_id: int, node):
         self.bot = bot
@@ -114,13 +156,19 @@ class Player:
                            'PIANO': Equalizer.piano()}
 
     @property
-    def is_connected(self):
-        """ Returns whether the player is connected to a voicechannel or not """
+    def is_connected(self) -> bool:
+        """Returns whether the player is connected to a voicechannel or not."""
         return self.channel_id is not None
 
     @property
-    def is_playing(self):
+    def is_playing(self) -> bool:
+        """Returns whether or not the player is currently playing."""
         return self.is_connected and self.current is not None
+
+    @property
+    def is_paused(self) -> bool:
+        """Returns whether or not the player is paused."""
+        return self.paused
 
     @property
     def position(self):
@@ -136,21 +184,21 @@ class Player:
         difference = (time.time() * 1000) - self.last_update
         return min(self.last_position + difference, self.current.duration)
 
-    async def update_state(self, state: dict):
+    async def update_state(self, state: dict) -> None:
         state = state['state']
 
         self.last_update = time.time() * 1000
         self.last_position = state.get('position', 0)
         self.position_timestamp = state.get('time', 0)
 
-    async def _voice_server_update(self, data):
+    async def _voice_server_update(self, data) -> None:
         self._voice_state.update({
             'event': data
         })
 
         await self._dispatch_voice_update()
 
-    async def _voice_state_update(self, data):
+    async def _voice_state_update(self, data) -> None:
         self._voice_state.update({
             'sessionId': data['session_id']
         })
@@ -163,12 +211,12 @@ class Player:
 
         await self._dispatch_voice_update()
 
-    async def _dispatch_voice_update(self):
+    async def _dispatch_voice_update(self) -> None:
         __log__.debug(f'PLAYER | Dispatching voice update:: {self.channel_id}')
         if {'sessionId', 'event'} == self._voice_state.keys():
             await self.node._send(op='voiceUpdate', guildId=str(self.guild_id), **self._voice_state)
 
-    async def hook(self, event):
+    async def hook(self, event) -> None:
         if isinstance(event, (TrackEnd, TrackException, TrackStuck)):
             self.current = None
 
@@ -197,7 +245,7 @@ class Player:
         await self._get_shard_socket(guild.shard_id).voice_state(self.guild_id, str(channel_id))
         __log__.info(f'PLAYER | Connected to voice channel:: {self.channel_id}')
 
-    async def disconnect(self):
+    async def disconnect(self) -> None:
         """|coro|
 
         Disconnect from a Discord Voice Channel.
@@ -210,7 +258,7 @@ class Player:
         self.channel_id = None
         await self._get_shard_socket(guild.shard_id).voice_state(self.guild_id, None)
 
-    async def play(self, track: Track, *, replace: bool = True, start: int = 0, end: int = 0):
+    async def play(self, track: Track, *, replace: bool = True, start: int = 0, end: int = 0) -> None:
         """|coro|
 
         Play a WaveLink Track.
@@ -253,7 +301,7 @@ class Player:
 
         __log__.debug(f'PLAYER | Started playing track:: {str(track)} ({self.channel_id})')
 
-    async def stop(self):
+    async def stop(self) -> None:
         """|coro|
 
         Stop the Player's currently playing song.
@@ -262,7 +310,7 @@ class Player:
         __log__.debug(f'PLAYER | Current track stopped:: {str(self.current)} ({self.channel_id})')
         self.current = None
 
-    async def destroy(self):
+    async def destroy(self) -> None:
         """|coro|
 
         Stop the player, and remove any internal references to it.
@@ -310,7 +358,7 @@ class Player:
 
         await self.node._send(op='equalizer', guildId=str(self.guild_id), bands=equalizer.eq)
 
-    async def set_pause(self, pause: bool):
+    async def set_pause(self, pause: bool) -> None:
         """|coro|
 
         Set the players paused state.
@@ -324,7 +372,7 @@ class Player:
         self.paused = pause
         __log__.debug(f'PLAYER | Set pause:: {self.paused} ({self.channel_id})')
 
-    async def set_volume(self, vol: int):
+    async def set_volume(self, vol: int) -> None:
         """|coro|
 
         Set the player's volume, between 0 and 1000.
@@ -338,7 +386,7 @@ class Player:
         await self.node._send(op='volume', guildId=str(self.guild_id), volume=self.volume)
         __log__.debug(f'PLAYER | Set volume:: {self.volume} ({self.channel_id})')
 
-    async def seek(self, position: int=0):
+    async def seek(self, position: int = 0) -> None:
         """Seek to the given position in the song.
 
         Parameters
@@ -349,7 +397,7 @@ class Player:
 
         await self.node._send(op='seek', guildId=str(self.guild_id), position=position)
 
-    async def change_node(self, identifier: str=None):
+    async def change_node(self, identifier: str = None) -> None:
         """|coro|
 
         Change the players current :class:`wavelink.node.Node`. Useful when a Node fails or when changing regions.
@@ -368,7 +416,7 @@ class Player:
             if not node:
                 raise WavelinkException(f'No Nodes matching identifier:: {identifier}')
             elif node == self.node:
-                raise WavelinkException('Node identifiers must not be the same while changing')
+                raise WavelinkException('Node identifiers must not be the same while changing.')
         else:
             self.node.close()
             node = None

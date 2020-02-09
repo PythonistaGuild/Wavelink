@@ -38,12 +38,25 @@ __log__ = logging.getLogger(__name__)
 class Node:
     """A WaveLink Node instance.
 
+    Attributes
+    ------------
+    host: str
+        The host address the node is connected to.
+    port: int
+        The port the node is connected to.
+    rest_uri: str
+        The rest server address the node is connecte to.
+    region: str
+        The region provided to the node on connection.
+    identifier: str
+        The unique indentifier associated with the node.
+
     .. warning::
         You should not create :class:`Node` objects manually. Instead you should use, :func:`Client.initiate_node`.
     """
 
     def __init__(self, host: str, port: int, shards: int, user_id: int, *, client, session, rest_uri: str, password: str,
-                 region: str, identifier: str, shard_id: int=None, secure: bool=False):
+                 region: str, identifier: str, shard_id: int = None, secure: bool = False):
         self.host = host
         self.port = port
         self.rest_uri = rest_uri
@@ -72,26 +85,26 @@ class Node:
 
     @property
     def is_available(self) -> bool:
-        """Return whether the Node is available."""
+        """Return whether the Node is available or not."""
         return self._websocket.is_connected and self.available
 
-    def close(self):
+    def close(self) -> None:
         """Close the node and make it unavailable."""
         self.available = False
 
-    def open(self):
+    def open(self) -> None:
         """Open the node and make it available."""
         self.available = True
 
     @property
-    def penalty(self):
+    def penalty(self) -> float:
         """Returns the load-balancing penalty for this node."""
         if not self.available or not self.stats:
             return 9e30
 
         return self.stats.penalty.total
 
-    async def connect(self, bot: Union[commands.Bot, commands.AutoShardedBot]):
+    async def connect(self, bot: Union[commands.Bot, commands.AutoShardedBot]) -> None:
         self._websocket = WebSocket(bot, self, self.host, self.port, self.password, self.shards, self.uid, self.secure)
         await self._websocket._connect()
 
@@ -147,7 +160,7 @@ class Node:
         """
         return self.players.get(guild_id, None)
 
-    async def on_event(self, event):
+    async def on_event(self, event) -> None:
         """Function which dispatches events when triggered on the Node."""
         __log__.info(f'NODE | Event dispatched:: <{str(event)}> ({self.__repr__()})')
         await event.player.hook(event)
@@ -160,20 +173,24 @@ class Node:
         else:
             self.hook(event)
 
-    def set_hook(self, func):
+    def set_hook(self, func) -> None:
         """Set the Node Event Hook.
 
         The event hook will be dispatched when an Event occurs.
-
         Maybe a coroutine.
+
+        Raises
+        --------
+        WavelinkException
+            The hook provided was not a valid callable.
         """
         if not callable(func):
             raise WavelinkException('Node hook must be a callable.')
 
         self.hook = func
 
-    async def destroy(self):
-        """Destroy the node and it's players."""
+    async def destroy(self) -> None:
+        """Destroy the node and all it's players."""
         players = self.players.copy()
 
         for _, player in players.items():
@@ -186,6 +203,6 @@ class Node:
 
         del self._client.nodes[self.identifier]
 
-    async def _send(self, **data):
+    async def _send(self, **data) -> None:
         __log__.debug(f'NODE | Sending payload:: <{data}> ({self.__repr__()})')
         await self._websocket._send(**data)
