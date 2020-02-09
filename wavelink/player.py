@@ -321,42 +321,24 @@ class Player:
         await self.node._send(op='destroy', guildId=str(self.guild_id))
         del self.node.players[self.guild_id]
 
-    async def set_preq(self, mode: str) -> str:
+    async def set_eq(self, equalizer: Equalizer) -> None:
         """|coro|
 
-        Set the Players Equalizer from a Pre-made list. If no/invalid mode is provided, the EQ will be reset.
+        Set the Players Equalizer.
 
-        Modes
-        -------
-        Flat:
-            The base EQ. Complete FlatLine.
-        Boost:
-            A Bass and Snare boost. Suitable to DNB type music.
-        Metal:
-            A metal/metal rock boost.
+        Parameters
+        ------------
+        equalizer: :class:`Equalizer`
+            The Equalizer to set.
         """
-        name = mode
-
-        mode = self.equalizers.get(mode.upper(), Equalizer.flat())
-        await self.node._send(op='equalizer', guildId=str(self.guild_id), bands=mode.eq)
-
-        return name
-
-    async def set_eq(self, *, levels: list):
-        """|coro|
-
-        Set the Players Equalizer. A list of tuples ranged for 0 to 14 with a gain will be accepted.
-
-        Bands: 0 - 14
-        Gains: -0.25 - 1.0
-
-        Example
-        ---------
-            [(0, .1), (7, .5), (8, .5)]
-        """
-        equalizer = Equalizer.build(levels=levels)
-
         await self.node._send(op='equalizer', guildId=str(self.guild_id), bands=equalizer.eq)
+
+    async def set_equalizer(self, equalizer: Equalizer) -> None:
+        """|coro|
+
+        An alias to :func:`set_eq`.
+        """
+        await self.set_eq(equalizer)
 
     async def set_pause(self, pause: bool) -> None:
         """|coro|
