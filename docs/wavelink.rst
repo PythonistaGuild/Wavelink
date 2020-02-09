@@ -129,6 +129,12 @@ Track
     :members:
 
 
+Equalizer
+----------------------------
+.. autoclass:: wavelink.eqs.Equalizer
+    :members:
+
+
 Events
 ----------------------------
 
