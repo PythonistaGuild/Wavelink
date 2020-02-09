@@ -38,6 +38,9 @@ __log__ = logging.getLogger(__name__)
 class Node:
     """A WaveLink Node instance.
 
+    .. warning::
+        You should not create :class:`Node` objects manually. Instead you should use, :func:`Client.initiate_node`.
+        
     Attributes
     ------------
     host: str
@@ -50,9 +53,6 @@ class Node:
         The region provided to the node on connection.
     identifier: str
         The unique indentifier associated with the node.
-
-    .. warning::
-        You should not create :class:`Node` objects manually. Instead you should use, :func:`Client.initiate_node`.
     """
 
     def __init__(self, host: str, port: int, shards: int, user_id: int, *, client, session, rest_uri: str, password: str,
