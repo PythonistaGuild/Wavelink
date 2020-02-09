@@ -40,7 +40,7 @@ class Node:
 
     .. warning::
         You should not create :class:`Node` objects manually. Instead you should use, :func:`Client.initiate_node`.
-        
+
     Attributes
     ------------
     host: str
