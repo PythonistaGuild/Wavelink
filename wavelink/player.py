@@ -31,6 +31,7 @@ from .eqs import *
 from .events import *
 
 
+__all__ = ('Track', 'TrackPlaylist', 'Player')
 __log__ = logging.getLogger(__name__)
 
 
