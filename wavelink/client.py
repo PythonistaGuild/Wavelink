@@ -374,5 +374,3 @@ class Client:
                 pass
             else:
                 await player._voice_state_update(data['d'])
-        else:
-            return
