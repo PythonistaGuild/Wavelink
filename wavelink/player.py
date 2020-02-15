@@ -136,7 +136,7 @@ class Player:
         The channel the player is connected to. Could be None if the player is not connected.
     """
 
-    def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot], guild_id: int, node):
+    def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot], guild_id: int, node, **kwargs):
         self.bot = bot
         self.guild_id = guild_id
         self.node = node

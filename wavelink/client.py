@@ -185,11 +185,14 @@ class Client:
 
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
-    def get_player(self, guild_id: int, *, cls=None, node_id=None) -> Player:
+    def get_player(self, guild_id: int, *, cls=None, node_id=None, **kwargs) -> Player:
         """Retrieve a player for the given guild ID. If None, a player will be created and returned.
 
         .. versionchanged:: 0.3.0
             cls is now a keyword only argument.
+
+        .. versionadded:: 0.5.01
+            Added support for passing kwarg parameters to the cls.
 
         Parameters
         ------------
@@ -239,7 +242,7 @@ class Client:
             if not node:
                 raise InvalidIDProvided(f'A Node with the identifier <{node_id}> does not exist.')
 
-            player = cls(self.bot, guild_id, node)
+            player = cls(self.bot, guild_id, node, **kwargs)
             node.players[guild_id] = player
 
             return player
@@ -259,7 +262,7 @@ class Client:
         if not shard_options and not region_options:
             # Sort by len of node players
             node = sorted(nodes, key=lambda n: len(n.players))[0]
-            player = cls(self.bot, guild_id, node)
+            player = cls(self.bot, guild_id, node, **kwargs)
             node.players[guild_id] = player
 
             return player
@@ -272,7 +275,7 @@ class Client:
         else:
             node = sorted(region_options, key=lambda n: len(n.players))[0]
 
-        player = cls(self.bot, guild_id, node)
+        player = cls(self.bot, guild_id, node, **kwargs)
         node.players[guild_id] = player
 
         return player
