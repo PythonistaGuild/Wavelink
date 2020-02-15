@@ -326,6 +326,9 @@ class Player:
 
         Set the Players Equalizer.
 
+        ..versionchanged:: 0.5.0
+            set_eq now accepts an :class:`Equalizer` instead of raw band/gain pairs.
+
         Parameters
         ------------
         equalizer: :class:`Equalizer`
