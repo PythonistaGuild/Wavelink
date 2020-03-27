@@ -193,7 +193,7 @@ class Node:
         """Destroy the node and all it's players."""
         players = self.players.copy()
 
-        for _, player in players.items():
+        for player in players.values():
             await player.destroy()
 
         try:
