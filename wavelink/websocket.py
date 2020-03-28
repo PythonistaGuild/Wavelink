@@ -137,6 +137,8 @@ class WebSocket:
                 return
 
             event = self._get_event(data['type'], data)
+            if not event:
+                return
 
             __log__.debug(f'WEBSOCKET | op: event:: {data}')
 
