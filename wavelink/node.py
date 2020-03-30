@@ -146,6 +146,37 @@ class Node:
 
             return tracks
 
+    async def build_track(self, identifier: str) -> Track:
+        """|coro|
+
+        Build a track object with a valid track identifier.
+
+        Parameters
+        ------------
+        identifier: str
+            The tracks unique Base64 encoded identifier. This is usually retrieved from various lavalink events.
+
+        Returns
+        ---------
+        :class:`wavelink.player.Track`
+            The track built from a Base64 identifier.
+
+        Raises
+        --------
+        BuildTrackError
+            Decoding and building the track failed.
+        """
+        async with self.session.get(f'{self.rest_uri}/decodetrack?track={identifier}',
+                                    headers={'Authorization': self.password}) as resp:
+            data = await resp.json()
+
+            if not resp.status == 200:
+                raise BuildTrackError(f'Failed to build track. Status: {data["status"]}, Error: {data["error"]}.'
+                                      f'Check the identfier is correct and try again.')
+
+            track = Track(id_=identifier, info=data)
+            return track
+
     def get_player(self, guild_id: int) -> Optional[Player]:
         """Retrieve a player object associated with the Node.
 

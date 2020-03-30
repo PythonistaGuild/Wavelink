@@ -108,6 +108,35 @@ class Client:
 
         return await node.get_tracks(query)
 
+    async def build_track(self, identifier: str):
+        """|coro|
+
+        Build a track object with a valid track identifier.
+
+        Parameters
+        ------------
+        identifier: str
+            The tracks unique Base64 encoded identifier. This is usually retrieved from various lavalink events.
+
+        Returns
+        ---------
+        :class:`wavelink.player.Track`
+            The track built from a Base64 identifier.
+
+        Raises
+        --------
+        ZeroConnectedNodes
+            There are no :class:`wavelink.node.Node`s currently connected.
+        BuildTrackError
+            Decoding and building the track failed.
+        """
+        node = self.get_best_node()
+
+        if node is None:
+            raise ZeroConnectedNodes
+
+        return await node.build_track(identifier)
+
     def _get_players(self) -> dict:
         players = []
 

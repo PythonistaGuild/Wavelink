@@ -40,3 +40,7 @@ class ZeroConnectedNodes(WavelinkException):
 
 class AuthorizationFailure(WavelinkException):
     """Exception raised when an invalid password is provided toa node."""
+
+
+class BuildTrackError(WavelinkException):
+    """Exception raised when a track is failed to be decoded and re-built."""
