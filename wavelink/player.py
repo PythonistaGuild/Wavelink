@@ -51,8 +51,8 @@ class Track:
         The tracks identifier. could be None depending on track type.
     ytid: Optional[str]
         The tracks YouTube ID. Could be None if ytsearch was not used.
-    length:
-        The duration of the track.
+    length: int
+        The duration of the track in milliseconds.
     duration:
         Alias to length.
     uri: Optional[str]
