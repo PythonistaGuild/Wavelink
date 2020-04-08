@@ -22,6 +22,7 @@ SOFTWARE.
 """
 import logging
 import time
+import re
 from discord.ext import commands
 from discord.gateway import DiscordWebSocket
 from typing import Optional, Union
@@ -46,6 +47,8 @@ class Track:
         The raw track info.
     title: str
         The track title.
+    identifier: Optional[str]
+        The tracks identifier. could be None depending on track type.
     ytid: Optional[str]
         The tracks YouTube ID. Could be None if ytsearch was not used.
     length:
@@ -66,6 +69,7 @@ class Track:
                  'info',
                  'query',
                  'title',
+                 'identifier',
                  'ytid',
                  'length',
                  'duration',
@@ -81,7 +85,8 @@ class Track:
         self.query = query
 
         self.title = info.get('title')
-        self.ytid = info.get('identifier')
+        self.identifier = info.get('identifier')
+        self.ytid = self.identifier if re.match(r"^[a-z0-9_-]{11}$", self.identifier) else None
         self.length = info.get('length')
         self.duration = self.length
         self.uri = info.get('uri')
