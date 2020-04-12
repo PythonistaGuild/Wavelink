@@ -23,11 +23,19 @@ SOFTWARE.
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
+    from .node import Node
     from .player import Player
     from .player import Track
 
 
-__all__ = ('WavelinkEvent', 'TrackEnd', 'TrackException', 'TrackStuck', 'TrackStart', 'WebsocketClosed')
+__all__ = ('WavelinkEvent',
+           'TrackEnd',
+           'TrackException',
+           'TrackStuck',
+           'TrackStart',
+           'WebsocketClosed',
+           'NodeConnected',
+           'NodeDisconnected')
 
 
 class WavelinkEvent:
@@ -160,3 +168,41 @@ class WebsocketClosed:
 
     def __str__(self):
         return 'WebsocketClosed'
+
+
+class NodeConnected:
+    """Event dispatched when a Node connection is established.
+
+    Attributes
+    ------------
+    node: :class:`wavelink.node.Node`
+        The node associated with the event.
+    """
+
+    def __init__(self, node: Node):
+        self.node = node
+
+    def __str__(self):
+        return 'NodeConnected'
+
+
+class NodeDisconnected:
+    """Event dispatched when a Node connection is closed.
+
+    Attributes
+    ------------
+    node: :class:`wavelink.node.Node`
+        The node associated with the event.
+    reason: str
+        The reason the connection was closed.
+    code: int
+        The connection close code.
+    """
+
+    def __init__(self, node: Node, reason: str, code: int):
+        self.node = node
+        self.reason = reason
+        self.code = code
+
+    def __str__(self):
+        return 'NodeDisconnected'
