@@ -160,7 +160,7 @@ class WebSocket:
         elif name == 'TrackExceptionEvent':
             return TrackException(data['player'], data['track'], data['error'])
         elif name == 'TrackStuckEvent':
-            return TrackStuck(data['player'], data['track'], int(data['threshold']))
+            return TrackStuck(data['player'], data['track'], int(data['thresholdMs']))
         elif name == 'WebSocketClosedEvent':
             return WebsocketClosed(data['player'], data['reason'], data['code'], data['guildId'])
 
