@@ -86,7 +86,7 @@ class Track:
 
         self.title = info.get('title')
         self.identifier = info.get('identifier')
-        self.ytid = self.identifier if re.match(r"^[a-z0-9_-]{11}$", self.identifier) else None
+        self.ytid = self.identifier if re.match(r"^[a-zA-Z0-9_-]{11}$", self.identifier) else None
         self.length = info.get('length')
         self.duration = self.length
         self.uri = info.get('uri')
