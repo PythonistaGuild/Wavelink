@@ -38,6 +38,8 @@ class Client:
     """The main WaveLink client."""
 
     def __new__(cls, *args, **kwargs):
+        cls.__qualname__ = 'wavelink.Client'
+
         try:
             bot = kwargs['bot']
         except KeyError:
@@ -54,7 +56,7 @@ class Client:
             return super().__new__(cls)
 
         for handler in update_handlers:
-            if isinstance(handler.__self__.__class__, cls.__class__):
+            if handler.__self__.__class__.__qualname__ == 'wavelink.Client':
                 bot.remove_listener(handler, 'on_socket_response')
 
         return super().__new__(cls)
