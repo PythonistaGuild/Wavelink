@@ -208,12 +208,13 @@ class Player:
             'sessionId': data['session_id']
         })
 
-        self.channel_id = data['channel_id']
+        channel_id = data['channel_id']
 
-        if not self.channel_id:  # We're disconnecting
+        if not channel_id:  # We're disconnecting
             self._voice_state.clear()
             return
 
+        self.channel_id = int(channel_id)
         await self._dispatch_voice_update()
 
     async def _dispatch_voice_update(self) -> None:
