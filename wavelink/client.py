@@ -37,6 +37,28 @@ __log__ = logging.getLogger(__name__)
 class Client:
     """The main WaveLink client."""
 
+    def __new__(cls, *args, **kwargs):
+        try:
+            bot = kwargs['bot']
+        except KeyError:
+            msg = 'wavelink.Client: bot is a required keyword only argument which is missing.'
+            raise WavelinkException(msg)
+
+        if not isinstance(bot, (commands.Bot, commands.AutoShardedBot)):
+            msg = f'wavelink.Client expected type <commands.Bot or commands.AutoShardedBot> not {type(bot)}'
+            raise TypeError(msg)
+
+        try:
+            update_handlers = bot.extra_events['on_socket_response']
+        except KeyError:
+            return super().__new__(cls)
+
+        for handler in update_handlers:
+            if isinstance(handler.__self__.__class__, cls.__class__):
+                bot.remove_listener(handler, 'on_socket_response')
+
+        return super().__new__(cls)
+
     def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot]):
         self.bot = bot
         self.loop = bot.loop or asyncio.get_event_loop()

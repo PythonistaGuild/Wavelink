@@ -327,7 +327,7 @@ class Music(commands.Cog):
         self.bot = bot
 
         if not hasattr(bot, 'wavelink'):
-            bot.wavelink = wavelink.Client(bot)
+            bot.wavelink = wavelink.Client(bot=bot)
 
         bot.loop.create_task(self.start_nodes())
 
