@@ -20,14 +20,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import aiohttp
 import asyncio
 import json
 import logging
 import sys
 import traceback
-import websockets
 from discord.ext import commands
-from typing import Union
+from typing import Any, Dict, Union
 
 from .backoff import ExponentialBackoff
 from .events import *
@@ -58,12 +58,12 @@ class WebSocket:
     @property
     def headers(self):
         return {'Authorization': self.password,
-                'Num-Shards': self.shard_count,
+                'Num-Shards': str(self.shard_count),
                 'User-Id': str(self.user_id)}
 
     @property
     def is_connected(self) -> bool:
-        return self._websocket is not None and self._websocket.open
+        return self._websocket is not None and not self._websocket.closed
 
     async def _connect(self):
         await self.bot.wait_until_ready()
@@ -75,14 +75,17 @@ class WebSocket:
                 uri = f'ws://{self.host}:{self.port}'
 
             if not self.is_connected:
-                self._websocket = await websockets.connect(uri=uri, extra_headers=self.headers)
+                self._websocket = await self._node.session.ws_connect(uri, headers=self.headers)
 
         except Exception as error:
             self._last_exc = error
             self._node.available = False
 
-            __log__.error(f'WEBSOCKET | Connection Failure:: {error}')
-            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+            if isinstance(error, aiohttp.WSServerHandshakeError) and error.status == 401:
+                print(f'\nAuthorization Failed for Node:: {self._node}\n', file=sys.stderr)
+            else:
+                __log__.error(f'WEBSOCKET | Connection Failure:: {error}')
+                traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
             return
 
         if not self._task:
@@ -100,15 +103,11 @@ class WebSocket:
         backoff = ExponentialBackoff(base=7)
 
         while True:
-            try:
-                data = await self._websocket.recv()
-                __log__.debug(f'WEBSOCKET | Received Payload:: <{data}>')
-            except websockets.ConnectionClosed as e:
-                self._last_exc = e
+            msg = await self._websocket.receive()
 
-                if e.code == 4001:
-                    print(f'\nAuthorization Failed for Node:: {self._node}\n', file=sys.stderr)
-                    break
+            if msg.type is aiohttp.WSMsgType.CLOSED:
+                __log__.debug(f'WEBSOCKET | Close data: {msg.extra}')
+
 
                 self._closed = True
                 retry = backoff.delay()
@@ -119,11 +118,10 @@ class WebSocket:
                 if not self.is_connected:
                     self.bot.loop.create_task(self._connect())
             else:
-                self.bot.loop.create_task(self.process_data(data))
+                __log__.debug(f'WEBSOCKET | Received Payload:: <{msg.data}>')
+                self.bot.loop.create_task(self.process_data(msg.json()))
 
-    async def process_data(self, data: str):
-        data = json.loads(data)
-
+    async def process_data(self, data: Dict[str, Any]):
         op = data.get('op', None)
         if not op:
             return
@@ -167,4 +165,4 @@ class WebSocket:
     async def _send(self, **data):
         if self.is_connected:
             __log__.debug(f'WEBSOCKET | Sending Payload:: {data}')
-            await self._websocket.send(json.dumps(data))
+            await self._websocket.send_json(data)
