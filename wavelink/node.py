@@ -130,6 +130,11 @@ class Node:
         async with self.session.get(f'{self.rest_uri}/loadtracks?identifier={quote(query)}',
                                     headers={'Authorization': self.password}) as resp:
             data = await resp.json()
+            
+            if not resp.status == 200:
+                __log__.warning(f'REST | Failed to get tracks with query:: <{query}>. Status: {data["status"]}, '
+                                f'Error: {data["error"]}.')
+                return None
 
             if not data['tracks']:
                 __log__.info(f'REST | No tracks with query:: <{query}> found.')
