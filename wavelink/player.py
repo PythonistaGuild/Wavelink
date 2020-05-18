@@ -187,7 +187,12 @@ class Player:
             return min(self.last_position, self.current.duration)
 
         difference = (time.time() * 1000) - self.last_update
-        return min(self.last_position + difference, self.current.duration)
+        position = self.last_position + difference
+
+        if position > self.current.duration:
+            return 0
+
+        return min(position, self.current.duration)
 
     async def update_state(self, state: dict) -> None:
         state = state['state']
