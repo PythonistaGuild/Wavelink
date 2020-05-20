@@ -20,8 +20,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
-import time
 import random
+import time
 
 
 class ExponentialBackoff:
@@ -43,7 +43,7 @@ class ExponentialBackoff:
         number in between may be returned.
     """
 
-    def __init__(self, base: int=1, *, integral: bool=False):
+    def __init__(self, base: int = 1, *, integral: bool = False):
         self._base = base
 
         self._exp = 0
@@ -60,7 +60,7 @@ class ExponentialBackoff:
         if integral:
             self._randfunc = rand.randrange
         else:
-            self._randfunc = rand.uniform # type:ignore
+            self._randfunc = rand.uniform  # type:ignore
 
     def delay(self) -> float:
         """Compute the next delay

@@ -21,13 +21,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
-    from .player import Player
-    from .player import Track
+    from .player import Player, Track
 
 
-__all__ = ('WavelinkEvent', 'TrackEnd', 'TrackException', 'TrackStuck', 'TrackStart', 'WebsocketClosed')
+__all__ = (
+    "WavelinkEvent",
+    "TrackEnd",
+    "TrackException",
+    "TrackStuck",
+    "TrackStart",
+    "WebsocketClosed",
+)
 
 
 class WavelinkEvent:
@@ -41,7 +49,7 @@ class WavelinkEvent:
         The track associated with the event.
     """
 
-    __slots__ = ('player', 'track')
+    __slots__ = ("player", "track")
 
     def __init__(self, player: Player, track: Track):
         self.player = player
@@ -61,14 +69,14 @@ class TrackEnd(WavelinkEvent):
         The reason the TrackEnd event was dispatched.
     """
 
-    __slots__ = ('reason', )
+    __slots__ = ("reason",)
 
     def __init__(self, player: Player, track: Track, reason: str):
         super().__init__(player, track)
         self.reason = reason
 
     def __str__(self) -> str:
-        return 'TrackEnd'
+        return "TrackEnd"
 
 
 class TrackException(WavelinkEvent):
@@ -84,14 +92,14 @@ class TrackException(WavelinkEvent):
         The error reason dispatched with the event.
     """
 
-    __slots__ = ('error', )
+    __slots__ = ("error",)
 
     def __init__(self, player: Player, track: Track, error: str):
         super().__init__(player, track)
         self.error = error
 
     def __str__(self) -> str:
-        return 'TrackException'
+        return "TrackException"
 
 
 class TrackStuck(WavelinkEvent):
@@ -107,14 +115,14 @@ class TrackStuck(WavelinkEvent):
         The threshold associated with the event.
     """
 
-    __slots__ = ('threshold', )
+    __slots__ = ("threshold",)
 
     def __init__(self, player: Player, track: Track, threshold: int):
         super().__init__(player, track)
         self.threshold = threshold
 
     def __str__(self) -> str:
-        return 'TrackStuck'
+        return "TrackStuck"
 
 
 class TrackStart(WavelinkEvent):
@@ -134,7 +142,7 @@ class TrackStart(WavelinkEvent):
         super().__init__(player, track)
 
     def __str__(self) -> str:
-        return 'TrackStart'
+        return "TrackStart"
 
 
 class WebsocketClosed:
@@ -159,4 +167,4 @@ class WebsocketClosed:
         self.guild_id = guild_id
 
     def __str__(self) -> str:
-        return 'WebsocketClosed'
+        return "WebsocketClosed"

@@ -20,12 +20,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import aiohttp
 import inspect
 import logging
-from discord.ext import commands
-from typing import Optional, Union, Dict, List, Callable, Any, Mapping
+from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 from urllib.parse import quote
+
+import aiohttp
+from discord.ext import commands
 
 from .client import Client
 from .errors import *
@@ -33,7 +34,6 @@ from .events import WavelinkEvent, WebsocketClosed
 from .player import Player, Track, TrackPlaylist
 from .stats import Stats
 from .websocket import WebSocket
-
 
 __log__ = logging.getLogger(__name__)
 
@@ -58,8 +58,22 @@ class Node:
         The unique indentifier associated with the node.
     """
 
-    def __init__(self, host: str, port: int, shards: int, user_id: int, *, client: Client, session: aiohttp.ClientSession, rest_uri: str, password: str,
-                 region: str, identifier: str, shard_id: Optional[int] = None, secure: bool = False):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        shards: int,
+        user_id: int,
+        *,
+        client: Client,
+        session: aiohttp.ClientSession,
+        rest_uri: str,
+        password: str,
+        region: str,
+        identifier: str,
+        shard_id: Optional[int] = None,
+        secure: bool = False,
+    ):
         self.host = host
         self.port = port
         self.rest_uri = rest_uri
@@ -78,18 +92,24 @@ class Node:
         self._websocket: Optional[WebSocket] = None
         self._client = client
 
-        self.hook: Optional[Callable[[Union[WavelinkEvent, WebsocketClosed]], Any]] = None
+        self.hook: Optional[
+            Callable[[Union[WavelinkEvent, WebsocketClosed]], Any]
+        ] = None
         self.available = True
 
         self.stats: Optional[Stats] = None
 
     def __repr__(self) -> str:
-        return f'{self.identifier} | {self.region} | (Shard: {self.shard_id})'
+        return f"{self.identifier} | {self.region} | (Shard: {self.shard_id})"
 
     @property
     def is_available(self) -> bool:
         """Return whether the Node is available or not."""
-        return self._websocket is not None and self._websocket.is_connected and self.available
+        return (
+            self._websocket is not None
+            and self._websocket.is_connected
+            and self.available
+        )
 
     def close(self) -> None:
         """Close the node and make it unavailable."""
@@ -106,11 +126,22 @@ class Node:
             return 9e30
         return self.stats.penalty.total
 
-    async def connect(self, bot: Union[commands.Bot[Any], commands.AutoShardedBot[Any]]) -> None:
-        self._websocket = WebSocket(bot, self, self.host, self.port, self.password, self.shards, self.uid, self.secure)
+    async def connect(
+        self, bot: Union[commands.Bot[Any], commands.AutoShardedBot[Any]]
+    ) -> None:
+        self._websocket = WebSocket(
+            bot,
+            self,
+            self.host,
+            self.port,
+            self.password,
+            self.shards,
+            self.uid,
+            self.secure,
+        )
         await self._websocket._connect()
 
-        __log__.info(f'NODE | {self.identifier} connected:: {self.__repr__()}')
+        __log__.info(f"NODE | {self.identifier} connected:: {self.__repr__()}")
 
     async def get_tracks(self, query: str) -> Union[List[Track], TrackPlaylist, None]:
         """|coro|
@@ -129,22 +160,27 @@ class Node:
             A list of or TrackPlaylist instance of :class:`wavelink.player.Track` objects.
             This could be None if no tracks were found.
         """
-        async with self.session.get(f'{self.rest_uri}/loadtracks?identifier={quote(query)}',
-                                    headers={'Authorization': self.password}) as resp:
+        async with self.session.get(
+            f"{self.rest_uri}/loadtracks?identifier={quote(query)}",
+            headers={"Authorization": self.password},
+        ) as resp:
             data = await resp.json()
 
-            if not data['tracks']:
-                __log__.info(f'REST | No tracks with query:: <{query}> found.')
+            if not data["tracks"]:
+                __log__.info(f"REST | No tracks with query:: <{query}> found.")
                 return None
 
-            if data['playlistInfo']:
+            if data["playlistInfo"]:
                 return TrackPlaylist(data=data)
 
             tracks = []
-            for track in data['tracks']:
-                tracks.append(Track(id_=track['track'], info=track['info']))
+            for track in data["tracks"]:
+                tracks.append(Track(id_=track["track"], info=track["info"]))
 
-            __log__.debug(f'REST | Found <{len(tracks)}> tracks with query:: <{query}> ({self.__repr__()})')
+            __log__.debug(
+                f"REST | Found <{len(tracks)}> tracks with query:: <{query}>"
+                f" ({self.__repr__()})"
+            )
 
             return tracks
 
@@ -168,13 +204,17 @@ class Node:
         BuildTrackError
             Decoding and building the track failed.
         """
-        async with self.session.get(f'{self.rest_uri}/decodetrack?track={identifier}',
-                                    headers={'Authorization': self.password}) as resp:
+        async with self.session.get(
+            f"{self.rest_uri}/decodetrack?track={identifier}",
+            headers={"Authorization": self.password},
+        ) as resp:
             data = await resp.json()
 
             if not resp.status == 200:
-                raise BuildTrackError(f'Failed to build track. Status: {data["status"]}, Error: {data["error"]}.'
-                                      f'Check the identfier is correct and try again.')
+                raise BuildTrackError(
+                    f'Failed to build track. Status: {data["status"]}, Error:'
+                    f' {data["error"]}.Check the identfier is correct and try again.'
+                )
 
             track = Track(id_=identifier, info=data)
             return track
@@ -195,7 +235,7 @@ class Node:
 
     async def on_event(self, event: Union[WavelinkEvent, WebsocketClosed]) -> None:
         """Function which dispatches events when triggered on the Node."""
-        __log__.info(f'NODE | Event dispatched:: <{str(event)}> ({self.__repr__()})')
+        __log__.info(f"NODE | Event dispatched:: <{str(event)}> ({self.__repr__()})")
         await event.player.hook(event)
 
         if not self.hook:
@@ -206,7 +246,9 @@ class Node:
         else:
             self.hook(event)
 
-    def set_hook(self, func: Callable[[Union[WavelinkEvent, WebsocketClosed]], Any]) -> None:
+    def set_hook(
+        self, func: Callable[[Union[WavelinkEvent, WebsocketClosed]], Any]
+    ) -> None:
         """Set the Node Event Hook.
 
         The event hook will be dispatched when an Event occurs.
@@ -218,7 +260,7 @@ class Node:
             The hook provided was not a valid callable.
         """
         if not callable(func):
-            raise WavelinkException('Node hook must be a callable.')
+            raise WavelinkException("Node hook must be a callable.")
 
         self.hook = func
 
@@ -238,6 +280,6 @@ class Node:
         del self._client.nodes[self.identifier]
 
     async def _send(self, **data: Any) -> None:
-        __log__.debug(f'NODE | Sending payload:: <{data}> ({self.__repr__()})')
+        __log__.debug(f"NODE | Sending payload:: <{data}> ({self.__repr__()})")
         if self._websocket:
             await self._websocket._send(**data)

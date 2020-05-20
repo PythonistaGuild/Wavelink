@@ -21,20 +21,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import logging
-import time
 import re
+import time
+from typing import Any, Dict, Optional, Union
+
 import discord
 from discord.ext import commands
 from discord.gateway import DiscordWebSocket
-from typing import Optional, Union, Any, Dict
 
-from .errors import *
 from .eqs import *
+from .errors import *
 from .events import *
 from .node import Node
 
-
-__all__ = ('Track', 'TrackPlaylist', 'Player')
+__all__ = ("Track", "TrackPlaylist", "Player")
 __log__ = logging.getLogger(__name__)
 
 
@@ -67,19 +67,21 @@ class Track:
         The thumbnail URL associated with the track. Could be None.
     """
 
-    __slots__ = ('id',
-                 'info',
-                 'query',
-                 'title',
-                 'identifier',
-                 'ytid',
-                 'length',
-                 'duration',
-                 'uri',
-                 'author',
-                 'is_stream',
-                 'dead',
-                 'thumb')
+    __slots__ = (
+        "id",
+        "info",
+        "query",
+        "title",
+        "identifier",
+        "ytid",
+        "length",
+        "duration",
+        "uri",
+        "author",
+        "is_stream",
+        "dead",
+        "thumb",
+    )
 
     def __init__(self, id_: str, info: Dict[str, Any], query: Optional[str] = None):
         self.id = id_
@@ -87,23 +89,29 @@ class Track:
         self.query = query
 
         # Used in __str__, has to be a string, either .get("title", "") or force it
-        self.title: str = info['title']
-        self.identifier = info.get('identifier')
+        self.title: str = info["title"]
+        self.identifier = info.get("identifier")
 
         if self.identifier is not None:
-            self.ytid = self.identifier if re.match(r"^[a-zA-Z0-9_-]{11}$", self.identifier) else None
+            self.ytid = (
+                self.identifier
+                if re.match(r"^[a-zA-Z0-9_-]{11}$", self.identifier)
+                else None
+            )
         else:
             self.ytid = None
-        self.length: Optional[int] = info.get('length')
+        self.length: Optional[int] = info.get("length")
         self.duration: Optional[int] = self.length  # mypy does not infer this one
-        self.uri = info.get('uri')
-        self.author = info.get('author')
+        self.uri = info.get("uri")
+        self.author = info.get("author")
 
-        self.is_stream = info.get('isStream')
+        self.is_stream = info.get("isStream")
         self.dead = False
 
         if self.ytid:
-            self.thumb: Optional[str] = f"https://img.youtube.com/vi/{self.ytid}/maxresdefault.jpg"
+            self.thumb: Optional[str] = (
+                f"https://img.youtube.com/vi/{self.ytid}/maxresdefault.jpg"
+            )
         else:
             self.thumb = None
 
@@ -128,7 +136,9 @@ class TrackPlaylist:
 
     def __init__(self, data: Dict[str, Any]):
         self.data = data
-        self.tracks = [Track(id_=track['track'], info=track['info']) for track in data['tracks']]
+        self.tracks = [
+            Track(id_=track["track"], info=track["info"]) for track in data["tracks"]
+        ]
 
 
 class Player:
@@ -148,7 +158,13 @@ class Player:
         The channel the player is connected to. Could be None if the player is not connected.
     """
 
-    def __init__(self, bot: Union[commands.Bot[Any], commands.AutoShardedBot[Any]], guild_id: int, node: Node, **kwargs: str):
+    def __init__(
+        self,
+        bot: Union[commands.Bot[Any], commands.AutoShardedBot[Any]],
+        guild_id: int,
+        node: Node,
+        **kwargs: str,
+    ):
         self.bot = bot
         self.guild_id = guild_id
         self.node = node
@@ -164,8 +180,12 @@ class Player:
         self.current: Optional[Track] = None
         self.channel_id: Optional[int] = None
 
-        self.equalizers = {'FLAT': Equalizer.flat(), 'BOOST': Equalizer.boost(), 'METAL': Equalizer.metal(),
-                           'PIANO': Equalizer.piano()}
+        self.equalizers = {
+            "FLAT": Equalizer.flat(),
+            "BOOST": Equalizer.boost(),
+            "METAL": Equalizer.metal(),
+            "PIANO": Equalizer.piano(),
+        }
 
     @property
     def is_connected(self) -> bool:
@@ -184,7 +204,12 @@ class Player:
 
     @property
     def position(self) -> Union[int, float]:
-        if not self.is_playing or not self.last_position or not self.current or not self.last_update:
+        if (
+            not self.is_playing
+            or not self.last_position
+            or not self.current
+            or not self.last_update
+        ):
             return 0
 
         if not self.current:
@@ -205,25 +230,21 @@ class Player:
         return min(position, self.current.duration)
 
     async def update_state(self, raw_state: Dict[str, Dict[str, int]]) -> None:
-        state = raw_state['state']
+        state = raw_state["state"]
 
         self.last_update = time.time() * 1000
-        self.last_position = state.get('position', 0)
-        self.position_timestamp = state.get('time', 0)
+        self.last_position = state.get("position", 0)
+        self.position_timestamp = state.get("time", 0)
 
     async def _voice_server_update(self, data: Dict[str, Any]) -> None:
-        self._voice_state.update({
-            'event': data
-        })
+        self._voice_state.update({"event": data})
 
         await self._dispatch_voice_update()
 
     async def _voice_state_update(self, data: Dict[str, Any]) -> None:
-        self._voice_state.update({
-            'sessionId': data['session_id']
-        })
+        self._voice_state.update({"sessionId": data["session_id"]})
 
-        channel_id = data['channel_id']
+        channel_id = data["channel_id"]
 
         if not channel_id:  # We're disconnecting
             self._voice_state.clear()
@@ -233,9 +254,11 @@ class Player:
         await self._dispatch_voice_update()
 
     async def _dispatch_voice_update(self) -> None:
-        __log__.debug(f'PLAYER | Dispatching voice update:: {self.channel_id}')
-        if {'sessionId', 'event'} == self._voice_state.keys():
-            await self.node._send(op='voiceUpdate', guildId=str(self.guild_id), **self._voice_state)
+        __log__.debug(f"PLAYER | Dispatching voice update:: {self.channel_id}")
+        if {"sessionId", "event"} == self._voice_state.keys():
+            await self.node._send(
+                op="voiceUpdate", guildId=str(self.guild_id), **self._voice_state
+            )
 
     async def hook(self, event: Union[WavelinkEvent, WebsocketClosed]) -> None:
         if isinstance(event, (TrackEnd, TrackException, TrackStuck)):
@@ -244,7 +267,7 @@ class Player:
     def _get_shard_socket(self, shard_id: int) -> Optional[DiscordWebSocket]:
         if isinstance(self.bot, commands.AutoShardedBot):
             return self.bot.shards[shard_id].ws  # type:ignore
-                                                 # not part of the discord.py public API, see #1497
+            # not part of the discord.py public API, see #1497
 
         if self.bot.shard_id is None or self.bot.shard_id == shard_id:
             return self.bot.ws
@@ -263,7 +286,7 @@ class Player:
         """
         guild = self.bot.get_guild(self.guild_id)
         if not guild:
-            raise InvalidIDProvided(f'No guild found for id <{self.guild_id}>')
+            raise InvalidIDProvided(f"No guild found for id <{self.guild_id}>")
         if not guild.shard_id:  # can be None
             raise RuntimeError("Guild {self.guild_id} has no shard")
 
@@ -274,7 +297,7 @@ class Player:
             raise RuntimeError("Shard has no socket")
 
         await shard_socket.voice_state(self.guild_id, channel_id)
-        __log__.info(f'PLAYER | Connected to voice channel:: {self.channel_id}')
+        __log__.info(f"PLAYER | Connected to voice channel:: {self.channel_id}")
 
     async def disconnect(self) -> None:
         """|coro|
@@ -283,11 +306,11 @@ class Player:
         """
         guild = self.bot.get_guild(self.guild_id)
         if not guild:
-            raise InvalidIDProvided(f'No guild found for id <{self.guild_id}>')
+            raise InvalidIDProvided(f"No guild found for id <{self.guild_id}>")
         if not guild.shard_id:  # can be None
             raise RuntimeError("Guild {self.guild_id} has no shard")
 
-        __log__.info(f'PLAYER | Disconnected from voice channel:: {self.channel_id}')
+        __log__.info(f"PLAYER | Disconnected from voice channel:: {self.channel_id}")
         self.channel_id = None
         shard_socket = self._get_shard_socket(guild.shard_id)
 
@@ -296,7 +319,9 @@ class Player:
 
         await shard_socket.voice_state(self.guild_id, None)
 
-    async def play(self, track: Track, *, replace: bool = True, start: int = 0, end: int = 0) -> None:
+    async def play(
+        self, track: Track, *, replace: bool = True, start: int = 0, end: int = 0
+    ) -> None:
         """|coro|
 
         Play a WaveLink Track.
@@ -325,26 +350,31 @@ class Player:
 
         self.current = track
 
-        payload: Dict[str, Union[str, bool]] = {'op': 'play',
-                   'guildId': str(self.guild_id),
-                   'track': track.id,
-                   'noReplace': no_replace,
-                   'startTime': str(start)
-                   }
+        payload: Dict[str, Union[str, bool]] = {
+            "op": "play",
+            "guildId": str(self.guild_id),
+            "track": track.id,
+            "noReplace": no_replace,
+            "startTime": str(start),
+        }
         if end > 0:
-            payload['endTime'] = str(end)
+            payload["endTime"] = str(end)
 
         await self.node._send(**payload)
 
-        __log__.debug(f'PLAYER | Started playing track:: {str(track)} ({self.channel_id})')
+        __log__.debug(
+            f"PLAYER | Started playing track:: {str(track)} ({self.channel_id})"
+        )
 
     async def stop(self) -> None:
         """|coro|
 
         Stop the Player's currently playing song.
         """
-        await self.node._send(op='stop', guildId=str(self.guild_id))
-        __log__.debug(f'PLAYER | Current track stopped:: {str(self.current)} ({self.channel_id})')
+        await self.node._send(op="stop", guildId=str(self.guild_id))
+        __log__.debug(
+            f"PLAYER | Current track stopped:: {str(self.current)} ({self.channel_id})"
+        )
         self.current = None
 
     async def destroy(self) -> None:
@@ -355,7 +385,7 @@ class Player:
         await self.stop()
         await self.disconnect()
 
-        await self.node._send(op='destroy', guildId=str(self.guild_id))
+        await self.node._send(op="destroy", guildId=str(self.guild_id))
         del self.node.players[self.guild_id]
 
     async def set_eq(self, equalizer: Equalizer) -> None:
@@ -371,7 +401,9 @@ class Player:
         equalizer: :class:`Equalizer`
             The Equalizer to set.
         """
-        await self.node._send(op='equalizer', guildId=str(self.guild_id), bands=equalizer.eq)
+        await self.node._send(
+            op="equalizer", guildId=str(self.guild_id), bands=equalizer.eq
+        )
 
     async def set_equalizer(self, equalizer: Equalizer) -> None:
         """|coro|
@@ -390,9 +422,9 @@ class Player:
         pause: bool
             A bool indicating if the player's paused state should be set to True or False.
         """
-        await self.node._send(op='pause', guildId=str(self.guild_id), pause=pause)
+        await self.node._send(op="pause", guildId=str(self.guild_id), pause=pause)
         self.paused = pause
-        __log__.debug(f'PLAYER | Set pause:: {self.paused} ({self.channel_id})')
+        __log__.debug(f"PLAYER | Set pause:: {self.paused} ({self.channel_id})")
 
     async def set_volume(self, vol: int) -> None:
         """|coro|
@@ -405,8 +437,10 @@ class Player:
             The volume to set the player to.
         """
         self.volume = max(min(vol, 1000), 0)
-        await self.node._send(op='volume', guildId=str(self.guild_id), volume=self.volume)
-        __log__.debug(f'PLAYER | Set volume:: {self.volume} ({self.channel_id})')
+        await self.node._send(
+            op="volume", guildId=str(self.guild_id), volume=self.volume
+        )
+        __log__.debug(f"PLAYER | Set volume:: {self.volume} ({self.channel_id})")
 
     async def seek(self, position: int = 0) -> None:
         """Seek to the given position in the song.
@@ -417,7 +451,7 @@ class Player:
             The position as an int in milliseconds to seek to. Could be None to seek to beginning.
         """
 
-        await self.node._send(op='seek', guildId=str(self.guild_id), position=position)
+        await self.node._send(op="seek", guildId=str(self.guild_id), position=position)
 
     async def change_node(self, identifier: Optional[str] = None) -> None:
         """|coro|
@@ -436,9 +470,11 @@ class Player:
             node = client.get_node(identifier)
 
             if not node:
-                raise WavelinkException(f'No Nodes matching identifier:: {identifier}')
+                raise WavelinkException(f"No Nodes matching identifier:: {identifier}")
             elif node == self.node:
-                raise WavelinkException('Node identifiers must not be the same while changing.')
+                raise WavelinkException(
+                    "Node identifiers must not be the same while changing."
+                )
         else:
             self.node.close()
             node = None
@@ -454,13 +490,13 @@ class Player:
 
             if not node:
                 self.node.open()
-                raise WavelinkException('No Nodes available for changeover.')
+                raise WavelinkException("No Nodes available for changeover.")
 
         self.node.open()
 
         old = self.node
         del old.players[self.guild_id]
-        await old._send(op='destroy', guildId=str(self.guild_id))
+        await old._send(op="destroy", guildId=str(self.guild_id))
 
         self.node = node
         self.node.players[int(self.guild_id)] = self
@@ -469,11 +505,20 @@ class Player:
             await self._dispatch_voice_update()
 
         if self.current:
-            await self.node._send(op='play', guildId=str(self.guild_id), track=self.current.id, startTime=int(self.position))
+            await self.node._send(
+                op="play",
+                guildId=str(self.guild_id),
+                track=self.current.id,
+                startTime=int(self.position),
+            )
             self.last_update = time.time() * 1000
 
             if self.paused:
-                await self.node._send(op='pause', guildId=str(self.guild_id), pause=self.paused)
+                await self.node._send(
+                    op="pause", guildId=str(self.guild_id), pause=self.paused
+                )
 
         if self.volume != 100:
-            await self.node._send(op='volume', guildId=str(self.guild_id), volume=self.volume)
+            await self.node._send(
+                op="volume", guildId=str(self.guild_id), volume=self.volume
+            )

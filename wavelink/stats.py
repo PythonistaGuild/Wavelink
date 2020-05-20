@@ -19,9 +19,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE."""
+from typing import Any, Dict, Union
+
 from .node import Node
 
-from typing import Dict, Any, Union
 
 class Penalty:
     def __init__(self, stats: Stats) -> None:
@@ -31,37 +32,46 @@ class Penalty:
         self.deficit_frame_penalty = 0.0
 
         if stats.frames_nulled != -1:
-            self.null_frame_penalty = (1.03 ** (500 * (stats.frames_nulled / 3000))) * 300 - 300
+            self.null_frame_penalty = (
+                1.03 ** (500 * (stats.frames_nulled / 3000))
+            ) * 300 - 300
             self.null_frame_penalty *= 2
 
         if stats.frames_deficit != -1:
-            self.deficit_frame_penalty = (1.03 ** (500 * (stats.frames_deficit / 3000))) * 600 - 600
+            self.deficit_frame_penalty = (
+                1.03 ** (500 * (stats.frames_deficit / 3000))
+            ) * 600 - 600
 
-        self.total = self.player_penalty + self.cpu_penalty + self.null_frame_penalty + self.deficit_frame_penalty
+        self.total = (
+            self.player_penalty
+            + self.cpu_penalty
+            + self.null_frame_penalty
+            + self.deficit_frame_penalty
+        )
 
 
 class Stats:
     def __init__(self, node: Node, data: Dict[str, Any]) -> None:
         self._node = node
 
-        self.uptime: int = data['uptime']
+        self.uptime: int = data["uptime"]
 
-        self.players: int = data['players']
-        self.playing_players: int = data['playingPlayers']
+        self.players: int = data["players"]
+        self.playing_players: int = data["playingPlayers"]
 
-        memory: Dict[str, int] = data['memory']
-        self.memory_free = memory['free']
-        self.memory_used = memory['used']
-        self.memory_allocated = memory['allocated']
-        self.memory_reservable = memory['reservable']
+        memory: Dict[str, int] = data["memory"]
+        self.memory_free = memory["free"]
+        self.memory_used = memory["used"]
+        self.memory_allocated = memory["allocated"]
+        self.memory_reservable = memory["reservable"]
 
-        cpu: Dict[str, Union[int, float]] = data['cpu']
-        self.cpu_cores: int = int(cpu['cores'])
-        self.system_load: float = cpu['systemLoad']
-        self.lavalink_load: float = cpu['lavalinkLoad']
+        cpu: Dict[str, Union[int, float]] = data["cpu"]
+        self.cpu_cores: int = int(cpu["cores"])
+        self.system_load: float = cpu["systemLoad"]
+        self.lavalink_load: float = cpu["lavalinkLoad"]
 
-        frame_stats: Dict[str, int] = data.get('frameStats', {})
-        self.frames_sent = frame_stats.get('sent', -1)
-        self.frames_nulled = frame_stats.get('nulled', -1)
-        self.frames_deficit = frame_stats.get('deficit', -1)
+        frame_stats: Dict[str, int] = data.get("frameStats", {})
+        self.frames_sent = frame_stats.get("sent", -1)
+        self.frames_nulled = frame_stats.get("nulled", -1)
+        self.frames_deficit = frame_stats.get("deficit", -1)
         self.penalty = Penalty(self)
