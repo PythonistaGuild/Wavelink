@@ -20,15 +20,18 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import aiohttp
 import inspect
 import logging
 from discord.ext import commands
-from typing import Optional, Union
+from typing import Optional, Union, Dict, List, Callable, Any, Mapping
 from urllib.parse import quote
 
+from .client import Client
 from .errors import *
-from .events import WebsocketClosed
+from .events import WavelinkEvent, WebsocketClosed
 from .player import Player, Track, TrackPlaylist
+from .stats import Stats
 from .websocket import WebSocket
 
 
@@ -55,8 +58,8 @@ class Node:
         The unique indentifier associated with the node.
     """
 
-    def __init__(self, host: str, port: int, shards: int, user_id: int, *, client, session, rest_uri: str, password: str,
-                 region: str, identifier: str, shard_id: int = None, secure: bool = False):
+    def __init__(self, host: str, port: int, shards: int, user_id: int, *, client: Client, session: aiohttp.ClientSession, rest_uri: str, password: str,
+                 region: str, identifier: str, shard_id: Optional[int] = None, secure: bool = False):
         self.host = host
         self.port = port
         self.rest_uri = rest_uri
@@ -69,24 +72,24 @@ class Node:
 
         self.shard_id = shard_id
 
-        self.players = {}
+        self.players: Dict[int, Player] = {}
 
         self.session = session
-        self._websocket = None
+        self._websocket: Optional[WebSocket] = None
         self._client = client
 
-        self.hook = None
+        self.hook: Optional[Callable[[Union[WavelinkEvent, WebsocketClosed]], Any]] = None
         self.available = True
 
-        self.stats = None
+        self.stats: Optional[Stats] = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.identifier} | {self.region} | (Shard: {self.shard_id})'
 
     @property
     def is_available(self) -> bool:
         """Return whether the Node is available or not."""
-        return self._websocket.is_connected and self.available
+        return self._websocket is not None and self._websocket.is_connected and self.available
 
     def close(self) -> None:
         """Close the node and make it unavailable."""
@@ -101,16 +104,15 @@ class Node:
         """Returns the load-balancing penalty for this node."""
         if not self.available or not self.stats:
             return 9e30
-
         return self.stats.penalty.total
 
-    async def connect(self, bot: Union[commands.Bot, commands.AutoShardedBot]) -> None:
+    async def connect(self, bot: Union[commands.Bot[Any], commands.AutoShardedBot[Any]]) -> None:
         self._websocket = WebSocket(bot, self, self.host, self.port, self.password, self.shards, self.uid, self.secure)
         await self._websocket._connect()
 
         __log__.info(f'NODE | {self.identifier} connected:: {self.__repr__()}')
 
-    async def get_tracks(self, query: str) -> Union[list, TrackPlaylist, None]:
+    async def get_tracks(self, query: str) -> Union[List[Track], TrackPlaylist, None]:
         """|coro|
 
         Search for and return a list of Tracks for the given query.
@@ -191,7 +193,7 @@ class Node:
         """
         return self.players.get(guild_id, None)
 
-    async def on_event(self, event) -> None:
+    async def on_event(self, event: Union[WavelinkEvent, WebsocketClosed]) -> None:
         """Function which dispatches events when triggered on the Node."""
         __log__.info(f'NODE | Event dispatched:: <{str(event)}> ({self.__repr__()})')
         await event.player.hook(event)
@@ -204,7 +206,7 @@ class Node:
         else:
             self.hook(event)
 
-    def set_hook(self, func) -> None:
+    def set_hook(self, func: Callable[[Union[WavelinkEvent, WebsocketClosed]], Any]) -> None:
         """Set the Node Event Hook.
 
         The event hook will be dispatched when an Event occurs.
@@ -228,12 +230,14 @@ class Node:
             await player.destroy()
 
         try:
-            self._websocket._task.cancel()
+            if self._websocket and self._websocket._task:
+                self._websocket._task.cancel()
         except Exception:
             pass
 
         del self._client.nodes[self.identifier]
 
-    async def _send(self, **data) -> None:
+    async def _send(self, **data: Any) -> None:
         __log__.debug(f'NODE | Sending payload:: <{data}> ({self.__repr__()})')
-        await self._websocket._send(**data)
+        if self._websocket:
+            await self._websocket._send(**data)

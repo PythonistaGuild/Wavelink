@@ -22,6 +22,7 @@ SOFTWARE.
 """
 import collections
 
+from typing import DefaultDict, List, Tuple
 
 class Equalizer:
     """Class representing a usuable equalizer.
@@ -33,17 +34,17 @@ class Equalizer:
     raw: list
         A list of tuple pairs containing a band int and gain float.
     """
-    def __init__(self, levels: list):
-        _dict = collections.defaultdict(int)
+    def __init__(self, levels: List[Tuple[int, float]]):
+        _band_dict: DefaultDict[int, float] = collections.defaultdict(int)
 
-        _dict.update(levels)
-        _dict = [{"band": i, "gain": _dict[i]} for i in range(15)]
+        _band_dict.update(levels)
+        _dict = [{"band": i, "gain": _band_dict[i]} for i in range(15)]
 
         self.eq = _dict
         self.raw = levels
 
     @classmethod
-    def build(cls, *, levels: list):
+    def build(cls, *, levels: List[Tuple[int, float]]) -> Equalizer:
         """Build an Equalizer class with the provided levels.
 
         Parameters
@@ -54,7 +55,7 @@ class Equalizer:
         return cls(levels)
 
     @classmethod
-    def flat(cls):
+    def flat(cls) -> Equalizer:
         """Flat Equalizer.
 
         Resets your EQ to Flat.
@@ -64,7 +65,7 @@ class Equalizer:
                     (10, .0), (11, .0), (12, .0), (13, .0), (14, .0)])
 
     @classmethod
-    def boost(cls):
+    def boost(cls) -> Equalizer:
         """Boost Equalizer.
 
         This equalizer emphasizes Punchy Bass and Crisp Mid-High tones.
@@ -75,7 +76,7 @@ class Equalizer:
                     (10, .0), (11, .0), (12, .125), (13, .15), (14, .05)])
 
     @classmethod
-    def metal(cls):
+    def metal(cls) -> Equalizer:
         """Experimental Metal/Rock Equalizer.
 
         Expect clipping on Bassy songs.
@@ -85,7 +86,7 @@ class Equalizer:
                     (10, .125), (11, .125), (12, .1), (13, .075), (14, .0)])
 
     @classmethod
-    def piano(cls):
+    def piano(cls) -> Equalizer:
         """Piano Equalizer.
 
         Suitable for Piano tracks, or tacks with an emphasis on Female Vocals.

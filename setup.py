@@ -50,7 +50,10 @@ with open(ROOT / 'README.rst', encoding='utf-8') as f:
     README = f.read()
 
 with open(ROOT / 'wavelink' / '__init__.py', encoding='utf-8') as f:
-    VERSION = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE).group(1)
+    match = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE)
+    if not match:
+        raise RuntimeError("Cannot find version")
+    VERSION = match.group(1)
 
 
 setuptools.setup(

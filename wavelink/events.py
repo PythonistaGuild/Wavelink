@@ -67,7 +67,7 @@ class TrackEnd(WavelinkEvent):
         super().__init__(player, track)
         self.reason = reason
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'TrackEnd'
 
 
@@ -90,7 +90,7 @@ class TrackException(WavelinkEvent):
         super().__init__(player, track)
         self.error = error
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'TrackException'
 
 
@@ -113,7 +113,7 @@ class TrackStuck(WavelinkEvent):
         super().__init__(player, track)
         self.threshold = threshold
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'TrackStuck'
 
 
@@ -133,7 +133,7 @@ class TrackStart(WavelinkEvent):
     def __init__(self, player: Player, track: Track):
         super().__init__(player, track)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'TrackStart'
 
 
@@ -158,5 +158,5 @@ class WebsocketClosed:
         self.code = code
         self.guild_id = guild_id
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'WebsocketClosed'

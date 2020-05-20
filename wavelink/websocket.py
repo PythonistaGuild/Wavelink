@@ -26,11 +26,12 @@ import logging
 import sys
 import traceback
 from discord.ext import commands
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, Optional, Mapping
 
 from .backoff import ExponentialBackoff
 from .events import *
 from .stats import Stats
+from .node import Node
 
 
 __log__ = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ __log__ = logging.getLogger(__name__)
 
 class WebSocket:
 
-    def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot], node, host: str, port: int,
+    def __init__(self, bot: Union[commands.Bot[Any], commands.AutoShardedBot[Any]], node: Node, host: str, port: int,
                  password: str, shard_count: int, user_id: int, secure: bool):
         self.bot = bot
         self.host = host
@@ -48,14 +49,14 @@ class WebSocket:
         self.user_id = user_id
         self.secure = secure
 
-        self._websocket = None
-        self._last_exc = None
-        self._task = None
+        self._websocket: Optional[aiohttp.ClientWebSocketResponse] = None
+        self._last_exc: Optional[Exception] = None
+        self._task: Optional[asyncio.Task[None]] = None
 
         self._node = node
 
     @property
-    def headers(self):
+    def headers(self) -> Dict[str, str]:
         return {'Authorization': self.password,
                 'Num-Shards': str(self.shard_count),
                 'User-Id': str(self.user_id)}
@@ -64,7 +65,7 @@ class WebSocket:
     def is_connected(self) -> bool:
         return self._websocket is not None and not self._websocket.closed
 
-    async def _connect(self):
+    async def _connect(self) -> None:
         await self.bot.wait_until_ready()
 
         try:
@@ -98,8 +99,10 @@ class WebSocket:
             print(f'\nWAVELINK:WEBSOCKET | Connection established::{self._node.__repr__()}\n')
             __log__.debug('WEBSOCKET | Connection established...%s', self._node.__repr__())
 
-    async def _listen(self):
+    async def _listen(self) -> None:
         backoff = ExponentialBackoff(base=7)
+        if self._websocket is None:
+            raise RuntimeError("Should not start listening before connecting")
 
         while True:
             msg = await self._websocket.receive()
@@ -120,7 +123,7 @@ class WebSocket:
                 __log__.debug(f'WEBSOCKET | Received Payload:: <{msg.data}>')
                 self.bot.loop.create_task(self.process_data(msg.json()))
 
-    async def process_data(self, data: Dict[str, Any]):
+    async def process_data(self, data: Dict[str, Any]) -> None:
         op = data.get('op', None)
         if not op:
             return
@@ -149,7 +152,7 @@ class WebSocket:
             except KeyError:
                 pass
 
-    def _get_event(self, name: str, data) -> Union[TrackEnd, TrackStart, TrackException, TrackStuck, WebsocketClosed]:
+    def _get_event(self, name: str, data: Dict[str, Any]) -> Union[WavelinkEvent, WebsocketClosed]:
         if name == 'TrackEndEvent':
             return TrackEnd(data['player'], data.get('track', None), data.get('reason', None))
         elif name == 'TrackStartEvent':
@@ -158,10 +161,10 @@ class WebSocket:
             return TrackException(data['player'], data['track'], data['error'])
         elif name == 'TrackStuckEvent':
             return TrackStuck(data['player'], data['track'], int(data['thresholdMs']))
-        elif name == 'WebSocketClosedEvent':
+        else:
             return WebsocketClosed(data['player'], data['reason'], data['code'], data['guildId'])
 
-    async def _send(self, **data):
-        if self.is_connected:
+    async def _send(self, **data: Any) -> None:
+        if self.is_connected and self._websocket:
             __log__.debug(f'WEBSOCKET | Sending Payload:: {data}')
             await self._websocket.send_json(data)

@@ -24,10 +24,10 @@ import aiohttp
 import asyncio
 import logging
 from discord.ext import commands
-from typing import Optional, Union
+from typing import Optional, Union, Any, Dict, List
 
 from .errors import *
-from .player import Player
+from .player import Player, Track, TrackPlaylist
 from .node import Node
 
 
@@ -37,7 +37,7 @@ __log__ = logging.getLogger(__name__)
 class Client:
     """The main WaveLink client."""
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: str, **kwargs: str) -> Any:
         cls.__qualname__ = 'wavelink.Client'
 
         try:
@@ -56,17 +56,17 @@ class Client:
             return super().__new__(cls)
 
         for handler in update_handlers:
-            if handler.__self__.__class__.__qualname__ == 'wavelink.Client':
+            if handler.__self__.__class__.__qualname__ == 'wavelink.Client': # type: ignore
                 bot.remove_listener(handler, 'on_socket_response')
 
         return super().__new__(cls)
 
-    def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot]):
+    def __init__(self, bot: Union[commands.Bot[Any], commands.AutoShardedBot[Any]]):
         self.bot = bot
         self.loop = bot.loop or asyncio.get_event_loop()
         self.session = aiohttp.ClientSession(loop=self.loop)
 
-        self.nodes = {}
+        self.nodes: Dict[str, Node] = {}
 
         bot.add_listener(self.update_handler, 'on_socket_response')
 
@@ -93,7 +93,7 @@ class Client:
         return self.bot.user.id
 
     @property
-    def players(self) -> dict:
+    def players(self) -> Dict[int, Player]:
         """Return the WaveLink clients current players across all nodes.
 
         Returns
@@ -103,7 +103,7 @@ class Client:
         """
         return self._get_players()
 
-    async def get_tracks(self, query: str) -> Optional[list]:
+    async def get_tracks(self, query: str) -> Optional[Union[List[Track], TrackPlaylist]]:
         """|coro|
 
         Search for and return a list of Tracks for the given query.
@@ -126,13 +126,13 @@ class Client:
             There are no :class:`wavelink.node.Node`s currently connected.
         """
         node = self.get_best_node()
-        
+
         if node is None:
             raise ZeroConnectedNodes
 
         return await node.get_tracks(query)
 
-    async def build_track(self, identifier: str):
+    async def build_track(self, identifier: str) -> Track:
         """|coro|
 
         Build a track object with a valid track identifier.
@@ -161,8 +161,8 @@ class Client:
 
         return await node.build_track(identifier)
 
-    def _get_players(self) -> dict:
-        players = []
+    def _get_players(self) -> Dict[int, Player]:
+        players: List[Player] = []
 
         for node in self.nodes.values():
             players.extend(node.players.values())
@@ -238,7 +238,7 @@ class Client:
 
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
-    def get_player(self, guild_id: int, *, cls=None, node_id=None, **kwargs) -> Player:
+    def get_player(self, guild_id: int, *, cls: Optional[type]=None, node_id:Optional[str]=None, **kwargs: str) -> Player:
         """Retrieve a player for the given guild ID. If None, a player will be created and returned.
 
         .. versionchanged:: 0.3.0
@@ -334,7 +334,7 @@ class Client:
         return player
 
     async def initiate_node(self, host: str, port: int, *, rest_uri: str, password: str, region: str, identifier: str,
-                            shard_id: int = None, secure: bool = False) -> Node:
+                            shard_id: Optional[int] = None, secure: bool = False) -> Node:
         """|coro|
 
         Initiate a Node and connect to the provided server.
@@ -412,7 +412,7 @@ class Client:
 
         await node.destroy()
 
-    async def update_handler(self, data) -> None:
+    async def update_handler(self, data: Dict[str, Any]) -> None:
         if not data or 't' not in data:
             return
 
