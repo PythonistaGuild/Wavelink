@@ -320,7 +320,7 @@ class PaginatorSource(menus.ListPageSource):
         return True
 
 
-class Music(commands.Cog):
+class Music(commands.Cog, wavelink.WavelinkMixin):
     """Music Cog."""
 
     def __init__(self, bot: commands.Bot):
@@ -350,13 +350,17 @@ class Music(commands.Cog):
                           }}
 
         for n in nodes.values():
-            node = await self.bot.wavelink.initiate_node(**n)
-            node.set_hook(self.node_event_hook)
+            await self.bot.wavelink.initiate_node(**n)
 
-    async def node_event_hook(self, event: wavelink.WavelinkEvent) -> None:
-        """Node event hook."""
-        if isinstance(event, (wavelink.TrackStuck, wavelink.TrackException, wavelink.TrackEnd)):
-            await event.player.do_next()
+    @wavelink.WavelinkMixin.listener()
+    async def on_node_ready(self, node: wavelink.Node):
+        print(f'Node {node.identifier} is ready!')
+
+    @wavelink.WavelinkMixin.listener('on_track_stuck')
+    @wavelink.WavelinkMixin.listener('on_track_end')
+    @wavelink.WavelinkMixin.listener('on_track_exception')
+    async def on_player_stop(self, node: wavelink.Node, payload):
+        await payload.player.do_next()
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):

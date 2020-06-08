@@ -24,6 +24,7 @@ import aiohttp
 import asyncio
 import logging
 from discord.ext import commands
+from functools import partial
 from typing import Optional, Union
 
 from .errors import *
@@ -102,6 +103,32 @@ class Client:
             A dict of the current WaveLink players.
         """
         return self._get_players()
+
+    async def _dispatch_listeners(self, name: str, *args, **kwargs) -> None:
+        futures = []
+
+        for cog in self.bot.cogs.values():
+            try:
+                listeners = cog.__wavelink_listeners__[name]
+            except (AttributeError, KeyError):
+                continue
+
+            for listener in listeners:
+                method = getattr(cog, listener)
+                future = asyncio.ensure_future(method(*args, **kwargs))
+
+                callback = partial(self._future_callback, cog, method)
+                future.add_done_callback(callback)
+                futures.append(future)
+
+        if not futures:
+            return
+
+        await asyncio.gather(*futures, return_exceptions=True)
+
+    def _future_callback(self, cog, listener, fut):
+        if fut.exception():
+            self.loop.create_task(cog.on_wavelink_error(listener, fut.exception()))
 
     async def get_tracks(self, query: str) -> Optional[list]:
         """|coro|

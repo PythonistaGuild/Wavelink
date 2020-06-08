@@ -54,7 +54,7 @@ A quick and easy bot example:
             self.bot = bot
 
             if not hasattr(bot, 'wavelink'):
-                self.bot.wavelink = wavelink.Client(self.bot)
+                self.bot.wavelink = wavelink.Client(bot=self.bot)
 
             self.bot.loop.create_task(self.start_nodes())
 
@@ -135,11 +135,8 @@ Equalizer
     :members:
 
 
-Events
+Event Payloads
 ----------------------------
-
-.. autoclass:: wavelink.events.WavelinkEvent
-    :members:
 
 .. autoclass:: wavelink.events.TrackStart
     :members:
@@ -151,6 +148,19 @@ Events
     :members:
 
 .. autoclass:: wavelink.events.TrackStuck
+    :members:
+
+
+WavelinkMixin
+-----------------------
+
+.. warning::
+    Listeners must be used with a `wavelink.WavelinkMixin.listener()` decorator to work.
+
+.. warning::
+    Listeners must be coroutines.
+
+.. autoclass:: wavelink.meta.WavelinkMixin
     :members:
 
 

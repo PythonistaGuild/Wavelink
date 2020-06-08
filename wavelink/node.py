@@ -27,7 +27,6 @@ from typing import Optional, Union
 from urllib.parse import quote
 
 from .errors import *
-from .events import WebsocketClosed
 from .player import Player, Track, TrackPlaylist
 from .websocket import WebSocket
 
@@ -55,8 +54,21 @@ class Node:
         The unique indentifier associated with the node.
     """
 
-    def __init__(self, host: str, port: int, shards: int, user_id: int, *, client, session, rest_uri: str, password: str,
-                 region: str, identifier: str, shard_id: int = None, secure: bool = False):
+    def __init__(self, host: str,
+                 port: int,
+                 shards: int,
+                 user_id: int,
+                 *,
+                 client,
+                 session,
+                 rest_uri: str,
+                 password: str,
+                 region: str,
+                 identifier: str,
+                 shard_id: int = None,
+                 secure: bool = False,
+                 ):
+
         self.host = host
         self.port = port
         self.rest_uri = rest_uri
@@ -105,7 +117,13 @@ class Node:
         return self.stats.penalty.total
 
     async def connect(self, bot: Union[commands.Bot, commands.AutoShardedBot]) -> None:
-        self._websocket = WebSocket(bot, self, self.host, self.port, self.password, self.shards, self.uid, self.secure)
+        self._websocket = WebSocket(node=self,
+                                    host=self.host,
+                                    port=self.port,
+                                    password=self.password,
+                                    shard_count=self.shards,
+                                    user_id=self.uid,
+                                    secure=self.secure)
         await self._websocket._connect()
 
         __log__.info(f'NODE | {self.identifier} connected:: {self.__repr__()}')
