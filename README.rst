@@ -76,7 +76,7 @@ A quick and easy bot example:
             self.bot = bot
 
             if not hasattr(bot, 'wavelink'):
-                self.bot.wavelink = wavelink.Client(self.bot)
+                self.bot.wavelink = wavelink.Client(bot=self.bot)
 
             self.bot.loop.create_task(self.start_nodes())
 
