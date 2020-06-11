@@ -145,8 +145,8 @@ class Node:
             A list of or TrackPlaylist instance of :class:`wavelink.player.Track` objects.
             This could be None if no tracks were found.
         """
-        async with self.session.get(f'{self.rest_uri}/loadtracks?identifier={quote(query)}',
-                                    headers={'Authorization': self.password}) as resp:
+        async with self.session.get(f'{self.rest_uri}/decodetrack?',
+                                    headers={'Authorization': self.password}, params = {'track':identifier}) as resp:
             data = await resp.json()
 
             if not data['tracks']:
