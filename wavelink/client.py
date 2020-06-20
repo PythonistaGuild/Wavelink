@@ -361,7 +361,7 @@ class Client:
         return player
 
     async def initiate_node(self, host: str, port: int, *, rest_uri: str, password: str, region: str, identifier: str,
-                            shard_id: int = None, secure: bool = False) -> Node:
+                            shard_id: int = None, secure: bool = False, heartbeat: float = None) -> Node:
         """|coro|
 
         Initiate a Node and connect to the provided server.
@@ -384,7 +384,9 @@ class Client:
             An optional Shard ID to associate with the :class:`wavelink.node.Node`. Could be None.
         secure: bool
             Whether the websocket should be started with the secure wss protocol.
-
+        heartbeat: Optional[float]
+            Send ping message every heartbeat seconds and wait pong response, if pong response is not received then close connection.
+        
         Returns
         ---------
         :class:`wavelink.node.Node`
@@ -409,8 +411,9 @@ class Client:
                     shard_id=shard_id,
                     session=self.session,
                     client=self,
-                    secure=secure)
-
+                    secure=secure,
+                    heartbeat=heartbeat)
+        
         await node.connect(bot=self.bot)
 
         node.available = True
