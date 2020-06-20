@@ -155,10 +155,18 @@ class Player:
         self.volume = 100
         self.paused = False
         self.current = None
+        self._equalizer = Equalizer.flat()
         self.channel_id = None
 
-        self.equalizers = {'FLAT': Equalizer.flat(), 'BOOST': Equalizer.boost(), 'METAL': Equalizer.metal(),
-                           'PIANO': Equalizer.piano()}
+    @property
+    def equalizer(self):
+        """The currently applied Equalizer."""
+        return self._equalizer
+
+    @property
+    def eq(self):
+        """Alias to :func:`equalizer`."""
+        return self.equalizer
 
     @property
     def is_connected(self) -> bool:
@@ -345,6 +353,7 @@ class Player:
             The Equalizer to set.
         """
         await self.node._send(op='equalizer', guildId=str(self.guild_id), bands=equalizer.eq)
+        self._equalizer = Equalizer
 
     async def set_equalizer(self, equalizer: Equalizer) -> None:
         """|coro|
