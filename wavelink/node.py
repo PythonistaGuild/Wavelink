@@ -67,6 +67,7 @@ class Node:
                  identifier: str,
                  shard_id: int = None,
                  secure: bool = False,
+                 heartbeat: float = None
                  ):
 
         self.host = host
@@ -78,6 +79,7 @@ class Node:
         self.region = region
         self.identifier = identifier
         self.secure = secure
+        self.heartbeat = heartbeat
 
         self.shard_id = shard_id
 
