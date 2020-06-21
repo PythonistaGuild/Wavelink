@@ -30,7 +30,7 @@ from typing import Any, Dict
 from .backoff import ExponentialBackoff
 from .events import *
 from .stats import Stats
-from .erros import NodeSessionClosedError
+from .errors import NodeSessionClosedError
 
 __log__ = logging.getLogger(__name__)
 
