@@ -30,7 +30,7 @@ from typing import Any, Dict
 from .backoff import ExponentialBackoff
 from .events import *
 from .stats import Stats
-
+from .erros import NodeSessionClosedError
 
 __log__ = logging.getLogger(__name__)
 
@@ -47,6 +47,7 @@ class WebSocket:
         self.shard_count = attrs.get('shard_count')
         self.user_id = attrs.get('user_id')
         self.secure = attrs.get('secure')
+        self.force_send_queue = attrs.get('force_send_queue', False) # Send queue regardless of session resume
         self.queue = []
         self.session_resumed = False # to check if the session was resumed 
         self.resume_session = attrs.get('resume_session', False)
@@ -102,7 +103,10 @@ class WebSocket:
             if not self.is_connected:
                 self._websocket = await self._node.session.ws_connect(uri, headers=self.headers, heartbeat=self._node.heartbeat)
                  # send queued messages if header not present but possibilty that session is resumed
-                self.session_resumed = self._websocket.headers.get('Session-Resumed', self.can_resume)
+                self.session_resumed = self._websocket.headers.get('Session-Resumed', self.force_send_queue)
+                if not self.session_resumed and self.headers.has_key('Resume-Key'):
+                    raise NodeSessionClosedError(f'repr(self._node): Session was closed. All Players may have been shut down')
+                    
         except Exception as error:
             self._last_exc = error
             self._node.available = False
