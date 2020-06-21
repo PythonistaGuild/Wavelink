@@ -47,20 +47,48 @@ class WebSocket:
         self.shard_count = attrs.get('shard_count')
         self.user_id = attrs.get('user_id')
         self.secure = attrs.get('secure')
-
+        self.queue = []
+        self.session_resumed = False # to check if the session was resumed 
+        self.resume_session = attrs.get('resume_session', False)
+        if self.resume_session:
+            self.resume_timeout = attr.get('resume_timeout', 60)
+            # Allow to pass a non_string, and invoke __str__ here.
+            self.resume_key = str(attr.get('resume_key', None))
+                if self.resume_key is None:
+                    import secrets
+                    import string
+                    alphabet = string.ascii_letters + string.digits
+                    self.resume_key = ''.join(secrets.choice(alphabet) for i in range(32))
+        
+        self.can_resume = False
+        
         self._websocket = None
         self._last_exc = None
         self._task = None
-
+        
     @property
     def headers(self):
-        return {'Authorization': self.password,
-                'Num-Shards': str(self.shard_count),
-                'User-Id': str(self.user_id)}
+        if not self.can_resume: # can't resume
+            return {'Authorization': self.password,
+                    'Num-Shards': str(self.shard_count),
+                    'User-Id': str(self.user_id)}
+        elif self.can_resume:
+            return {'Authorization': self.password,
+                    'Num-Shards': str(self.shard_count),
+                    'User-Id': str(self.user_id),
+                    'Resume-Key': self.resume_key}
 
     @property
     def is_connected(self) -> bool:
         return self._websocket is not None and not self._websocket.closed
+
+    async def configure_resume(self) -> None:
+        if self.can_resume:
+            return
+        else:
+            await self._send(op='configureResuming', key=self.resume_key, timeout=self.resume_timeout)
+            self.can_resume = True
+            return 
 
     async def _connect(self):
         await self.bot.wait_until_ready()
@@ -73,11 +101,12 @@ class WebSocket:
 
             if not self.is_connected:
                 self._websocket = await self._node.session.ws_connect(uri, headers=self.headers, heartbeat=self._node.heartbeat)
-
+                 # send queued messages if header not present but possibilty that session is resumed
+                self.session_resumed = self._websocket.headers.get('Session-Resumed', self.can_resume)
         except Exception as error:
             self._last_exc = error
             self._node.available = False
-
+            
             if isinstance(error, aiohttp.WSServerHandshakeError) and error.status == 401:
                 print(f'\nAuthorization Failed for Node:: {self._node}\n', file=sys.stderr)
             else:
@@ -95,10 +124,13 @@ class WebSocket:
         if self.is_connected:
             await self.client._dispatch_listeners('on_node_ready', self._node)
             __log__.debug('WEBSOCKET | Connection established...%s', self._node.__repr__())
+            self.bot.loop.create_task(self.send_queue())
+            self.bot.loop.create_task(self.configure_resume())
 
     async def _listen(self):
         backoff = ExponentialBackoff(base=7)
-
+        
+        tries = 0
         while True:
             msg = await self._websocket.receive()
 
@@ -106,8 +138,14 @@ class WebSocket:
                 __log__.debug(f'WEBSOCKET | Close data: {msg.extra}')
 
                 self._closed = True
-                retry = backoff.delay()
-
+                if not self.can_resume:
+                    retry = backoff.delay()
+                elif self.can_resume and tries < 2: # hand off to Exponential backoff after atleast 2 tries
+                    if self.resume_timeout <= 70:
+                        retry = (self.resume_timeout / 2.0)
+                    else: # try_after 30 seconds 2 times and then hand over to exponential backoff.
+                        retry = 30.0
+                        
                 __log__.warning(f'\nWEBSOCKET | Connection closed:: Retrying connection in <{retry}> seconds\n')
 
                 await asyncio.sleep(retry)
@@ -161,8 +199,23 @@ class WebSocket:
             return 'on_track_stuck', TrackStuck(data)
         elif name == 'WebSocketClosedEvent':
             return 'on_websocket_closed', WebsocketClosed(data)
-
+        
+    async def send_queue(self):
+        count = 0
+        for data in self.queue:
+            if self.is_connected and self.session_resumed:
+                await self._send(**data) # does this take too much time? should i create a task?
+                count += 1
+            else:
+                break
+        else:
+            del self.queue[0:count] # continue at reconnect
+            return None
+            
     async def _send(self, **data):
         if self.is_connected:
             __log__.debug(f'WEBSOCKET | Sending Payload:: {data}')
             await self._websocket.send_json(data)
+        else:
+            __log__.debug(f'WEBSOCKET | Queueing Payload:: {data}')
+            self.queue
