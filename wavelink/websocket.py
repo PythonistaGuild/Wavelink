@@ -46,8 +46,8 @@ class WebSocket:
         self.shard_count = attrs.get('shard_count')
         self.user_id = attrs.get('user_id')
         self.secure = attrs.get('secure')
-        self.force_send_queue = attrs.get('force_send_queue', False) # Send queue regardless of session resume
-        self.session_resumed = False # to check if the session was resumed 
+        self.force_send_queue = attrs.get('force_send_queue', False) # Send queue regardless of session resume.
+        self.session_resumed = False # To check if the session was resumed.
         self.resume_session = attrs.get('resume_session', False)
         if self.resume_session:
             self.resume_timeout = attrs.get('resume_timeout', 60)
@@ -60,7 +60,7 @@ class WebSocket:
                 import string
                 alphabet = string.ascii_letters + string.digits
                 self.resume_key = ''.join(secrets.choice(alphabet) for i in range(32))
-        
+
         self._can_resume = False
         self._queue = []
         self._websocket = None
@@ -90,7 +90,7 @@ class WebSocket:
             await self._send(op='configureResuming', key=str(self.resume_key), timeout=self.resume_timeout)
             __log__.info(f"WEBSOCKET | {repr(self._node)} | Resuming configured with Key {self.resume_key}")
             self._can_resume = True
-            return 
+            return
 
     async def _connect(self):
         await self.bot.wait_until_ready()
