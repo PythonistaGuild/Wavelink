@@ -81,7 +81,7 @@ class Node:
     hook: Callable
         A callable object. use :func:`Node.set_hook`
     available: bool
-        Wether the Node is in use or not. Use is_available instead. 
+        Wether the Node is in use or not. Use is_available instead.
     stats: Optional[:class:`Stats`]
         The Node's stats, sent by the server. Could be None.
     """
@@ -120,7 +120,6 @@ class Node:
         self.resume_session = resume_session
         self.resume_timeout = resume_timeout
         self.resume_key = resume_key
-        
         self.shard_id = shard_id
 
         self.players = {}
