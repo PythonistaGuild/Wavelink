@@ -361,7 +361,9 @@ class Client:
         return player
 
     async def initiate_node(self, host: str, port: int, *, rest_uri: str, password: str, region: str, identifier: str,
-                            shard_id: int = None, secure: bool = False, heartbeat: float = None) -> Node:
+                            shard_id: int = None, secure: bool = False, heartbeat: float = None,
+                            resume_session: bool = False, resume_timeout: float = 60.0, resume_key: str = None, 
+                            force_send_queue: bool = False) -> Node:
         """|coro|
 
         Initiate a Node and connect to the provided server.
@@ -386,6 +388,16 @@ class Client:
             Whether the websocket should be started with the secure wss protocol.
         heartbeat: Optional[float]
             Send ping message every heartbeat seconds and wait pong response, if pong response is not received then close connection.
+        resume_session: Optional[bool]
+            If True then Lavalink server will continue to play music until bot reconnects or
+            till `resume_timeout` and then shuts-down all Players. Defaults to False.
+        resume_timeout: Optional[float]
+            Has no effect unless resume_session is True. Defaults to 60.0 seconds.
+        resume_key: Optional[str]
+            Has no effect unless resume_session is True. Defaults to a secret AlphaNumeric key that is 32 characters long
+        force_send_queue: Optional[bool]
+            Send the waiting WS requests on recconect regardless of Lavalink session resume request result.
+            Defaults to False.
         
         Returns
         ---------
@@ -412,8 +424,12 @@ class Client:
                     session=self.session,
                     client=self,
                     secure=secure,
-                    heartbeat=heartbeat)
-        
+                    heartbeat=heartbeat,
+                    resume_session=resume_session,
+                    resume_timeout=resume_timeout,
+                    resume_key=resume_key,
+                    force_send_queue=force_send_queue)
+
         await node.connect(bot=self.bot)
 
         node.available = True
