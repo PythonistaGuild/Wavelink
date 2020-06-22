@@ -140,7 +140,6 @@ class WebSocket:
 
     async def _listen(self):
         backoff = ExponentialBackoff(base=7)
-        
         tries = 0
         while True:
             msg = await self._websocket.receive()
@@ -156,7 +155,7 @@ class WebSocket:
                         retry = (self.resume_timeout / 2.0) - 1.0 # Account for latency.
                     else: # try_after 30 seconds 2 times and then hand over to exponential backoff.
                         retry = 30.0
-                        
+
                 __log__.warning(f'\nWEBSOCKET | Connection closed:: Retrying connection in <{retry}> seconds\n')
 
                 await asyncio.sleep(retry)
@@ -219,7 +218,7 @@ class WebSocket:
         else:
             del self.queue[0:count] # delete the sent data & continue at next reconnect.
             return None
-            
+
     async def _send(self, **data):
         if self.is_connected:
             __log__.debug(f'WEBSOCKET | Sending Payload:: {data}')
