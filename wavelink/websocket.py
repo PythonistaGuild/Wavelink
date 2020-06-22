@@ -180,9 +180,9 @@ class WebSocket:
 
             name = data['type']
             if name == 'TrackEndEvent':
-                listener, payload = ('on_track_end', TrackEnd(data))
+                listener, payload = 'on_track_end', TrackEnd(data)
             elif name == 'TrackStartEvent':
-                listener, payload = ('on_track_start', TrackStart(data))
+                listener, payload = 'on_track_start', TrackStart(data)
             elif name == 'TrackExceptionEvent':
                 listener, payload = 'on_track_exception', TrackException(data)
             elif name == 'TrackStuckEvent':
