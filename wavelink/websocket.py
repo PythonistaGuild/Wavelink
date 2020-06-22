@@ -179,8 +179,17 @@ class WebSocket:
             except KeyError:
                 return
 
-            listener, payload = self._get_event_payload(data['type'], data)
-
+            name = data['type']
+            if name == 'TrackEndEvent':
+                listener, payload = ('on_track_end', TrackEnd(data))
+            elif name == 'TrackStartEvent':
+                listener, payload = ('on_track_start', TrackStart(data))
+            elif name == 'TrackExceptionEvent':
+                listener, payload = 'on_track_exception', TrackException(data)
+            elif name == 'TrackStuckEvent':
+                listener, payload = 'on_track_stuck', TrackStuck(data)
+            elif name == 'WebSocketClosedEvent':
+                listener, payload = 'on_websocket_closed', WebsocketClosed(data)
             __log__.debug(f'WEBSOCKET | op: event:: {data}')
 
             # Dispatch node event/player hooks
@@ -199,18 +208,6 @@ class WebSocket:
             except KeyError:
                 pass
 
-    def _get_event_payload(self, name: str, data):
-        if name == 'TrackEndEvent':
-            return 'on_track_end', TrackEnd(data)
-        elif name == 'TrackStartEvent':
-            return 'on_track_start', TrackStart(data)
-        elif name == 'TrackExceptionEvent':
-            return 'on_track_exception', TrackException(data)
-        elif name == 'TrackStuckEvent':
-            return 'on_track_stuck', TrackStuck(data)
-        elif name == 'WebSocketClosedEvent':
-            return 'on_websocket_closed', WebsocketClosed(data)
-        
     async def _send_queue(self):
         count = 0
         for data in self._queue:
