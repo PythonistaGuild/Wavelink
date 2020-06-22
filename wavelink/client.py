@@ -362,7 +362,7 @@ class Client:
 
     async def initiate_node(self, host: str, port: int, *, rest_uri: str, password: str, region: str, identifier: str,
                             shard_id: int = None, secure: bool = False, heartbeat: float = None,
-                            resume_session: bool = False, resume_timeout: float = 60.0, resume_key: str = None, 
+                            resume_session: bool = False, resume_timeout: float = 60.0, resume_key: str = None,
                             force_send_queue: bool = False) -> Node:
         """|coro|
 
