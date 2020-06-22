@@ -46,12 +46,44 @@ class Node:
         The host address the node is connected to.
     port: int
         The port the node is connected to.
+    shards: int
+        The number of Shards.
     rest_uri: str
         The rest server address the node is connecte to.
+    uid: int
+        The user id.
+    password: str
+        The Node's password
     region: str
         The region provided to the node on connection.
     identifier: str
         The unique indentifier associated with the node.
+    secure: bool
+        Wether the web-sockect connection is secure.
+    shard_id: Optional[int]
+        The shard id, defuault value is None.
+    heartbeat: float
+        Duration between pings, helps keep WS stable. Defaults to None to disable.
+    resume_session: bool
+            If True then Lavalink server will continue to play music until bot reconnects or
+            till `resume_timeout` and then shuts-down all Players. Defaults to False.
+    resume_timeout: float
+        Has no effect unless resume_session is True. Defaults to 60.0 seconds.
+    resume_key: str
+        Has no effect unless resume_session is True. Defaults to a secret AlphaNumeric key that is 32 characters long
+    force_send_queue: bool
+        Send the waiting WS requests on recconect regardless of Lavalink session resume request result.
+        Defaults to False.
+    players: Dict[int, Player]
+        A dictionary with guild id as key and the respective guild's Player as value. Please use :func:`Node.get_player` instead.
+    session: aiohttp.ClientSession
+        The aiohttp session.
+    hook: Callable
+        A callable object. use :func:`Node.set_hook`
+    available: bool
+        Wether the Node is in use or not. Use is_available instead. 
+    stats: Optional[:class:`Stats`]
+        The Node's stats, sent by the server. Could be None.
     """
 
     def __init__(self, host: str,
@@ -67,7 +99,11 @@ class Node:
                  identifier: str,
                  shard_id: int = None,
                  secure: bool = False,
-                 heartbeat: float = None
+                 heartbeat: float,
+                 resume_session: bool,
+                 resume_timeout: float,
+                 resume_key: str,
+                 force_send_queue: bool
                  ):
 
         self.host = host
@@ -80,7 +116,11 @@ class Node:
         self.identifier = identifier
         self.secure = secure
         self.heartbeat = heartbeat
-
+        self.force_send_queue = force_send_queue
+        self.resume_session = resume_session
+        self.resume_timeout = resume_timeout
+        self.resume_key = resume_key
+        
         self.shard_id = shard_id
 
         self.players = {}
@@ -125,7 +165,11 @@ class Node:
                                     password=self.password,
                                     shard_count=self.shards,
                                     user_id=self.uid,
-                                    secure=self.secure)
+                                    secure=self.secure,
+                                    force_send_queue=self.force_send_queue,
+                                    resume_session=self.resume_session,
+                                    resume_timeout=self.resume_timeout,
+                                    resume_key=self.resume_key)
         await self._websocket._connect()
 
         __log__.info(f'NODE | {self.identifier} connected:: {self.__repr__()}')
