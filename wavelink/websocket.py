@@ -110,7 +110,7 @@ class WebSocket:
                     raise NodeSessionClosedError(f'{repr(self._node)} | Session was closed. All Players may have been shut down')
                 elif self.session_resumed:
                     __log__.info(f"WEBSOCKET | {repr(self._node)} | Resumed Session with key: {self.resume_key}")
-                
+
         except NodeSessionClosedError:
             __log__.warning(f"WEBSOCKET | {repr(self._node)} | Closed Session due to timeout.") # Error Not Fatal enough to return
             
