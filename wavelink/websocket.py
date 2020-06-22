@@ -135,7 +135,7 @@ class WebSocket:
         if self.is_connected:
             await self.client._dispatch_listeners('on_node_ready', self._node)
             __log__.debug('WEBSOCKET | Connection established...%s', self._node.__repr__())
-            self.bot.loop.create_task(self.send_queue())
+            self.bot.loop.create_task(self._send_queue())
             if not self._can_resume:
                 self.bot.loop.create_task(self._configure_resume())
 
@@ -212,7 +212,7 @@ class WebSocket:
         elif name == 'WebSocketClosedEvent':
             return 'on_websocket_closed', WebsocketClosed(data)
         
-    async def send_queue(self):
+    async def _send_queue(self):
         count = 0
         for data in self.queue:
             if self.is_connected and (self.session_resumed or self.force_send_queue):
