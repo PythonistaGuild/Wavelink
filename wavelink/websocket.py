@@ -47,7 +47,6 @@ class WebSocket:
         self.user_id = attrs.get('user_id')
         self.secure = attrs.get('secure')
         self.force_send_queue = attrs.get('force_send_queue', False) # Send queue regardless of session resume
-        self.queue = []
         self.session_resumed = False # to check if the session was resumed 
         self.resume_session = attrs.get('resume_session', False)
         if self.resume_session:
@@ -63,10 +62,11 @@ class WebSocket:
                 self.resume_key = ''.join(secrets.choice(alphabet) for i in range(32))
         
         self._can_resume = False
+        self._queue = []
         self._websocket = None
         self._last_exc = None
         self._task = None
-        
+
     @property
     def headers(self) -> dict:
         if not self._can_resume: # can't resume
@@ -117,7 +117,6 @@ class WebSocket:
         except Exception as error:
             self._last_exc = error
             self._node.available = False
-            
             if isinstance(error, aiohttp.WSServerHandshakeError) and error.status == 401:
                 print(f'\nAuthorization Failed for Node:: {self._node}\n', file=sys.stderr)
             else:
@@ -214,7 +213,7 @@ class WebSocket:
         
     async def _send_queue(self):
         count = 0
-        for data in self.queue:
+        for data in self._queue:
             if self.is_connected and (self.session_resumed or self.force_send_queue):
                 await self._send(**data) # Don't send messages too quickly.
                 count += 1
@@ -230,4 +229,4 @@ class WebSocket:
             await self._websocket.send_json(data)
         else:
             __log__.debug(f'WEBSOCKET | Queueing Payload:: {data}')
-            self.queue.append(data)
+            self._queue.append(data)
