@@ -113,7 +113,7 @@ class WebSocket:
 
         except NodeSessionClosedError:
             __log__.warning(f"WEBSOCKET | {repr(self._node)} | Closed Session due to timeout.") # Error Not Fatal enough to return
-            
+
         except Exception as error:
             self._last_exc = error
             self._node.available = False
