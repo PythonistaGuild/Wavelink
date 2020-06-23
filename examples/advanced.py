@@ -38,8 +38,10 @@ import typing
 
 import async_timeout
 import discord
-import wavelink
+
 from discord.ext import commands, menus
+
+import wavelink
 
 # URL matching REGEX...
 URL_REG = re.compile(r"https?://(?:www\.)?.+")

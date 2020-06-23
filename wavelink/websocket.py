@@ -24,9 +24,11 @@ import asyncio
 import logging
 import sys
 import traceback
-from typing import Any, Dict, Mapping, Optional, Union
+
+from typing import Any, Dict, Optional, Union
 
 import aiohttp
+
 from discord.ext import commands
 
 from .backoff import ExponentialBackoff

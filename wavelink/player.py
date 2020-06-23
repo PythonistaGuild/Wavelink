@@ -23,9 +23,9 @@ SOFTWARE.
 import logging
 import re
 import time
+
 from typing import Any, Dict, Optional, Union
 
-import discord
 from discord.ext import commands
 from discord.gateway import DiscordWebSocket
 

@@ -22,9 +22,11 @@ SOFTWARE.
 """
 import asyncio
 import logging
+
 from typing import Any, Dict, List, Optional, Union
 
 import aiohttp
+
 from discord.ext import commands
 
 from .errors import *

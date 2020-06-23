@@ -22,10 +22,12 @@ SOFTWARE.
 """
 import inspect
 import logging
-from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+
+from typing import Any, Callable, Dict, List, Optional, Union
 from urllib.parse import quote
 
 import aiohttp
+
 from discord.ext import commands
 
 from .client import Client

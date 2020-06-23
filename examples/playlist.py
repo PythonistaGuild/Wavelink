@@ -23,14 +23,17 @@ import itertools
 import re
 import sys
 import traceback
+
 from typing import Union
 
 import discord
 import humanize
-import wavelink
+
 from discord.ext import commands
 
-RURL = re.compile("https?:\/\/(?:www\.)?.+")
+import wavelink
+
+RURL = re.compile(r"https?:\/\/(?:www\.)?.+")
 
 
 class Bot(commands.Bot):

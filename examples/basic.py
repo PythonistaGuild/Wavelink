@@ -1,6 +1,8 @@
 import discord
-import wavelink
+
 from discord.ext import commands
+
+import wavelink
 
 
 class Bot(commands.Bot):
