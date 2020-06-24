@@ -68,9 +68,11 @@ class Node:
             If True then Lavalink server will continue to play music until bot reconnects or
             till `resume_timeout` and then shuts-down all Players. Defaults to False.
     resume_timeout: float
-        Has no effect unless resume_session is True. Defaults to 60.0 seconds.
+        Has no effect unless resume_session is True.
     resume_key: str
         Has no effect unless resume_session is True. Defaults to a secret AlphaNumeric key that is 32 characters long
+    payload_timeout: float
+        Has no effect unless resume_session is True. Amount of time a send request should be queued.
     force_send_queue: bool
         Send the waiting WS requests on recconect regardless of Lavalink session resume request result.
         Defaults to False.
@@ -103,7 +105,8 @@ class Node:
                  resume_session: bool,
                  resume_timeout: float,
                  resume_key: str,
-                 force_send_queue: bool
+                 force_send_queue: bool,
+                 payload_timeout: float
                  ):
 
         self.host = host
@@ -120,6 +123,7 @@ class Node:
         self.resume_session = resume_session
         self.resume_timeout = resume_timeout
         self.resume_key = resume_key
+        self.payload_timeout = payload_timeout
         self.shard_id = shard_id
 
         self.players = {}
@@ -168,7 +172,8 @@ class Node:
                                     force_send_queue=self.force_send_queue,
                                     resume_session=self.resume_session,
                                     resume_timeout=self.resume_timeout,
-                                    resume_key=self.resume_key)
+                                    resume_key=self.resume_key,
+                                    payload_timeout=self.payload_timeout)
         await self._websocket._connect()
 
         __log__.info(f'NODE | {self.identifier} connected:: {self.__repr__()}')
