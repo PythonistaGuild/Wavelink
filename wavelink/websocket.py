@@ -72,17 +72,17 @@ class WebSocket:
         self.user_id = attrs.get('user_id')
         self.secure = attrs.get('secure')
         # Send queue regardless of session resume.
-        self.force_send_queue = attrs.get('force_send_queue', False)
+        self.force_send_queue = attrs.get('force_send_queue')
         # Operations take 20 to 1 ms
-        self.payload_timeout = attrs.get('payload_timeout', 30.02)
+        self.payload_timeout = attrs.get('payload_timeout')
         self.session_resumed = False # To check if the session was resumed.
-        self.resume_session = attrs.get('resume_session', False)
+        self.resume_session = attrs.get('resume_session')
         if self.resume_session:
-            self.resume_timeout = attrs.get('resume_timeout', 60)
+            self.resume_timeout = attrs.get('resume_timeout')
             # self.resume_key is casted to str to allow a Key object with __repr__ method.
             # Useful if the class implements it's own method to generate keys.
             # logger's level should be set to warning if stdout is vulnurable. eg: shared VPS
-            self.resume_key = attrs.get('resume_key', None)
+            self.resume_key = attrs.get('resume_key')
             if self.resume_key is None:
                 import secrets # Don't import unless resuming is enabled
                 import string
