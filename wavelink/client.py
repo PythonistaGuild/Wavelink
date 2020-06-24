@@ -363,7 +363,7 @@ class Client:
     async def initiate_node(self, host: str, port: int, *, rest_uri: str, password: str, region: str, identifier: str,
                             shard_id: int = None, secure: bool = False, heartbeat: float = None,
                             resume_session: bool = False, resume_timeout: float = 60.0, resume_key: str = None,
-                            force_send_queue: bool = False) -> Node:
+                            force_send_queue: bool = False, payload_timeout: float = 35.02) -> Node:
         """|coro|
 
         Initiate a Node and connect to the provided server.
@@ -398,7 +398,10 @@ class Client:
         force_send_queue: Optional[bool]
             Send the waiting WS requests on recconect regardless of Lavalink session resume request result.
             Defaults to False.
-        
+        payload_timeout: float
+            The amount of time a payload should be queued, logically should be greater than (resume_timeout/2 - 1) or 30.0.
+            Defaults to 35.02 seconds.
+
         Returns
         ---------
         :class:`wavelink.node.Node`
@@ -428,7 +431,8 @@ class Client:
                     resume_session=resume_session,
                     resume_timeout=resume_timeout,
                     resume_key=resume_key,
-                    force_send_queue=force_send_queue)
+                    force_send_queue=force_send_queue,
+                    payload_timeout=payload_timeout)
 
         await node.connect(bot=self.bot)
 
