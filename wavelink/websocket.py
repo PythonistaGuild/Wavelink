@@ -1,17 +1,13 @@
 """MIT License
-
 Copyright (c) 2019-2020 PythonistaGuild
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
-
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,19 +16,48 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import aiohttp
 import asyncio
 import logging
 import sys
+import time
 import traceback
+from json import loads
 from typing import Any, Dict
 
+import aiohttp
+
 from .backoff import ExponentialBackoff
+from .errors import NodeSessionClosedError
 from .events import *
 from .stats import Stats
-from .errors import NodeSessionClosedError
 
 __log__ = logging.getLogger(__name__)
+
+class _Payload:
+    def __init__(self, data, StampDiff, timeout):
+        self._data = data
+        self._stampdiff = StampDiff
+        self._timeout = timeout
+
+    @property
+    def payload(self):
+        if self._stampdiff < self._timeout:
+            return None
+        else:
+            return self._data
+
+class _TimedQueue(asyncio.Queue):
+    def __init__(self, maxsize=0, *, loop=None, timeout):
+        self._timeout = timeout
+        super().__init__(maxsize, loop=loop)
+
+    def _get(self):
+        item = self._queue.popleft()
+        StampDiff = time.time() - item[0]
+        return _Payload(item[1], StampDiff, self._timeout)
+
+    def _put(self, item):
+        self._queue.append((time.time(), item))
 
 class WebSocket:
 
@@ -46,7 +71,10 @@ class WebSocket:
         self.shard_count = attrs.get('shard_count')
         self.user_id = attrs.get('user_id')
         self.secure = attrs.get('secure')
-        self.force_send_queue = attrs.get('force_send_queue', False) # Send queue regardless of session resume.
+        # Send queue regardless of session resume.
+        self.force_send_queue = attrs.get('force_send_queue', False)
+        # Operations take 20 to 1 ms
+        self.payload_timeout = attrs.get('payload_timeout', 30.02)
         self.session_resumed = False # To check if the session was resumed.
         self.resume_session = attrs.get('resume_session', False)
         if self.resume_session:
@@ -62,7 +90,7 @@ class WebSocket:
                 self.resume_key = ''.join(secrets.choice(alphabet) for i in range(32))
 
         self._can_resume = False
-        self._queue = []
+        self._queue = _TimedQueue(0, loop=self.client.loop, timeout=self.payload_timeout)
         self._websocket = None
         self._last_exc = None
         self._task = None
@@ -103,10 +131,10 @@ class WebSocket:
 
             if not self.is_connected:
                 self._websocket = await self._node.session.ws_connect(uri, headers=self.headers, heartbeat=self._node.heartbeat)
-                # Send queued messages if header not present but possibilty that session is resumed.
-                # if First connect then this will be false
-                self.session_resumed = self._websocket._response.headers.get('Session-Resumed', self._can_resume)
-                if not self.session_resumed and self.headers.has_key('Resume-Key'):
+                # If header not present then account for possibilty that session is resumed.
+                # if First connect then this will be false.
+                self.session_resumed = loads(self._websocket._response.headers.get('Session-Resumed', self._can_resume))
+                if not self.session_resumed and self._can_resume:
                     raise NodeSessionClosedError(f'{repr(self._node)} | Session was closed. All Players may have been shut down')
                 elif self.session_resumed:
                     __log__.info(f"WEBSOCKET | {repr(self._node)} | Resumed Session with key: {self.resume_key}")
@@ -125,7 +153,7 @@ class WebSocket:
             return
 
         if not self._task:
-            self._task = self.bot.loop.create_task(self._listen())
+            self._task = self.client.loop.create_task(self._listen())
 
         self._last_exc = None
         self._closed = False
@@ -134,9 +162,11 @@ class WebSocket:
         if self.is_connected:
             await self.client._dispatch_listeners('on_node_ready', self._node)
             __log__.debug('WEBSOCKET | Connection established...%s', self._node.__repr__())
-            self.bot.loop.create_task(self._send_queue())
             if not self._can_resume:
-                self.bot.loop.create_task(self._configure_resume())
+                self.client.loop.create_task(self._configure_resume())
+            if self.session_resumed or self.force_send_queue:
+                # Send only on resume or when forced.
+                self.client.loop.create_task(self._send_queue())
 
     async def _listen(self):
         backoff = ExponentialBackoff(base=7)
@@ -160,10 +190,10 @@ class WebSocket:
 
                 await asyncio.sleep(retry)
                 if not self.is_connected:
-                    self.bot.loop.create_task(self._connect())
+                    self.client.loop.create_task(self._connect())
             else:
                 __log__.debug(f'WEBSOCKET | Received Payload:: <{msg.data}>')
-                self.bot.loop.create_task(self.process_data(msg.json()))
+                self.client.loop.create_task(self.process_data(msg.json()))
 
     async def process_data(self, data: Dict[str, Any]):
         op = data.get('op', None)
@@ -208,21 +238,22 @@ class WebSocket:
                 pass
 
     async def _send_queue(self):
-        count = 0
-        for data in self._queue:
-            if self.is_connected and (self.session_resumed or self.force_send_queue):
-                await self._send(**data) # Don't send messages too quickly.
-                count += 1
+        # send while connected, resume on reconnect
+        while self.is_connected:
+            try:
+                data = self._queue.get_nowait()
+            except asyncio.QueueEmpty:
+                return
+            if data.payload is not None:
+                await self._send(**data.payload)
             else:
-                break
-        else:
-            del self.queue[0:count] # delete the sent data & continue at next reconnect.
-            return None
+                pass
 
     async def _send(self, **data):
         if self.is_connected:
             __log__.debug(f'WEBSOCKET | Sending Payload:: {data}')
             await self._websocket.send_json(data)
-        else:
+        elif self.resume_session:
             __log__.debug(f'WEBSOCKET | Queueing Payload:: {data}')
-            self._queue.append(data)
+            # we don't need to catch QueueFull as maxsize is 0
+            self._queue.put_nowait(data)
