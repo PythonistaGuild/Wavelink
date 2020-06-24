@@ -297,9 +297,9 @@ class Node:
 
         try:
             self._websocket._task.cancel()
+            await self._websocket._websocket.close(message=b'Node destroy request.')
         except Exception:
             pass
-
         del self._client.nodes[self.identifier]
 
     async def _send(self, **data) -> None:
