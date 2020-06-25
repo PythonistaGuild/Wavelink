@@ -73,9 +73,6 @@ class Node:
         Has no effect unless resume_session is True. Defaults to a secret AlphaNumeric key that is 32 characters long
     payload_timeout: float
         Has no effect unless resume_session is True. Amount of time a send request should be queued.
-    force_send_queue: bool
-        Send the waiting WS requests on recconect regardless of Lavalink session resume request result.
-        Defaults to False.
     players: Dict[int, Player]
         A dictionary with guild id as key and the respective guild's Player as value. Please use :func:`Node.get_player` instead.
     session: aiohttp.ClientSession
@@ -119,7 +116,6 @@ class Node:
         self.identifier = identifier
         self.secure = secure
         self.heartbeat = heartbeat
-        self.force_send_queue = force_send_queue
         self.resume_session = resume_session
         self.resume_timeout = resume_timeout
         self.resume_key = resume_key
@@ -169,7 +165,6 @@ class Node:
                                     shard_count=self.shards,
                                     user_id=self.uid,
                                     secure=self.secure,
-                                    force_send_queue=self.force_send_queue,
                                     resume_session=self.resume_session,
                                     resume_timeout=self.resume_timeout,
                                     resume_key=self.resume_key,
