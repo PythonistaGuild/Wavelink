@@ -59,6 +59,9 @@ class _TimedQueue(asyncio.Queue):
     def _put(self, item):
         self._queue.append((time.time(), item))
 
+    def clear(self):
+        self._queue.clear()
+
 class WebSocket:
 
     def __init__(self, **attrs):
@@ -141,7 +144,7 @@ class WebSocket:
 
         except NodeSessionClosedError:
             __log__.warning(f"WEBSOCKET | {repr(self._node)} | Closed Session due to timeout.") # Error Not Fatal enough to return
-
+            self._queue.clear() # Clear queue
         except Exception as error:
             self._last_exc = error
             self._node.available = False
