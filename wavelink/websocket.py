@@ -41,7 +41,7 @@ class _Payload:
 
     @property
     def payload(self):
-        if self._stampdiff < self._timeout:
+        if self._stampdiff > self._timeout:
             return None
         else:
             return self._data
