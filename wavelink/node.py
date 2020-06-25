@@ -102,7 +102,6 @@ class Node:
                  resume_session: bool,
                  resume_timeout: float,
                  resume_key: str,
-                 force_send_queue: bool,
                  payload_timeout: float
                  ):
 
