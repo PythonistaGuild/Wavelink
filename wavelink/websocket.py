@@ -54,7 +54,7 @@ class _TimedQueue(asyncio.Queue):
     def _get(self):
         item = self._queue.popleft()
         StampDiff = time.time() - item[0]
-        return _Payload(item[1], StampDiff, self._timeout)
+        return _Payload(item[1], StampDiff, self._timeout).payload
 
     def _put(self, item):
         self._queue.append((time.time(), item))
@@ -247,7 +247,7 @@ class WebSocket:
                 data = self._queue.get_nowait()
             except asyncio.QueueEmpty:
                 return
-            if data.payload is not None:
+            if data is not None:
                 await self._send(**data.payload)
             else:
                 pass
