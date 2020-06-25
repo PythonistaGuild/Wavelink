@@ -169,7 +169,7 @@ class WebSocket:
             if not self._can_resume:
                 self.client.loop.create_task(self._configure_resume())
             if self.session_resumed:
-                # Send only on resume or when forced.
+                # Send only on resume.
                 self.client.loop.create_task(self._send_queue())
 
     async def _listen(self):
