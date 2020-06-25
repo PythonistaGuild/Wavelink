@@ -75,7 +75,6 @@ class WebSocket:
         self.user_id = attrs.get('user_id')
         self.secure = attrs.get('secure')
         # Send queue regardless of session resume.
-        self.force_send_queue = attrs.get('force_send_queue')
         # Operations take 20 to 1 ms
         self.payload_timeout = attrs.get('payload_timeout')
         self.session_resumed = False # To check if the session was resumed.
@@ -93,7 +92,9 @@ class WebSocket:
                 self.resume_key = ''.join(secrets.choice(alphabet) for i in range(32))
 
         self._can_resume = False
-        self._queue = _TimedQueue(0, loop=self.client.loop, timeout=self.payload_timeout)
+        # Dont initialze when not used.
+        if self.resume_session:
+            self._queue = _TimedQueue(0, loop=self.client.loop, timeout=self.payload_timeout)
         self._websocket = None
         self._last_exc = None
         self._task = None
@@ -167,7 +168,7 @@ class WebSocket:
             __log__.debug('WEBSOCKET | Connection established...%s', self._node.__repr__())
             if not self._can_resume:
                 self.client.loop.create_task(self._configure_resume())
-            if self.session_resumed or self.force_send_queue:
+            if self.session_resumed:
                 # Send only on resume or when forced.
                 self.client.loop.create_task(self._send_queue())
 
