@@ -291,6 +291,10 @@ class Node:
 
         try:
             self._websocket._task.cancel()
+            # Lavalink server currently doesn't close session immediately on 1000 (if session resuming is enabled)
+            # so we send a dummy payload.
+            # TODO: Remove dummy payload when Lavalink adds 1000 functionality. 
+            await self._websocket._send(op='configureResuming', key="Dummy_Termination_Payload", timeout=0.1)
             await self._websocket._websocket.close(message=b'Node destroy request.')
         except Exception:
             pass
