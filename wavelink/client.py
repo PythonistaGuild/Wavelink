@@ -67,7 +67,7 @@ class Client:
         self.bot = bot
         self.loop = bot.loop or asyncio.get_event_loop()
         self.session = aiohttp.ClientSession(loop=self.loop)
-        self._halt_cleanups = False
+
         self.nodes = {}
         bot.add_listener(self.update_handler, 'on_socket_response')
         self.loop.create_task(self._add_exit_handler())
