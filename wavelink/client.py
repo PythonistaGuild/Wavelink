@@ -20,17 +20,18 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import aiohttp
 import asyncio
 import logging
-from discord.ext import commands
+import signal
 from functools import partial
 from typing import Optional, Union
 
-from .errors import *
-from .player import Player
-from .node import Node
+import aiohttp
+from discord.ext import commands
 
+from .errors import *
+from .node import Node
+from .player import Player
 
 __log__ = logging.getLogger(__name__)
 
@@ -66,10 +67,10 @@ class Client:
         self.bot = bot
         self.loop = bot.loop or asyncio.get_event_loop()
         self.session = aiohttp.ClientSession(loop=self.loop)
-
+        self._halt_cleanups = False
         self.nodes = {}
-
         bot.add_listener(self.update_handler, 'on_socket_response')
+        self.loop.create_task(self._add_exit_handler())
 
     @property
     def shard_count(self) -> int:
@@ -483,3 +484,47 @@ class Client:
                 pass
             else:
                 await player._voice_state_update(data['d'])
+
+    async def _close(self) -> None:
+        async def __inner(client: Client) -> None:
+            # We need to wait for them since they don't catch asyncio.CancelledError
+            # Keep session open if not exiting.
+            Nodes = list(client.nodes.values())
+            if Nodes: # Check if there are any.
+                for node in Nodes:
+                    await node.destroy()
+            await client.session.close()
+                # del client
+            __log__.info(f"Closed session and destroyed Nodes.")
+        try:
+            await __inner(self)
+        except asyncio.CancelledError:
+            await __inner(self)
+        else:
+            return
+
+    async def _add_exit_handler(self) -> None:
+        def wraper(*args): # signum and frame not needed
+            self.loop.create_task(self._close())
+            self.loop.stop()
+        try:
+            await self.bot.wait_until_ready()
+            self.loop.add_signal_handler(signal.SIGINT, wraper)
+            self.loop.add_signal_handler(signal.SIGTERM, wraper)
+        except NotImplementedError:
+            try:
+                # We really want to close the websockets.
+                signal.signal(signal.SIGINT, wraper)
+                signal.signal(signal.SIGTERM, wraper)
+            except Exception:
+                __log__.warning("Failed to add exit handler.", exc_info=True)
+                return
+            else:
+                __log__.debug("Added signal handler.")
+                return
+        except Exception:
+            __log__.warning("Failed to add exit handler.", exc_info=True)
+            return
+        else:
+            __log__.debug("Added loop signal handler.")
+            return
