@@ -490,7 +490,7 @@ class Client:
             Nodes = list(client.nodes.values())
             if Nodes: # Check if there are any.
                 for node in Nodes:
-                    client.loop.create_task(node.destroy())
+                    await node.destroy()
             await client.session.close()
                 # del client
             __log__.info(f"Closed session and destroyed Nodes.")
@@ -512,6 +512,7 @@ class Client:
         except NotImplementedError:
             try:
                 # We really want to close the websockets.
+                # Windows doesn't support loop.add_signal_handler
                 signal.signal(signal.SIGINT, wraper)
                 signal.signal(signal.SIGTERM, wraper)
             except Exception:

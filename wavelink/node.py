@@ -285,23 +285,19 @@ class Node:
 
     async def destroy(self) -> None:
         """Destroy the node and all it's players."""
-        while True:
-            try:
-                players = self.players.copy()
+        players = self.players.copy()
 
-                for player in players.values():
-                    await player.destroy()
+        for player in players.values():
+            await player.destroy()
 
-                try:
-                    self._websocket._task.cancel()
-                except Exception:
-                    pass
-                await self._websocket.close()
-                del self._client.nodes[self.identifier]
-            except asyncio.CancelledError:
-                pass
-            else:
-                return
+        try:
+            self._websocket._task.cancel()
+        except Exception:
+            pass
+        __log__.info(f"{self} | Destroyed and disconnected")
+        await self._websocket.close()
+        del self._client.nodes[self.identifier]
+        return
 
     async def _send(self, **data) -> None:
         __log__.debug(f'NODE | Sending payload:: <{data}> ({self.__repr__()})')
