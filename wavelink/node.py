@@ -294,8 +294,8 @@ class Node:
             self._websocket._task.cancel()
         except Exception:
             pass
-        __log__.info(f"{self} | Destroyed and disconnected")
         await self._websocket.close()
+        __log__.info(f"{self} | Destroyed and disconnected")
         del self._client.nodes[self.identifier]
         return
 
