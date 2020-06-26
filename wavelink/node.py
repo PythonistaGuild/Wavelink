@@ -20,16 +20,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import asyncio
 import inspect
 import logging
-from discord.ext import commands
 from typing import Optional, Union
 from urllib.parse import quote
+
+from discord.ext import commands
 
 from .errors import *
 from .player import Player, Track, TrackPlaylist
 from .websocket import WebSocket
-
 
 __log__ = logging.getLogger(__name__)
 
@@ -284,21 +285,23 @@ class Node:
 
     async def destroy(self) -> None:
         """Destroy the node and all it's players."""
-        players = self.players.copy()
+        while True:
+            try:
+                players = self.players.copy()
 
-        for player in players.values():
-            await player.destroy()
+                for player in players.values():
+                    await player.destroy()
 
-        try:
-            self._websocket._task.cancel()
-            # Lavalink server currently doesn't close session immediately on 1000 (if session resuming is enabled)
-            # so we send a dummy payload.
-            # TODO: Remove dummy payload when Lavalink adds 1000 functionality. 
-            await self._websocket._send(op='configureResuming', key="Dummy_Termination_Payload", timeout=0.1)
-            await self._websocket._websocket.close(message=b'Node destroy request.')
-        except Exception:
-            pass
-        del self._client.nodes[self.identifier]
+                try:
+                    self._websocket._task.cancel()
+                except Exception:
+                    pass
+                await self._websocket.close()
+                del self._client.nodes[self.identifier]
+            except asyncio.CancelledError:
+                pass
+            else:
+                return
 
     async def _send(self, **data) -> None:
         __log__.debug(f'NODE | Sending payload:: <{data}> ({self.__repr__()})')

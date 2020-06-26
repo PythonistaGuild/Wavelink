@@ -140,7 +140,7 @@ class WebSocket:
             self._last_exc = error
             self._node.available = False
             if isinstance(error, aiohttp.WSServerHandshakeError) and error.status == 401:
-                print(f'\nAuthorization Failed for Node:: {self._node}\n', file=sys.stderr)
+                __log__.critical(f'\nAuthorization Failed for Node:: {self._node}\n')
             else:
                 __log__.error(f'WEBSOCKET | Connection Failure:: {error}')
                 traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
@@ -251,3 +251,12 @@ class WebSocket:
             __log__.debug(f'WEBSOCKET | Queueing Payload:: {data}')
             # we don't need to catch QueueFull as maxsize is 0
             self._queue.put_nowait(data)
+
+    async def close(self):
+        # Lavalink server currently doesn't close session immediately on 1000 (if session resuming is enabled)
+        # so we send a dummy payload.
+        # TODO: Remove dummy payload when Lavalink adds 1000 functionality.
+        await self._send(op='configureResuming', key="Dummy_Termination_Payload", timeout=0.1)
+        await self._websocket.close(message=b'Node destroy request.')
+        __log__.debug("WEBSOCKET | Closed websocket connection gracefully with code 1000.")
+        return

@@ -487,12 +487,10 @@ class Client:
 
     async def _close(self) -> None:
         async def __inner(client: Client) -> None:
-            # We need to wait for them since they don't catch asyncio.CancelledError
-            # Keep session open if not exiting.
             Nodes = list(client.nodes.values())
             if Nodes: # Check if there are any.
                 for node in Nodes:
-                    await node.destroy()
+                    client.loop.create_task(node.destroy())
             await client.session.close()
                 # del client
             __log__.info(f"Closed session and destroyed Nodes.")
