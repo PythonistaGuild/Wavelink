@@ -33,19 +33,6 @@ from .stats import Stats
 
 __log__ = logging.getLogger(__name__)
 
-class _Payload:
-    def __init__(self, data, StampDiff, timeout):
-        self._data = data
-        self._stampdiff = StampDiff
-        self._timeout = timeout
-
-    @property
-    def payload(self):
-        if self._stampdiff > self._timeout:
-            return None
-        else:
-            return self._data
-
 class _TimedQueue(asyncio.Queue):
     def __init__(self, maxsize=0, *, loop=None, timeout):
         self._timeout = timeout
@@ -54,7 +41,10 @@ class _TimedQueue(asyncio.Queue):
     def _get(self):
         item = self._queue.popleft()
         StampDiff = time.time() - item[0]
-        return _Payload(item[1], StampDiff, self._timeout).payload
+        if StampDiff > self._timeout:
+            return None
+        else:
+            return item[1]
 
     def _put(self, item):
         self._queue.append((time.time(), item))
