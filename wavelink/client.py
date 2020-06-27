@@ -486,25 +486,27 @@ class Client:
                 await player._voice_state_update(data['d'])
 
     async def _close(self) -> None:
-        async def __inner(client: Client) -> None:
+
+        async def inner(client: Client):
             Nodes = list(client.nodes.values())
             if Nodes: # Check if there are any.
                 for node in Nodes:
                     await node.destroy()
             await client.session.close()
-                # del client
             __log__.info(f"Closed session and destroyed Nodes.")
+            return True
+
         try:
-            await __inner(self)
+            # For discord's run method.
+            self.loop.stop()
+            # Let other tasks run.
+            await asyncio.sleep(0)
         except asyncio.CancelledError:
-            await __inner(self)
-        else:
-            return
+            closed = await inner(self)
 
     async def _add_exit_handler(self) -> None:
         def wraper(*args): # signum and frame not needed
             self.loop.create_task(self._close())
-            self.loop.stop()
         try:
             await self.bot.wait_until_ready()
             self.loop.add_signal_handler(signal.SIGINT, wraper)
