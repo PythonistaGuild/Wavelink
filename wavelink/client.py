@@ -502,7 +502,7 @@ class Client:
             # Let other tasks run.
             await asyncio.sleep(0)
         except asyncio.CancelledError:
-            closed = await inner(self)
+            await inner(self)
 
     async def _add_exit_handler(self) -> None:
         def wraper(*args): # signum and frame not needed
