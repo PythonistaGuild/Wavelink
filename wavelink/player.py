@@ -96,7 +96,7 @@ class Track:
         self.dead = False
 
         if self.ytid:
-            self.thumb = f"https://img.youtube.com/vi/{self.ytid}/maxresdefault.jpg"
+            self.thumb = f"https://img.youtube.com/vi/{self.ytid}/hqdefault.jpg"
         else:
             self.thumb = None
 
