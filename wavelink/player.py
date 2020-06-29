@@ -239,6 +239,12 @@ class Player:
         if isinstance(event, (TrackEnd, TrackException, TrackStuck)):
             self.current = None
 
+        if isinstance(event, WebsocketClosed):
+            if event.code in (4015,4009,4006):
+                await self.connect(self.channel_id)
+            else:
+                self.channel_id = None
+
     def _get_shard_socket(self, shard_id: int) -> Optional[DiscordWebSocket]:
         if isinstance(self.bot, commands.AutoShardedBot):
             return self.bot.shards[shard_id].ws
