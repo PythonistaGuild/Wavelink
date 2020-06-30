@@ -22,6 +22,8 @@ SOFTWARE.
 """
 import asyncio
 import logging
+import secrets
+import string
 import sys
 import time
 import traceback
@@ -80,10 +82,7 @@ class WebSocket:
             # logger's level should be set to warning if stdout is vulnurable. eg: shared VPS
             self.resume_key = attrs.get('resume_key')
             if self.resume_key is None:
-                import secrets # Don't import unless resuming is enabled
-                import string
-                alphabet = string.ascii_letters + string.digits
-                self.resume_key = ''.join(secrets.choice(alphabet) for i in range(32))
+                self.resume_key = self._gen_key(32)
 
         self._can_resume = False
         # Dont initialze when not used.
@@ -108,6 +107,10 @@ class WebSocket:
     @property
     def is_connected(self) -> bool:
         return self._websocket is not None and not self._websocket.closed
+    
+    def _gen_key(self, len):
+        alphabet = string.ascii_letters + string.digits
+        return ''.join(secrets.choice(alphabet) for i in range(len))
 
     async def _configure_resume(self) -> None:
         if self._can_resume:
@@ -139,6 +142,8 @@ class WebSocket:
 
         except NodeSessionClosedError:
             __log__.warning(f"WEBSOCKET | {repr(self._node)} | Closed Session due to timeout.") # Error Not Fatal enough to return
+            self.resume_key = self._gen_key()
+            await self._configure_resume()
             self._queue.clear() # Clear queue
         except Exception as error:
             self._last_exc = error
