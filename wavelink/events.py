@@ -25,7 +25,9 @@ __all__ = ('TrackEnd',
            'TrackException',
            'TrackStuck',
            'TrackStart',
-           'WebsocketClosed')
+           'WebsocketClosed',
+           'WebsocketConnectionFailed',
+           'WebsocketConnectionClosed')
 
 
 class TrackEnd:
@@ -146,3 +148,37 @@ class WebsocketClosed:
 
     def __str__(self):
         return 'WebsocketClosedEvent'
+
+
+class WebsocketConnectionFailed:
+    """Event dispatched when the connection to a node failed.
+    Attributes
+    ------------
+    node: :class:`wavelink.node.Node`
+        The node associated with the event.
+    """
+
+    __slots__ = 'node'
+
+    def __init__(self, data: dict):
+        self.node = data.get('node')
+
+    def __str__(self):
+        return 'WebsocketConnectionFailedEvent'
+
+
+class WebsocketConnectionClosed:
+    """Event dispatched when the connection to a node has been closed.
+    Attributes
+    ------------
+    node: :class:`wavelink.node.Node`
+        The node associated with the event.
+    """
+
+    __slots__ = 'node'
+
+    def __init__(self, data: dict):
+        self.node = data.get('node')
+
+    def __str__(self):
+        return 'WebsocketConnectionClosedEvent'
