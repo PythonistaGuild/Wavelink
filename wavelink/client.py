@@ -22,7 +22,6 @@ SOFTWARE.
 """
 import asyncio
 import logging
-import signal
 from functools import partial
 from typing import Optional, Union
 
@@ -70,7 +69,6 @@ class Client:
 
         self.nodes = {}
         bot.add_listener(self.update_handler, 'on_socket_response')
-        self.loop.create_task(self._add_exit_handler())
 
     @property
     def shard_count(self) -> int:
@@ -484,48 +482,3 @@ class Client:
                 pass
             else:
                 await player._voice_state_update(data['d'])
-
-    async def _close(self) -> None:
-
-        async def inner(client: Client):
-            Nodes = list(client.nodes.values())
-            if Nodes: # Check if there are any.
-                for node in Nodes:
-                    await node.destroy()
-            await client.session.close()
-            __log__.info(f"Closed session and destroyed Nodes.")
-            return True
-
-        try:
-            # For discord's run method.
-            self.loop.stop()
-            # Let other tasks run.
-            await asyncio.sleep(0)
-        except asyncio.CancelledError:
-            await inner(self)
-
-    async def _add_exit_handler(self) -> None:
-        def wraper(*args): # signum and frame not needed
-            self.loop.create_task(self._close())
-        try:
-            await self.bot.wait_until_ready()
-            self.loop.add_signal_handler(signal.SIGINT, wraper)
-            self.loop.add_signal_handler(signal.SIGTERM, wraper)
-        except NotImplementedError:
-            try:
-                # We really want to close the websockets.
-                # Windows doesn't support loop.add_signal_handler
-                signal.signal(signal.SIGINT, wraper)
-                signal.signal(signal.SIGTERM, wraper)
-            except Exception:
-                __log__.warning("Failed to add exit handler.", exc_info=True)
-                return
-            else:
-                __log__.debug("Added signal handler.")
-                return
-        except Exception:
-            __log__.warning("Failed to add exit handler.", exc_info=True)
-            return
-        else:
-            __log__.debug("Added loop signal handler.")
-            return
