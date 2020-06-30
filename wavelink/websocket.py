@@ -142,7 +142,7 @@ class WebSocket:
 
         except NodeSessionClosedError:
             __log__.warning(f"WEBSOCKET | {repr(self._node)} | Closed Session due to timeout.") # Error Not Fatal enough to return
-            self.resume_key = self._gen_key()
+            self.resume_key = self._gen_key(32)
             await self._configure_resume()
             self._queue.clear() # Clear queue
         except Exception as error:
