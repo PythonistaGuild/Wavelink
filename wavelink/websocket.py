@@ -145,6 +145,8 @@ class WebSocket:
             self.resume_key = self._gen_key(32)
             await self._configure_resume()
             self._queue.clear() # Clear queue
+            self.resume_key = self._gen_key(32)
+            self.client.loop.create_task(self._configure_resume())
         except Exception as error:
             self._last_exc = error
             self._node.available = False
