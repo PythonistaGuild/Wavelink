@@ -25,10 +25,10 @@ import asyncio
 import logging
 from discord.ext import commands
 from functools import partial
-from typing import Optional, Union
+from typing import Optional, Union, List, Iterable
 
 from .errors import *
-from .player import Player
+from .player import Player, Track
 from .node import Node
 
 
@@ -153,13 +153,13 @@ class Client:
             There are no :class:`wavelink.node.Node`s currently connected.
         """
         node = self.get_best_node()
-        
+
         if node is None:
             raise ZeroConnectedNodes
 
         return await node.get_tracks(query)
 
-    async def build_track(self, identifier: str):
+    async def build_track(self, identifier: str) -> Track:
         """|coro|
 
         Build a track object with a valid track identifier.
@@ -187,6 +187,35 @@ class Client:
             raise ZeroConnectedNodes
 
         return await node.build_track(identifier)
+
+    async def build_tracks(self, identifiers: Iterable[str]) -> List[Tracks]:
+        """|coro|
+
+        Build multiple track objects with a valid track identifier.
+
+        Parameters
+        ------------
+        identifiers: List[str]
+            The track unique Base64 encoded identifiers. This is usually retrieved from various lavalink events.
+
+        Returns
+        ---------
+        List[:class:`wavelink.player.Track`]
+            The tracks built from the Base64 identifiers.
+
+        Raises
+        --------
+        ZeroConnectedNodes
+            There are no :class:`wavelink.node.Node`s currently connected.
+        BuildTrackError
+            Decoding and building one of the tracks failed.
+        """
+        node = self.get_best_node()
+
+        if node is None:
+            raise ZeroConnectedNodes
+
+        return await node.build_tracks(identifiers)
 
     def _get_players(self) -> dict:
         players = []
@@ -386,7 +415,7 @@ class Client:
             Whether the websocket should be started with the secure wss protocol.
         heartbeat: Optional[float]
             Send ping message every heartbeat seconds and wait pong response, if pong response is not received then close connection.
-        
+
         Returns
         ---------
         :class:`wavelink.node.Node`
@@ -413,7 +442,7 @@ class Client:
                     client=self,
                     secure=secure,
                     heartbeat=heartbeat)
-        
+
         await node.connect(bot=self.bot)
 
         node.available = True

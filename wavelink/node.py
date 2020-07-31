@@ -23,7 +23,7 @@ SOFTWARE.
 import inspect
 import logging
 from discord.ext import commands
-from typing import Optional, Union
+from typing import Optional, Union, Iterable, List
 from urllib.parse import quote
 
 from .errors import *
@@ -197,6 +197,36 @@ class Node:
 
             track = Track(id_=identifier, info=data)
             return track
+
+    async def build_tracks(self, identifiers: Iterable[str]) -> List[Track]:
+        """|coro|
+
+        Build multiple track objects with valid track identifiers.
+
+        Parameters
+        ------------
+        identifiers: List[str]
+            The track unique Base64 encoded identifiers. This is usually retrieved from various lavalink events.
+
+        Returns
+        ---------
+        List[:class:`wavelink.player.Track`]
+            The tracks built from the Base64 identifiers.
+
+        Raises
+        --------
+        BuildTrackError
+            Decoding and building the tracks failed.
+        """
+        async with self.session.post(f'{self.rest_uri}/decodetracks?',
+                                     headers={'Authorization': self.password},
+                                     data=list(identifiers)) as resp:
+            if not resp.status == 200:
+                raise BuildTrackError(f'Failed to build track. Status: {data["status"]}, Error: {data["error"]}.'
+                                      f'Check whether the identfier(s) are correct and try again.')
+
+            return [Track(id_=datum["track"], info=datum["info"])
+                    for datum in await resp.json()]
 
     def get_player(self, guild_id: int) -> Optional[Player]:
         """Retrieve a player object associated with the Node.
