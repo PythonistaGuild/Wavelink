@@ -57,6 +57,24 @@ class _TimedQueue(asyncio.Queue):
 
     def clear(self):
         self._queue.clear()
+        
+class _Key:
+    def __init__(len: int=32, persistent: str="youshallnotpass"):
+        self.len: int = len
+        self.persistent: str = persistent
+
+    def __repr__(self):
+        """Generate a new key and make it persistent"""
+        alphabet = string.ascii_letters + string.digits + "#$%&()*+,-./:;<=>?@[]^_{}"
+        key = ''.join(secrets.choice(alphabet) for i in range(len))
+        self.persistent = key
+        return key
+
+    def __str__(self):
+        """Return the persistent key."""
+        # Ensure output is not a non-string
+        # Since input could be Any object.
+        return str(self.persistent)
 
 class WebSocket:
 
@@ -80,6 +98,7 @@ class WebSocket:
             # self.resume_key is casted to str to allow a Key object with __repr__ method.
             # Useful if the class implements it's own method to generate keys.
             # logger's level should be set to warning if stdout is vulnurable. eg: shared VPS
+            # As resuming key is logged.
             self.resume_key = attrs.get('resume_key')
             if self.resume_key is None:
                 self.resume_key = self._gen_key(32)
@@ -94,23 +113,27 @@ class WebSocket:
 
     @property
     def headers(self) -> dict:
-        if not self._can_resume: # can't resume
-            return {'Authorization': self.password,
-                    'Num-Shards': str(self.shard_count),
-                    'User-Id': str(self.user_id)}
+        base = {'Authorization': self.password,
+                'Num-Shards': str(self.shard_count),
+                'User-Id': str(self.user_id)}
+        if not self._can_resume:
+            return base
         elif self._can_resume:
-            return {'Authorization': self.password,
-                    'Num-Shards': str(self.shard_count),
-                    'User-Id': str(self.user_id),
-                    'Resume-Key': str(self.resume_key)}
+            return base.update({'Resume-Key': str(self.resume_key)})
 
     @property
     def is_connected(self) -> bool:
         return self._websocket is not None and not self._websocket.closed
     
-    def _gen_key(self, len):
-        alphabet = string.ascii_letters + string.digits
-        return ''.join(secrets.choice(alphabet) for i in range(len))
+    def _gen_key(self, len=32):
+        if self.resume_key is None:
+            return _Key(len)
+        else:
+            # if this is a class then it will generate a persistent key
+            # We should not't check the instance since
+            # we would still make 1 extra call to check, which is useless.
+            self.resume_key.__repr__()
+            return self.resume_key
 
     async def _configure_resume(self) -> None:
         if self._can_resume:
@@ -136,18 +159,21 @@ class WebSocket:
                 # if First connect then this will be false.
                 self.session_resumed = loads(self._websocket._response.headers.get('Session-Resumed', self._can_resume))
                 if not self.session_resumed and self._can_resume:
-                    raise NodeSessionClosedError(f'{repr(self._node)} | Session was closed. All Players may have been shut down')
+                    raise NodeSessionClosedError(f'{repr(self._node)} | Session was closed due to timeout. All Players may have been shut down')
                 elif self.session_resumed:
                     __log__.info(f"WEBSOCKET | {repr(self._node)} | Resumed Session with key: {self.resume_key}")
 
         except NodeSessionClosedError:
             __log__.warning(f"WEBSOCKET | {repr(self._node)} | Closed Session due to timeout.") # Error Not Fatal enough to return
-            self.resume_key = self._gen_key(32)
-            await self._configure_resume()
+            # This exception raised when we can resume hence queue is initialized.
             self._queue.clear() # Clear queue
-            self.resume_key = self._gen_key(32)
+            # Generate a new key
+            self.resume_key = self._gen_key()
+            self._can_resume = False
             self.client.loop.create_task(self._configure_resume())
+
         except Exception as error:
+            self._can_resume = False
             self._last_exc = error
             self._node.available = False
             if isinstance(error, aiohttp.WSServerHandshakeError) and error.status == 401:
@@ -265,9 +291,34 @@ class WebSocket:
 
     async def close(self):
         # Lavalink server currently doesn't close session immediately on 1000 (if session resuming is enabled)
-        # so we send a payload to disable resuming.
-        # TODO: Remove disable payload when Lavalink adds 1000 functionality.
+        # so we send a payload to disable resuming. It has been documented in lavalink implementation guide.
+        # TODO: Remove disable payload when Lavalink adds 1000 functionality
         await self._send(op='configureResuming', key=None)
         await self._websocket.close(message=b'Node destroy request.')
+        self._closed = True
+        self._node.available = False
         __log__.debug("WEBSOCKET | Closed websocket connection gracefully with code 1000.")
         return
+    
+    async def reset(self):
+        if isinstance(self._resume_key, str):
+            pass
+        elif isinstance(self._resume_key, _Key):
+            self._resume_key = None
+            self._resume_key = self._gen_key
+        else:
+            pass
+        if self.resume_session:
+            self._can_resume = False
+            self._queue.clear()
+        self._last_exc = None
+        self._closed = False
+        self._node.available = True
+        await self.close()
+        try:
+            self._task.cancel()
+        except:
+            pass
+        finally:
+            self._task = None
+        await self._connect()
