@@ -59,9 +59,9 @@ class _TimedQueue(asyncio.Queue):
         self._queue.clear()
         
 class _Key:
-    def __init__(len: int=32, persistent: str="youshallnotpass"):
+    def __init__(len: int=32):
         self.len: int = len
-        self.persistent: str = persistent
+        self.persistent: str = None
 
     def __repr__(self):
         """Generate a new key and make it persistent"""
@@ -74,6 +74,8 @@ class _Key:
         """Return the persistent key."""
         # Ensure output is not a non-string
         # Since input could be Any object.
+        if not self.persistent:
+            return self.__repr__()
         return str(self.persistent)
 
 class WebSocket:
