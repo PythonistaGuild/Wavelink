@@ -204,6 +204,7 @@ class WebSocket:
     async def _listen(self):
         backoff = ExponentialBackoff(base=7)
         tries = 0
+        timeout_margin = self.resume_timeout / 1.25
         while True:
             msg = await self._websocket.receive()
 
@@ -211,13 +212,7 @@ class WebSocket:
                 __log__.debug(f'WEBSOCKET | Close data: {msg.extra}')
 
                 self._closed = True
-                if not self._can_resume:
-                    retry = backoff.delay()
-                elif self._can_resume and tries <= 1: # hand off to Exponential backoff after atleast 2 tries
-                    if self.resume_timeout <= 70:
-                        retry = (self.resume_timeout / 2.0) - 1.0 # Account for latency.
-                    else: # try_after 30 seconds 2 times and then hand over to exponential backoff.
-                        retry = 30.0
+                retry = backoff.delay()
 
                 __log__.warning(f'\nWEBSOCKET | Connection closed:: Retrying connection in <{retry}> seconds\n')
 
