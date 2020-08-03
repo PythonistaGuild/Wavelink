@@ -23,7 +23,7 @@ SOFTWARE.
 import inspect
 import logging
 from discord.ext import commands
-from typing import Optional, Union, Iterable, List
+from typing import Optional, Union, List
 from urllib.parse import quote
 
 from .errors import *
@@ -169,7 +169,7 @@ class Node:
     async def build_tracks(self, *identifiers: str) -> List[Track]:
         """|coro|
 
-        Build multiple track objects with valid track identifiers.
+        Build track objects with valid track identifier(s).
 
         Parameters
         ------------

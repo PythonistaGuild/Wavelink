@@ -25,7 +25,7 @@ import asyncio
 import logging
 from discord.ext import commands
 from functools import partial
-from typing import Optional, Union, List, Iterable
+from typing import Optional, Union, List
 
 from .errors import *
 from .player import Player, Track
@@ -162,7 +162,7 @@ class Client:
     async def build_tracks(self, *identifiers: str) -> List[Track]:
         """|coro|
 
-        Build multiple track objects with a valid track identifier.
+        Build track objects with valid track identifier(s).
 
         Parameters
         ------------
