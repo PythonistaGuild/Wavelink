@@ -47,6 +47,7 @@ class WebSocket:
         self.shard_count = attrs.get('shard_count')
         self.user_id = attrs.get('user_id')
         self.secure = attrs.get('secure')
+        self._dumps = attrs.get('dumps')
 
         self._websocket = None
         self._last_exc = None
@@ -165,4 +166,12 @@ class WebSocket:
     async def _send(self, **data):
         if self.is_connected:
             __log__.debug(f'WEBSOCKET | Sending Payload:: {data}')
-            await self._websocket.send_json(data)
+            data_str = self._dumps(data)
+            if isinstance(data_str, bytes):
+                # Some JSON libraries serialize to bytes
+                # Yet Lavalink does not support binary websockets
+                # So we need to decode. In the future, maybe
+                # self._websocket.send_bytes could be used
+                # if Lavalink ever implements it
+                data_str = data_str.decode('utf-8')
+            await self._websocket.send_str(data_str)
