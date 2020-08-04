@@ -22,9 +22,10 @@ SOFTWARE.
 """
 import asyncio
 import inspect
+import json
 import logging
 from discord.ext import commands
-from typing import Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 from urllib.parse import quote
 
 from .backoff import ExponentialBackoff
@@ -69,7 +70,8 @@ class Node:
                  identifier: str,
                  shard_id: int = None,
                  secure: bool = False,
-                 heartbeat: float = None
+                 heartbeat: float = None,
+                 dumps: Callable[[Dict[str, Any]], Union[str, bytes]] = json.dumps
                  ):
 
         self.host = host
@@ -82,6 +84,8 @@ class Node:
         self.identifier = identifier
         self.secure = secure
         self.heartbeat = heartbeat
+
+        self._dumps = dumps
 
         self.shard_id = shard_id
 
@@ -127,7 +131,8 @@ class Node:
                                     password=self.password,
                                     shard_count=self.shards,
                                     user_id=self.uid,
-                                    secure=self.secure)
+                                    secure=self.secure,
+                                    dumps=self._dumps)
         await self._websocket._connect()
 
         __log__.info(f'NODE | {self.identifier} connected:: {self.__repr__()}')

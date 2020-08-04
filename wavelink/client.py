@@ -25,6 +25,7 @@ import asyncio
 import logging
 from discord.ext import commands
 from functools import partial
+from json import dumps
 from typing import Optional, Union
 
 from .errors import *
@@ -68,6 +69,8 @@ class Client:
         self.session = aiohttp.ClientSession(loop=self.loop)
 
         self.nodes = {}
+
+        self._dumps = dumps
 
         bot.add_listener(self.update_handler, 'on_socket_response')
 
@@ -157,7 +160,7 @@ class Client:
             There are no :class:`wavelink.node.Node`s currently connected.
         """
         node = self.get_best_node()
-        
+
         if node is None:
             raise ZeroConnectedNodes
 
@@ -390,7 +393,7 @@ class Client:
             Whether the websocket should be started with the secure wss protocol.
         heartbeat: Optional[float]
             Send ping message every heartbeat seconds and wait pong response, if pong response is not received then close connection.
-        
+
         Returns
         ---------
         :class:`wavelink.node.Node`
@@ -416,8 +419,9 @@ class Client:
                     session=self.session,
                     client=self,
                     secure=secure,
-                    heartbeat=heartbeat)
-        
+                    heartbeat=heartbeat,
+                    dumps=self._dumps)
+
         await node.connect(bot=self.bot)
 
         node.available = True
@@ -471,3 +475,18 @@ class Client:
                 pass
             else:
                 await player._voice_state_update(data['d'])
+
+    def set_serializer(self, serializer_function) -> None:
+        """Sets the JSON dumps function for use in the websocket.
+        The default one is the built-in JSON module.
+
+        Parameters
+        ----------
+        serializer_function: Callable[[Dict[str, Any]]], Union[str, bytes]]
+            The function that serializes the JSON data to a string or bytes.
+        """
+        self._dumps = serializer_function
+        # Update all existing nodes
+        for node in self.nodes.values():
+            node._dumps = serializer_function
+            node._websocket._dumps = serializer_function
