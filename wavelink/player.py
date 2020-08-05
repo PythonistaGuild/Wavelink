@@ -249,7 +249,6 @@ class Player:
         if self.bot.shard_id is None or self.bot.shard_id == shard_id:
             return self.bot.ws
 
-
     async def connect(self, channel_id: int):
         """|coro|
 
@@ -357,7 +356,7 @@ class Player:
             The Equalizer to set.
         """
         await self.node._send(op='equalizer', guildId=str(self.guild_id), bands=equalizer.eq)
-        self._equalizer = Equalizer
+        self._equalizer = equalizer
 
     async def set_equalizer(self, equalizer: Equalizer) -> None:
         """|coro|
