@@ -24,7 +24,7 @@ import collections
 
 
 class Equalizer:
-    """Class representing a usuable equalizer.
+    """Class representing a usable equalizer.
 
     Parameters
     ------------
