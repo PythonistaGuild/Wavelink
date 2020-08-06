@@ -241,10 +241,7 @@ class Player:
 
     def _get_shard_socket(self, shard_id: int) -> Optional[DiscordWebSocket]:
         if isinstance(self.bot, commands.AutoShardedBot):
-            try:
-                return self.bot.shards[shard_id].ws
-            except AttributeError:
-                return self.bot.shards[shard_id]._parent.ws
+            return self.bot.shards[shard_id].ws
 
         if self.bot.shard_id is None or self.bot.shard_id == shard_id:
             return self.bot.ws
@@ -356,7 +353,7 @@ class Player:
             The Equalizer to set.
         """
         await self.node._send(op='equalizer', guildId=str(self.guild_id), bands=equalizer.eq)
-        self._equalizer = equalizer
+        self._equalizer = Equalizer
 
     async def set_equalizer(self, equalizer: Equalizer) -> None:
         """|coro|

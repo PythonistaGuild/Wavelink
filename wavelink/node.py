@@ -229,9 +229,8 @@ class Node:
         BuildTrackError
             Decoding and building the track failed.
         """
-        async with self.session.get(f'{self.rest_uri}/decodetrack?',
-                                    headers={'Authorization': self.password},
-                                    params={'track': identifier}) as resp:
+        async with self.session.get(f'{self.rest_uri}/decodetrack?track={identifier}',
+                                    headers={'Authorization': self.password}) as resp:
             data = await resp.json()
 
             if not resp.status == 200:

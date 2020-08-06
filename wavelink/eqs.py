@@ -24,14 +24,10 @@ import collections
 
 
 class Equalizer:
-    """Class representing a usable equalizer.
+    """Class representing a usuable equalizer.
 
-    Parameters
-    ------------
-    levels: List[Tuple[int, float]]
-        A list of tuple pairs containing a band int and gain float.
-    name: str
-        An Optional string to name this Equalizer. Defaults to 'CustomEqualizer'
+    .. warning::
+        You can only create Equalizers through the provided class methods.
 
     Attributes
     ------------
@@ -40,22 +36,8 @@ class Equalizer:
     raw: list
         A list of tuple pairs containing a band int and gain float.
     """
-    def __init__(self, *, levels: list, name: str = 'CustomEqualizer'):
-        self.eq = self._factory(levels)
-        self.raw = levels
-
-        self._name = name
-
-    def __str__(self):
-        return self._name
-
-    def __repr__(self):
-        return f'<wavelink.eqs.Equalizer: {self._name}, Raw: {self.eq}>'
-
-    @property
-    def name(self):
-        """The Equalizers friendly name."""
-        return self._name
+    def __init__(self):
+        raise NotImplementedError
 
     @staticmethod
     def _factory(levels: list):
@@ -67,17 +49,20 @@ class Equalizer:
         return _dict
 
     @classmethod
-    def build(cls, *, levels: list, name: str = 'CustomEqualizer'):
+    def build(cls, *, levels: list):
         """Build a custom Equalizer class with the provided levels.
 
         Parameters
         ------------
         levels: List[Tuple[int, float]]
             A list of tuple pairs containing a band int and gain float.
-        name: str
-            An Optional string to name this Equalizer. Defaults to 'CustomEqualizer'
         """
-        return cls(levels=levels, name=name)
+        self = cls.__new__(cls)
+        self.eq = cls._factory(levels)
+        self.raw = levels
+
+        cls.__str__ = lambda _: 'CustomEqualizer'
+        return self
 
     @classmethod
     def flat(cls):
@@ -88,8 +73,12 @@ class Equalizer:
         levels = [(0, .0), (1, .0), (2, .0), (3, .0), (4, .0),
                   (5, .0), (6, .0), (7, .0), (8, .0), (9, .0),
                   (10, .0), (11, .0), (12, .0), (13, .0), (14, .0)]
+        self = cls.__new__(cls)
+        self.eq = cls._factory(levels)
+        self.raw = levels
 
-        return cls(levels=levels, name='Flat')
+        cls.__str__ = lambda _: 'Flat'
+        return self
 
     @classmethod
     def boost(cls):
@@ -102,7 +91,12 @@ class Equalizer:
                   (5, .05), (6, 0.075), (7, .0), (8, .0), (9, .0),
                   (10, .0), (11, .0), (12, .125), (13, .15), (14, .05)]
 
-        return cls(levels=levels, name='Boost')
+        self = cls.__new__(cls)
+        self.eq = cls._factory(levels)
+        self.raw = levels
+
+        cls.__str__ = lambda _: 'Boost'
+        return self
 
     @classmethod
     def metal(cls):
@@ -114,7 +108,12 @@ class Equalizer:
                   (5, .1), (6, .0), (7, .125), (8, .175), (9, .175),
                   (10, .125), (11, .125), (12, .1), (13, .075), (14, .0)]
 
-        return cls(levels=levels, name='Metal')
+        self = cls.__new__(cls)
+        self.eq = cls._factory(levels)
+        self.raw = levels
+
+        cls.__str__ = lambda _: 'Metal'
+        return self
 
     @classmethod
     def piano(cls):
@@ -127,4 +126,9 @@ class Equalizer:
                   (4, 0.25), (5, 0.25), (6, 0.0), (7, -0.25), (8, -0.25),
                   (9, 0.0), (10, 0.0), (11, 0.5), (12, 0.25), (13, -0.025)]
 
-        return cls(levels=levels, name='Piano')
+        self = cls.__new__(cls)
+        self.eq = cls._factory(levels)
+        self.raw = levels
+
+        cls.__str__ = lambda _: 'Piano'
+        return self
