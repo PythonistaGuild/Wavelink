@@ -59,14 +59,15 @@ class _TimedQueue(asyncio.Queue):
         self._queue.clear()
         
 class _Key:
-    def __init__(len: int=32):
-        self.len: int = len
-        self.persistent: str = None
+    def __init__(self, Len: int = 32):
+        self.Len: int = Len
+        self.persistent: str = ""
+        self.__repr__()
 
     def __repr__(self):
         """Generate a new key and make it persistent"""
-        alphabet = string.ascii_letters + string.digits + "#$%&()*+,-./:;<=>?@[]^_{}"
-        key = ''.join(secrets.choice(alphabet) for i in range(len))
+        alphabet = string.ascii_letters + string.digits + "#$%&()*+,-./:;<=>?@[]^_~!"
+        key = ''.join(secrets.choice(alphabet) for i in range(self.Len))
         self.persistent = key
         return key
 
@@ -103,7 +104,7 @@ class WebSocket:
             # As resuming key is logged.
             self.resume_key = attrs.get('resume_key')
             if self.resume_key is None:
-                self.resume_key = self._gen_key(32)
+                self.resume_key = self._gen_key()
 
         self._can_resume = False
         # Dont initialze when not used.
@@ -127,9 +128,9 @@ class WebSocket:
     def is_connected(self) -> bool:
         return self._websocket is not None and not self._websocket.closed
     
-    def _gen_key(self, len=32):
+    def _gen_key(self, Len=32):
         if self.resume_key is None:
-            return _Key(len)
+            return _Key()
         else:
             # if this is a class then it will generate a persistent key
             # We should not't check the instance since
