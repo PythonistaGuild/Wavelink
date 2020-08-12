@@ -27,7 +27,6 @@ import string
 import sys
 import time
 import traceback
-from json import loads
 from typing import Any, Dict
 
 import aiohttp
@@ -57,7 +56,7 @@ class _TimedQueue(asyncio.Queue):
 
     def clear(self):
         self._queue.clear()
-        
+
 class _Key:
     def __init__(self, Len: int = 32):
         self.Len: int = Len
@@ -160,9 +159,9 @@ class WebSocket:
                 self._websocket = await self._node.session.ws_connect(uri, headers=self.headers, heartbeat=self._node.heartbeat)
                 # If header not present then account for possibilty that session is resumed.
                 # if First connect then this will be false.
-                self.session_resumed = loads(self._websocket._response.headers.get('Session-Resumed', self._can_resume))
+                self.session_resumed = self._websocket._response.headers.get('Session-Resumed', self._can_resume)
                 if not self.session_resumed and self._can_resume:
-                    raise NodeSessionClosedError(f'{repr(self._node)} | Session was closed due to timeout. All Players may have been shut down')
+                    raise NodeSessionClosedError(f'{repr(self._node)} | Session was closed due to timeout. All Players may have been disconnected')
                 elif self.session_resumed:
                     __log__.info(f"WEBSOCKET | {repr(self._node)} | Resumed Session with key: {self.resume_key}")
 
@@ -291,10 +290,13 @@ class WebSocket:
         # Lavalink server currently doesn't close session immediately on 1000 (if session resuming is enabled)
         # so we send a payload to disable resuming. It has been documented in lavalink implementation guide.
         # TODO: Remove disable payload when Lavalink adds 1000 functionality
-        await self._send(op='configureResuming', key=None)
+        if self._can_resume:
+            await self._send(op='configureResuming', key=None)
         await self._websocket.close(message=b'Node destroy request.')
         self._closed = True
         self._node.available = False
+        # We have disabled resuming.
+        self._can_resume = False
         __log__.debug("WEBSOCKET | Closed websocket connection gracefully with code 1000.")
         return
     
