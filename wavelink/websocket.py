@@ -215,9 +215,9 @@ class WebSocket:
 
     async def _listen(self):
         backoff = ExponentialBackoff(base=7)
-        # This is an approximate count of how many seconds we have been disconnected.
+        # This is an approximatly the no. of seconds we have been disconnected for.
         # This is the easiest implementation, other ways are more sophisticated
-        # but we shalln't want to add attrs as disconnects are usually rare.
+        # but we shalln't add attrs to class or globals as disconnects are usually rare.
         down_time = 0.0
         while True:
             msg = await self._websocket.receive()
