@@ -27,6 +27,7 @@ import string
 import sys
 import time
 import traceback
+from types import MappingProxyType
 from typing import Any, Dict
 
 import aiohttp
@@ -37,6 +38,17 @@ from .events import *
 from .stats import Stats
 
 __log__ = logging.getLogger(__name__)
+
+EventMapping = MappingProxyType(
+    {
+        "TrackEndEvent": ("on_track_end", TrackEnd(data)),
+        "TrackStartEvent": ("on_track_start", TrackStart(data)),
+        "TrackExceptionEvent": ("on_track_exception", TrackException(data)),
+        "TrackStuckEvent": ("on_track_stuck", TrackStuck(data)),
+        "WebSocketClosedEvent": ("on_websocket_closed", WebsocketClosed(data)),
+    }
+)
+
 
 class _TimedQueue(asyncio.Queue):
     def __init__(self, maxsize=0, *, loop=None, timeout):
@@ -236,17 +248,12 @@ class WebSocket:
             except KeyError:
                 return
 
-            name = data['type']
-            if name == 'TrackEndEvent':
-                listener, payload = 'on_track_end', TrackEnd(data)
-            elif name == 'TrackStartEvent':
-                listener, payload = 'on_track_start', TrackStart(data)
-            elif name == 'TrackExceptionEvent':
-                listener, payload = 'on_track_exception', TrackException(data)
-            elif name == 'TrackStuckEvent':
-                listener, payload = 'on_track_stuck', TrackStuck(data)
-            elif name == 'WebSocketClosedEvent':
-                listener, payload = 'on_websocket_closed', WebsocketClosed(data)
+            try:
+                listener, payload = EventMapping[data['type']]
+            except KeyError:
+                __log__.exception('Unknown Event received!')
+                return
+
             __log__.debug(f'WEBSOCKET | op: event:: {data}')
 
             # Dispatch node event/player hooks
