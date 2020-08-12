@@ -65,7 +65,7 @@ class _Key:
         self.__repr__()
 
     def __repr__(self):
-        """Generate a new key and make it persistent"""
+        """Generate a new key, return it and make it persistent"""
         alphabet = string.ascii_letters + string.digits + "#$%&()*+,-./:;<=>?@[]^_~!"
         key = ''.join(secrets.choice(alphabet) for i in range(self.Len))
         self.persistent = key
@@ -303,20 +303,19 @@ class WebSocket:
             pass
         elif isinstance(self._resume_key, _Key):
             self._resume_key = None
-            self._resume_key = self._gen_key
+            self._resume_key = self._gen_key()
         else:
             pass
+
         if self.resume_session:
             self._can_resume = False
             self._queue.clear()
-        self._last_exc = None
-        self._closed = False
-        self._node.available = True
-        await self.close()
+
         try:
             self._task.cancel()
         except:
             pass
         finally:
             self._task = None
+        await self.close()
         await self._connect()
