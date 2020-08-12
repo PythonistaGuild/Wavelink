@@ -138,7 +138,7 @@ class WebSocket:
     @property
     def is_connected(self) -> bool:
         return self._websocket is not None and not self._websocket.closed
-    
+
     def _gen_key(self, Len=32):
         if self.resume_key is None:
             return _Key()
@@ -215,8 +215,10 @@ class WebSocket:
 
     async def _listen(self):
         backoff = ExponentialBackoff(base=7)
-        tries = 0
-        timeout_margin = self.resume_timeout / 1.25
+        # This is an approximate count of how many seconds we have been disconnected.
+        # This is the easiest implementation, other ways are more sophisticated
+        # but we shalln't want to add attrs as disconnects are usually rare.
+        down_time = 0.0
         while True:
             msg = await self._websocket.receive()
 
@@ -225,13 +227,18 @@ class WebSocket:
 
                 self._closed = True
                 retry = backoff.delay()
+                if self._can_resume and retry >= self.resume_timeout and down_time < self.timeout:
+                    backoff._exp = 0
+                    retry = backoff.delay()
 
                 __log__.warning(f'\nWEBSOCKET | Connection closed:: Retrying connection in <{retry}> seconds\n')
+                down_time += retry
 
                 await asyncio.sleep(retry)
                 if not self.is_connected:
                     self.client.loop.create_task(self._connect())
             else:
+                down_time = 0.0
                 __log__.debug(f'WEBSOCKET | Received Payload:: <{msg.data}>')
                 self.client.loop.create_task(self.process_data(msg.json()))
 
@@ -308,11 +315,11 @@ class WebSocket:
         return
     
     async def reset(self):
-        if isinstance(self._resume_key, str):
+        if isinstance(self.resume_key, str):
             pass
-        elif isinstance(self._resume_key, _Key):
-            self._resume_key = None
-            self._resume_key = self._gen_key()
+        elif isinstance(self.resume_key, _Key):
+            self.resume_key = None
+            self.resume_key = self._gen_key()
         else:
             pass
 
@@ -322,7 +329,7 @@ class WebSocket:
 
         try:
             self._task.cancel()
-        except:
+        except Exception:
             pass
         finally:
             self._task = None
