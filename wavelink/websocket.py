@@ -313,7 +313,7 @@ class WebSocket:
         self._can_resume = False
         __log__.debug("WEBSOCKET | Closed websocket connection gracefully with code 1000.")
         return
-    
+
     async def reset(self):
         if isinstance(self.resume_key, str):
             pass
@@ -330,7 +330,7 @@ class WebSocket:
         try:
             self._task.cancel()
         except Exception:
-            pass
+            __log__.debug("Error while cancelling task", exc_info=True)
         finally:
             self._task = None
         await self.close()
