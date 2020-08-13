@@ -64,15 +64,6 @@ class Node:
         The shard id, defuault value is None.
     heartbeat: float
         Duration between pings, helps keep WS stable. Defaults to None to disable.
-    resume_session: bool
-            If True then Lavalink server will continue to play music until bot reconnects or
-            till `resume_timeout` and then shuts-down all Players. Defaults to False.
-    resume_timeout: float
-        Has no effect unless resume_session is True.
-    resume_key: str
-        Has no effect unless resume_session is True. Defaults to a secret AlphaNumeric key that is 32 characters long
-    payload_timeout: float
-        Has no effect unless resume_session is True. Amount of time a send request should be queued.
     players: Dict[int, Player]
         A dictionary with guild id as key and the respective guild's Player as value. Please use :func:`Node.get_player` instead.
     session: aiohttp.ClientSession
@@ -115,10 +106,10 @@ class Node:
         self.identifier = identifier
         self.secure = secure
         self.heartbeat = heartbeat
-        self.resume_session = resume_session
-        self.resume_timeout = resume_timeout
-        self.resume_key = resume_key
-        self.payload_timeout = payload_timeout
+        self._resume_session = resume_session
+        self._resume_timeout = resume_timeout
+        self._resume_key = resume_key
+        self._payload_timeout = payload_timeout
         self.shard_id = shard_id
 
         self.players = {}
@@ -164,11 +155,12 @@ class Node:
                                     shard_count=self.shards,
                                     user_id=self.uid,
                                     secure=self.secure,
-                                    resume_session=self.resume_session,
-                                    resume_timeout=self.resume_timeout,
-                                    resume_key=self.resume_key,
-                                    payload_timeout=self.payload_timeout)
+                                    resume_session=self._resume_session,
+                                    resume_timeout=self._resume_timeout,
+                                    resume_key=self._resume_key,
+                                    payload_timeout=self._payload_timeout)
         await self._websocket._connect()
+        del self._resume_session, self._resume_timeout, self._resume_key, self._payload_timeout
 
         __log__.info(f'NODE | {self.identifier} connected:: {self.__repr__()}')
 
