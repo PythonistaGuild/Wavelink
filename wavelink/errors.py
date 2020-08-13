@@ -44,3 +44,6 @@ class AuthorizationFailure(WavelinkException):
 
 class BuildTrackError(WavelinkException):
     """Exception raised when a track is failed to be decoded and re-built."""
+
+class NodeSessionClosedError(WavelinkException):
+    """Exception raised when a Node's session can't be or is not resumed."""

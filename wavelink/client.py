@@ -20,17 +20,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import aiohttp
 import asyncio
 import logging
-from discord.ext import commands
 from functools import partial
 from typing import Optional, Union
 
-from .errors import *
-from .player import Player
-from .node import Node
+import aiohttp
+from discord.ext import commands
 
+from .errors import *
+from .node import Node
+from .player import Player
 
 __log__ = logging.getLogger(__name__)
 
@@ -68,7 +68,6 @@ class Client:
         self.session = aiohttp.ClientSession(loop=self.loop)
 
         self.nodes = {}
-
         bot.add_listener(self.update_handler, 'on_socket_response')
 
     @property
@@ -361,7 +360,9 @@ class Client:
         return player
 
     async def initiate_node(self, host: str, port: int, *, rest_uri: str, password: str, region: str, identifier: str,
-                            shard_id: int = None, secure: bool = False, heartbeat: float = None) -> Node:
+                            shard_id: int = None, secure: bool = False, heartbeat: float = None,
+                            resume_session: bool = False, resume_timeout: float = 60.0, resume_key: str = None,
+                            payload_timeout: float = 35.02) -> Node:
         """|coro|
 
         Initiate a Node and connect to the provided server.
@@ -386,7 +387,17 @@ class Client:
             Whether the websocket should be started with the secure wss protocol.
         heartbeat: Optional[float]
             Send ping message every heartbeat seconds and wait pong response, if pong response is not received then close connection.
-        
+        resume_session: Optional[bool]
+            If True then Lavalink server will continue to play music until bot reconnects or
+            till `resume_timeout` and then shuts-down all Players. Defaults to False.
+        resume_timeout: Optional[float]
+            Has no effect unless resume_session is True. Defaults to 60.0 seconds.
+        resume_key: Optional[str]
+            Has no effect unless resume_session is True. Defaults to a secret AlphaNumeric key that is 32 characters long
+        payload_timeout: float
+            The amount of time a payload should be queued, logically should be greater than (resume_timeout/2 - 1) or 30.0.
+            Defaults to 35.02 seconds.
+
         Returns
         ---------
         :class:`wavelink.node.Node`
@@ -412,8 +423,12 @@ class Client:
                     session=self.session,
                     client=self,
                     secure=secure,
-                    heartbeat=heartbeat)
-        
+                    heartbeat=heartbeat,
+                    resume_session=resume_session,
+                    resume_timeout=resume_timeout,
+                    resume_key=resume_key,
+                    payload_timeout=payload_timeout)
+
         await node.connect(bot=self.bot)
 
         node.available = True
