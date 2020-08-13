@@ -160,7 +160,7 @@ class Node:
                                     resume_key=self._resume_key,
                                     payload_timeout=self._payload_timeout)
         await self._websocket._connect()
-        del self._resume_session, self._resume_timeout, self._resume_key, self._payload_timeout
+        # del self._resume_session, self._resume_timeout, self._resume_key, self._payload_timeout
 
         __log__.info(f'NODE | {self.identifier} connected:: {self.__repr__()}')
 
