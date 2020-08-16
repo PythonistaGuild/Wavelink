@@ -26,8 +26,8 @@ __all__ = ('TrackEnd',
            'TrackStuck',
            'TrackStart',
            'WebsocketClosed',
-           'WebsocketConnectionFailed',
-           'WebsocketConnectionClosed')
+           'NodeConnectionFailed',
+           'NodeConnectionClosed')
 
 
 class TrackEnd:
@@ -150,7 +150,7 @@ class WebsocketClosed:
         return 'WebsocketClosedEvent'
 
 
-class WebsocketConnectionFailed:
+class NodeConnectionFailed:
     """Event dispatched when the connection to a node failed.
     Attributes
     ------------
@@ -167,7 +167,7 @@ class WebsocketConnectionFailed:
         return 'WebsocketConnectionFailedEvent'
 
 
-class WebsocketConnectionClosed:
+class NodeConnectionClosed:
     """Event dispatched when the connection to a node has been closed.
     Attributes
     ------------
