@@ -84,7 +84,7 @@ class WebSocket:
                 __log__.error(f'WEBSOCKET | Connection Failure:: {error}')
                 traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
                 if self._node.hook is not None:
-                    self.bot.loop.create_task(self._node.hook(WebsocketConnectionFailed({"node": self._node})))
+                    self.bot.loop.create_task(self._node.hook(NodeConnectionFailed({"node": self._node})))
 
             return
 
@@ -111,7 +111,7 @@ class WebSocket:
                 self._closed = True
                 retry = backoff.delay()
                 if self._node.hook is not None:
-                    self.bot.loop.create_task(self._node.hook(WebsocketConnectionClosed({"node": self._node})))
+                    self.bot.loop.create_task(self._node.hook(NodeConnectionClosed({"node": self._node})))
                 __log__.warning(f'\nWEBSOCKET | Connection closed:: Retrying connection in <{retry}> seconds\n')
 
                 await asyncio.sleep(retry)

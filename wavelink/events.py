@@ -164,7 +164,7 @@ class NodeConnectionFailed:
         self.node = data.get('node')
 
     def __str__(self):
-        return 'WebsocketConnectionFailedEvent'
+        return 'NodeConnectionFailed'
 
 
 class NodeConnectionClosed:
@@ -181,4 +181,4 @@ class NodeConnectionClosed:
         self.node = data.get('node')
 
     def __str__(self):
-        return 'WebsocketConnectionClosedEvent'
+        return 'NodeConnectionClosed'
