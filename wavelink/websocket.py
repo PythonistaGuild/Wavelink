@@ -171,7 +171,7 @@ class WebSocket:
                 self._websocket = await self._node.session.ws_connect(uri, headers=self.headers, heartbeat=self._node.heartbeat)
                 # If header not present then account for possibilty that session is resumed.
                 # if First connect then this will be false.
-                self.session_resumed = self._websocket._response.headers.get('Session-Resumed', self._can_resume)
+                self.session_resumed = self._websocket._response.headers.get('Session-Resumed', False)
                 if not self.session_resumed and self._can_resume:
                     raise NodeSessionClosedError(f'{repr(self._node)} | Session was closed due to timeout. All Players may have been disconnected')
                 elif self.session_resumed:
