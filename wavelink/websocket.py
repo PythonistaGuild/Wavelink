@@ -41,11 +41,11 @@ __log__ = logging.getLogger(__name__)
 
 EventMapping = MappingProxyType(
     {
-        "TrackEndEvent": ("on_track_end", TrackEnd(data)),
-        "TrackStartEvent": ("on_track_start", TrackStart(data)),
-        "TrackExceptionEvent": ("on_track_exception", TrackException(data)),
-        "TrackStuckEvent": ("on_track_stuck", TrackStuck(data)),
-        "WebSocketClosedEvent": ("on_websocket_closed", WebsocketClosed(data)),
+        "TrackEndEvent": ("on_track_end", TrackEnd),
+        "TrackStartEvent": ("on_track_start", TrackStart),
+        "TrackExceptionEvent": ("on_track_exception", TrackException),
+        "TrackStuckEvent": ("on_track_stuck", TrackStuck),
+        "WebSocketClosedEvent": ("on_websocket_closed", WebsocketClosed),
     }
 )
 
@@ -256,7 +256,8 @@ class WebSocket:
                 return
 
             try:
-                listener, payload = EventMapping[data['type']]
+                listener, payload_type = EventMapping[data['type']]
+                payload = payload_type(data)
             except KeyError:
                 __log__.exception('Unknown Event received!')
                 return
