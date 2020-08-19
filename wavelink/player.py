@@ -141,6 +141,9 @@ class Player(discord.VoiceProtocol):
         finally:
             self.cleanup()
 
+    async def get_tracks(self, query: str):
+        return await self.node.get_tracks(query)
+
     async def move_to(self, channel: discord.VoiceChannel):
         """|coro|
         Moves the player to a different voice channel.
