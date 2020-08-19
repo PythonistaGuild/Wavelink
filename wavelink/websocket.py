@@ -192,6 +192,9 @@ class WebSocket:
             self._node.available = False
             if isinstance(error, aiohttp.WSServerHandshakeError) and error.status == 401:
                 __log__.critical(f'\nAuthorization Failed for Node:: {self._node}\n')
+                if self.resume_session:
+                    self.resume_key = self._gen_key() # Auth maybe due to key, so we change it immidiately
+                    self.client.loop.create_task(self._configure_resume())
             else:
                 __log__.error(f'WEBSOCKET | Connection Failure:: {error}')
                 traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
