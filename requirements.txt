@@ -1,0 +1,2 @@
+aiohttp>=3.6.0,<3.7.0
+discord.py>=1.4.0
