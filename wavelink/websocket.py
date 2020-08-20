@@ -134,7 +134,7 @@ class WebSocket:
             pass
         elif self._can_resume:
             base.update({'Resume-Key': str(self.resume_key)})
-        return
+        return base
 
     @property
     def is_connected(self) -> bool:
