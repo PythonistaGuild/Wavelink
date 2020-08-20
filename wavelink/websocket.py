@@ -131,9 +131,10 @@ class WebSocket:
                 'Num-Shards': str(self.shard_count),
                 'User-Id': str(self.user_id)}
         if not self._can_resume:
-            return base
+            pass
         elif self._can_resume:
-            return base.update({'Resume-Key': str(self.resume_key)})
+            base.update({'Resume-Key': str(self.resume_key)})
+        return
 
     @property
     def is_connected(self) -> bool:
@@ -192,8 +193,6 @@ class WebSocket:
             self._node.available = False
             if isinstance(error, aiohttp.WSServerHandshakeError) and error.status == 401:
                 __log__.critical(f'\nAuthorization Failed for Node:: {self._node}\n')
-                if self.resume_session:
-                    self.resume_key = self._gen_key() # Auth maybe due to key, so we change it immidiately
             else:
                 __log__.error(f'WEBSOCKET | Connection Failure:: {error}')
                 traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
