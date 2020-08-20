@@ -38,6 +38,7 @@ if TYPE_CHECKING:
 
 T = TypeVar('T', bound=wavelink.abc.Playable)
 U = TypeVar('U', bound=wavelink.abc.Playlist)
+V = TypeVar('V', bound=wavelink.abc.Searchable)
 
 
 class Node:
@@ -94,7 +95,38 @@ class Node:
 
         return data, resp
 
-    async def get_tracks(self, query: str, cls: Type[T] = wavelink.abc.Track) -> List[T]:  # type: ignore
+    async def get_track(self, cls: Type[T], identifier: str) -> Optional[T]:
+        data, _ = await self._get_data('loadtracks', {'identifier': identifier})
+        load_type = LoadType.try_value(data['loadType'])
+
+        if load_type == LoadType.load_failed:
+            raise LoadTrackError(data)
+
+        if load_type == LoadType.no_matches:
+            return None
+
+        if load_type != LoadType.track_loaded:
+            raise WavelinkException
+
+        track_data = data['tracks'][0]
+        return cls(track_data['track'], track_data['info'])
+
+    async def get_playlist(self, cls: Type[U], identifier: str) -> Optional[U]:
+        data, _ = await self._get_data('loadtracks', {'identifier': identifier})
+        load_type = LoadType.try_value(data['loadType'])
+
+        if load_type == LoadType.load_failed:
+            raise LoadTrackError(data)
+
+        if load_type == LoadType.no_matches:
+            return None
+
+        if load_type != LoadType.playlist_loaded:
+            raise WavelinkException
+
+        return cls(data)
+
+    async def get_tracks(self, cls: Type[V], query: str) -> List[V]:
         data, _ = await self._get_data('loadtracks', {'identifier': query})
         load_type = LoadType.try_value(data['loadType'])
 
@@ -118,38 +150,7 @@ class Node:
 
         return tracks
 
-    async def get_track(self, identifier: str, cls: Type[T] = wavelink.abc.Track) -> Optional[T]:  # type: ignore
-        data, _ = await self._get_data('loadtracks', {'identifier': identifier})
-        load_type = LoadType.try_value(data['loadType'])
-
-        if load_type == LoadType.load_failed:
-            raise LoadTrackError(data)
-
-        if load_type == LoadType.no_matches:
-            return None
-
-        if load_type != LoadType.track_loaded:
-            raise WavelinkException
-
-        track_data = data['tracks'][0]
-        return cls(track_data['track'], track_data['info'])
-
-    async def get_playlist(self, identifier: str, cls: Type[U] = wavelink.abc.Playlist) -> Optional[U]:  # type: ignore
-        data, _ = await self._get_data('loadtracks', {'identifier': identifier})
-        load_type = LoadType.try_value(data['loadType'])
-
-        if load_type == LoadType.load_failed:
-            raise LoadTrackError(data)
-
-        if load_type == LoadType.no_matches:
-            return None
-
-        if load_type != LoadType.playlist_loaded:
-            raise WavelinkException
-
-        return cls(data)
-
-    async def build_track(self, identifier: str, cls: Type[T] = wavelink.abc.Track) -> T:  # type: ignore
+    async def build_track(self, cls: Type[T], identifier: str) -> T:
         data, resp = await self._get_data('decodetrack', {'track': identifier})
 
         if resp.status != 200:

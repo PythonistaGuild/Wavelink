@@ -20,7 +20,11 @@ from __future__ import annotations
 
 import abc
 
-from typing import Any, Dict
+from typing import Any, Dict, List, Type, TypeVar, TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from .node import Node
 
 
 class Playable(metaclass=abc.ABCMeta):
@@ -33,25 +37,13 @@ class Playlist(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-class Track(Playable):
+T = TypeVar('T', bound='Searchable')
 
-    def __init__(self, id: str, data: Dict[str, Any]):
-        super().__init__(id, data)
 
-        self.title = data.get('title')
-        self.identifier = data.get('identifier')
-        self.length = self.duration = data.get('length')
-        self.uri = data.get('uri')
-        self.author = data.get('author')
+class Searchable(Playable):
+    _search_type: str = None  # type: ignore
 
-        self._stream = data.get('isStream')
-        self._dead = False
-
-    def __str__(self):
-        return self.title
-
-    def is_stream(self):
-        return self._stream
-
-    def is_dead(self):
-        return self._dead
+    @classmethod
+    @abc.abstractmethod
+    async def search(cls: Type[T], node: Node, query: str) -> List[T]:
+        ...

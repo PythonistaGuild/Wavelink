@@ -21,7 +21,7 @@ from __future__ import annotations
 import datetime
 import logging
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 import discord
 
@@ -143,8 +143,8 @@ class Player(discord.VoiceProtocol):
         finally:
             self.cleanup()
 
-    async def get_tracks(self, query: str):
-        return await self.node.get_tracks(query)
+    async def get_tracks(self, cls: Type[wavelink.abc.Searchable], query: str):
+        return await self.node.get_tracks(cls, query)
 
     async def move_to(self, channel: discord.VoiceChannel):
         """|coro|

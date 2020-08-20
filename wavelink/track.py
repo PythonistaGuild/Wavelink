@@ -26,21 +26,45 @@ import wavelink.abc
 from .node import Node
 
 
-__all__ = ('Searchable',
+__all__ = ('Track',
+           'SearchableTrack',
            'YouTubeVideo',
            'SoundCloudTrack',
            'YouTubePlaylist')
 
 
-T = TypeVar('T', bound='Searchable')
+class Track(wavelink.abc.Playable):
+
+    def __init__(self, id: str, data: Dict[str, Any]):
+        super().__init__(id, data)
+
+        self.title = data.get('title')
+        self.identifier = data.get('identifier')
+        self.length = self.duration = data.get('length')
+        self.uri = data.get('uri')
+        self.author = data.get('author')
+
+        self._stream = data.get('isStream')
+        self._dead = False
+
+    def __str__(self):
+        return self.title
+
+    def is_stream(self):
+        return self._stream
+
+    def is_dead(self):
+        return self._dead
 
 
-class Searchable(wavelink.abc.Playable):
-    _search_type: str = None  # type: ignore
+T = TypeVar('T', bound='SearchableTrack')
+
+
+class SearchableTrack(Track, wavelink.abc.Searchable):
 
     @classmethod
     async def search(cls: Type[T], node: Node, query: str) -> List[T]:
-        return await node.get_tracks(f'{cls._search_type}:{query}', cls=cls)
+        return await node.get_tracks(cls, f'{cls._search_type}:{query}')
 
     @classmethod
     async def convert(cls, ctx: commands.Context, argument: str):
@@ -53,7 +77,7 @@ class Searchable(wavelink.abc.Playable):
         return results[0]
 
 
-class YouTubeVideo(wavelink.abc.Track, Searchable):
+class YouTubeVideo(SearchableTrack):
     _search_type = 'ytsearch'
 
     @property
@@ -63,7 +87,7 @@ class YouTubeVideo(wavelink.abc.Track, Searchable):
     thumb = thumbnail
 
 
-class SoundCloudTrack(wavelink.abc.Track, Searchable):
+class SoundCloudTrack(SearchableTrack):
     _search_type = 'scsearch'
 
 
