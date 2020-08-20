@@ -31,20 +31,17 @@ import setuptools
 
 
 ROOT = pathlib.Path(__file__).parent
-ON_RTD = os.getenv('READTHEDOCS') == 'True'
-
 
 with open(ROOT / 'requirements.txt', encoding='utf-8') as f:
     REQUIREMENTS = f.readlines()
 
-if ON_RTD:
-    REQUIREMENTS.extend((
-        'pygments',
-        'sphinx==1.7.4',
-        'sphinxcontrib-asyncio',
-        'sphinxcontrib-napoleon',
+EXTRA_REQUIREMENTS = {
+    'docs': [
+        'sphinx==3.2.1',
+        'sphinxcontrib_trio==1.1.2',
         'sphinxcontrib-websupport',
-    ))
+    ]
+}
 
 with open(ROOT / 'README.rst', encoding='utf-8') as f:
     README = f.read()
@@ -64,6 +61,7 @@ setuptools.setup(
     long_description=README,
     include_package_data=True,
     install_requires=REQUIREMENTS,
+    extras_require=EXTRA_REQUIREMENTS,
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Intended Audience :: Developers',

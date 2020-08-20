@@ -84,9 +84,9 @@ T = TypeVar('T', bound='SearchableTrack')
 
 
 class SearchableTrack(Track, wavelink.abc.Searchable):
-    """Reperesents a Lavalink track object which type can be searched for.
+    """Represents a Lavalink track object which type can be searched for.
 
-    This class is a subclas of :class:`~wavelink.track.Track` and as a result
+    This class is a subclass of :class:`Track` and as a result
     inherits it's attributes.
     """
 
@@ -100,14 +100,14 @@ class SearchableTrack(Track, wavelink.abc.Searchable):
 
         Parameters
         ----------
-        node: :class:`~wavelink.node.Node`
-            The :class:`~wavelink.node.Node` to use when searching.
+        node: :class:`Node`
+            The :class:`Node` to use when searching.
         query: str
             The query to search for tracks which relate to.
 
         Returns
         -------
-        List[`~wavelink.track.SearchableTrack`]
+        List[`SearchableTrack`]
             A list of search results.
         """
         return await node.get_tracks(cls, f'{cls._search_type}:{query}')
@@ -124,9 +124,9 @@ class SearchableTrack(Track, wavelink.abc.Searchable):
 
 
 class YouTubeVideo(SearchableTrack):
-    """Reperesents a Lavalink YouTube video object.
+    """Represents a Lavalink YouTube video object.
 
-    This class is a subclas of :class:`~wavelink.track.SearchableTrack` and as a result
+    This class is a subclass of :class:`SearchableTrack` and as a result
     inherits it's attributes.
     """
 
@@ -141,9 +141,9 @@ class YouTubeVideo(SearchableTrack):
 
 
 class SoundCloudTrack(SearchableTrack):
-    """Reperesents a Lavalink SoundCloud track object.
+    """Represents a Lavalink SoundCloud track object.
 
-    This class is a subclas of :class:`~wavelink.track.SearchableTrack` and as a result
+    This class is a subclass of :class:`SearchableTrack` and as a result
     inherits it's attributes.
     """
 
@@ -151,14 +151,14 @@ class SoundCloudTrack(SearchableTrack):
 
 
 class YouTubePlaylist(wavelink.abc.Playlist):
-    """Reperesents a Lavalink YouTube playlist object.
+    """Represents a Lavalink YouTube playlist object.
 
     Attributes
     ----------
     name: str
         The name of the playlist.
-    tracks: :class:`~wavelink.track.YouTubeVideo`
-        The list of :class:`~wavelink.track.YouTubeVideo` in the playlist.
+    tracks: :class:`YouTubeVideo`
+        The list of :class:`YouTubeVideo` in the playlist.
     selected_track: Optional[int]
         The selected video in the playlist. This could be ``None``.
     """

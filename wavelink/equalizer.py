@@ -118,6 +118,3 @@ class Equalizer:
                   (9, 0.0), (10, 0.0), (11, 0.5), (12, 0.25), (13, -0.025)]
 
         return cls(levels=levels, name='Piano')
-
-
-Equaliser = Equalizer

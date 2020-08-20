@@ -4,7 +4,7 @@ __license__ = 'MIT'
 __copyright__ = 'Copyright 2019-2020 (c) PythonistaGuild'
 __version__ = '1.0.0'
 
-from .equalizer import Equalizer, Equaliser
+from .equalizer import Equalizer
 from .errors import *
 from .node import Node
 from .player import Player

@@ -40,7 +40,7 @@ class AuthorizationFailure(WavelinkException):
 
 
 class LoadTrackError(WavelinkException):
-    """Exception raised when an error occured when loading a track."""
+    """Exception raised when an error occurred when loading a track."""
 
     def __init__(self, data: Dict[str, Any]):
         exception = data['exception']

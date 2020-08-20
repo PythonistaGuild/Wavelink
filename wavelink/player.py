@@ -38,19 +38,19 @@ class Player(discord.VoiceProtocol):
     """Represents a Wavelink Player.
 
     .. warning::
-        You should not create :class:`~wavelink.player.Player` objects manually.
-        Instead you should use the :func:`~discord.VoiceChannel.connect` method.
+        You should not create :class:`Player` objects manually.
+        Instead you should use the :func:`~discord.abc.Connectable.connect` method.
 
     Attributes
     ----------
     client: :class:`~discord.Client`
-        The discord :class:`~discord.Client` attached to this :class:`~wavelink.player.Player`.
-    node: :class:`~wavelink.node.Node`
-        The node this :class:`~wavelink.player.Player` belongs to.
+        The discord :class:`~discord.Client` attached to this :class:`Player`.
+    node: :class:`Node`
+        The node this :class:`Player` belongs to.
     channel: Optional[:class:`~discord.VoiceChannel`]
         The :class:`~discord.VoiceChannel` the :class:`~discord.Client` is connected to. Could be ``None``.
     volume: int
-        The :class:`~wavelink.player.Player`'s current volume.
+        The :class:`Player`'s current volume.
     """
 
     def __init__(self, client: discord.Client, channel: discord.VoiceChannel):
@@ -77,7 +77,7 @@ class Player(discord.VoiceProtocol):
 
     @property
     def guild(self) -> discord.Guild:
-        """The :class:`~discord.Guild` this :class:`~wavelink.player.Player` is in."""
+        """The :class:`~discord.Guild` this :class:`Player` is in."""
         return self.channel.guild
 
     @property
@@ -90,7 +90,7 @@ class Player(discord.VoiceProtocol):
         """The currently applied Equalizer."""
         return self._equalizer
 
-    equaliser = eq = equalizer
+    eq = equalizer
 
     @property
     def source(self) -> Optional[wavelink.abc.Playable]:
@@ -163,10 +163,12 @@ class Player(discord.VoiceProtocol):
 
     async def move_to(self, channel: discord.VoiceChannel):
         """|coro|
+
         Moves the player to a different voice channel.
+
         Parameters
         -----------
-        channel: :class:`abc.Snowflake`
+        channel: :class:`~discord,VoiceChannel`
             The channel to move to. Must be a voice channel.
         """
         await self.guild.change_voice_state(channel=channel)
@@ -174,18 +176,20 @@ class Player(discord.VoiceProtocol):
 
     async def play(self, source: wavelink.abc.Playable, replace: bool = True, start: int = 0, end: int = 0):
         """|coro|
+
         Play a WaveLink Track.
+
         Parameters
-        ------------
-        source: :class:`Playable`
-            The :class:`Track` to initiate playing.
+        ----------
+        source: :class:`abc.Playable`
+            The :class:`abc.Playable` to initiate playing.
         replace: bool
-            Whether or not the current track, if there is one, should be replaced or not. Defaults to True.
+            Whether or not the current track, if there is one, should be replaced or not. Defaults to ``True``.
         start: int
-            The position to start the player from in milliseconds. Defaults to 0.
+            The position to start the player from in milliseconds. Defaults to ``0``.
         end: int
-            The position to end the track on in milliseconds. By default this always allows the current
-            song to finish playing.
+            The position to end the track on in milliseconds.
+            By default this always allows the current song to finish playing.
         """
         if replace or not self.is_playing():
             await self.update_state({'state': {}})
@@ -222,6 +226,7 @@ class Player(discord.VoiceProtocol):
 
     async def stop(self):
         """|coro|
+
         Stop the Player's currently playing song.
         """
         await self.node.websocket.send(op='stop', guildId=str(self.guild.id))
@@ -230,9 +235,11 @@ class Player(discord.VoiceProtocol):
 
     async def set_pause(self, pause: bool) -> None:
         """|coro|
+
         Set the players paused state.
+
         Parameters
-        ------------
+        ----------
         pause: bool
             A bool indicating if the player's paused state should be set to True or False.
         """
@@ -242,21 +249,25 @@ class Player(discord.VoiceProtocol):
 
     async def pause(self):
         """|coro|
+
         Pauses the player if it was playing.
         """
         await self.set_pause(True)
 
     async def resume(self):
         """|coro|
+
         Resumes the player if it was paused.
         """
         await self.set_pause(False)
 
     async def set_volume(self, volume: int):
         """|coro|
+
         Set the player's volume, between 0 and 1000.
+
         Parameters
-        ------------
+        ----------
         volume: int
             The volume to set the player to.
         """
@@ -266,9 +277,11 @@ class Player(discord.VoiceProtocol):
 
     async def seek(self, position: int = 0):
         """|coro|
+
         Seek to the given position in the song.
+
         Parameters
-        ------------
+        ----------
         position: int
             The position as an int in milliseconds to seek to. Could be None to seek to beginning.
         """
@@ -276,10 +289,12 @@ class Player(discord.VoiceProtocol):
 
     async def change_node(self, node: Optional[Node]):
         """|coro|
-        Change the players current :class:`wavelink.node.Node`. Useful when a Node fails or when changing regions.
+
+        Change the players current :class:`Node`. Useful when a Node fails or when changing regions.
         The change Node behaviour allows for near seamless fallbacks and changeovers to occur.
+
         Parameters
-        ------------
+        ----------
         Optional[Node]
             The node to change to. If None, the next best available Node will be found.
         """
