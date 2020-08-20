@@ -23,6 +23,8 @@ from discord import Enum
 
 class ErrorSeverity(Enum):
     common = 'COMMON'
+    suspicious = 'SUSPICIOUS'
+    fault = 'FAULT'
 
 
 class LoadType(Enum):

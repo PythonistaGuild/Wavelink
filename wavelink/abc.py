@@ -28,21 +28,41 @@ if TYPE_CHECKING:
 
 
 class Playable(metaclass=abc.ABCMeta):
-    def __init__(self, id: str, data: Dict[str, Any]):
+    """An ABC that defines the basic structure of a lavalink track resource.
+
+    Attributes
+    ----------
+    id: str
+        The base64 identifier for this object.
+    info: Dict[str, Any]
+        The raw data supplied by Lavalink.
+    """
+
+    def __init__(self, id: str, info: Dict[str, Any]):
         self.id = id
+        self.info = info
 
 
 class Playlist(metaclass=abc.ABCMeta):
+    """An ABC that defines the basic structure of a lavalink playlist resource.
+
+    Attributes
+    ----------
+    data: Dict[str, Any]
+        The raw data supplied by Lavalink.
+    """
+
     def __init__(self, data: Dict[str, Any]):
-        raise NotImplementedError
+        self.data = data
 
 
 T = TypeVar('T', bound='Searchable')
 
 
 class Searchable(Playable):
-
+    """An ABC that defines the basic structure of a lavalink track resource type which can be searched for."""
     @classmethod
     @abc.abstractmethod
     async def search(cls: Type[T], node: Node, query: str) -> List[T]:
+
         ...

@@ -28,7 +28,7 @@ import discord
 
 import wavelink.abc
 from .enums import LoadType
-from .errors import BuildTrackError, LoadTrackError, WavelinkException
+from .errors import BuildTrackError, LoadTrackError, NodeOccupied, WavelinkException
 from .websocket import WebSocket
 
 if TYPE_CHECKING:
@@ -42,7 +42,29 @@ V = TypeVar('V', bound=wavelink.abc.Searchable)
 
 
 class Node:
+    """Represents a WaveLink Node.
 
+    .. warning::
+        You should not create :class:`~wavelink.node.Node` objects manually.
+        Instead you should use the :func:`~wavelink.node.Node.create` helper method.
+
+    Attributes
+    ----------
+    client: :class:`~discord.Client`
+        The discord client attached to this node.
+    identifier: str
+        The unique indentifier associated with the node.
+    host: str
+        The host address the node is connected to.
+    port: int
+        The port the node is connected to.
+    rest_uri: str
+        The rest server address the node is connected to.
+    region: :class:`~discord.VoiceRegion`
+        The discord voice region provided to the node on connection.
+    players: List[:class:`~wavelink.player.Player`]
+        The list of players attached to this node.
+    """
     _all_nodes: DefaultDict[discord.Client, List[Node]] = defaultdict(list)
     _session: aiohttp.ClientSession = None  # type: ignore
 
@@ -50,6 +72,10 @@ class Node:
                  region: discord.VoiceRegion, secure: bool = False, shard_id: int = None, heartbeat: float = None):
         self.client = client
         self.identifier = identifier
+
+        node = Node.get_node(client, identifier)
+        if node is not None:
+            raise NodeOccupied(f'Node with identifier ({identifier}) already exists >> {node.__repr__()}')
 
         self.host = host
         self.port = port
@@ -68,19 +94,23 @@ class Node:
 
         self._all_nodes[client].append(self)
 
-    def is_available(self):
+    def is_available(self) -> bool:
+        """Indicates whether the node is currently available."""
         return self.websocket.is_connected() and self._available
 
     def close(self):
+        """Closes the node and makes it unavailable."""
         self._available = False
 
     def open(self):
+        """Opens the node and makes it available."""
         self._available = True
 
     @property
-    def penalty(self):
-        if not self.available or self.stats is None:
-            return float('inf')
+    def penalty(self) -> float:
+        """The load-balancing penalty for this node."""
+        if not self.is_available() or self.stats is None:
+            return 9e30
 
         return self.stats.penalty.total
 
@@ -96,6 +126,29 @@ class Node:
         return data, resp
 
     async def get_track(self, cls: Type[T], identifier: str) -> Optional[T]:
+        """|coro|
+
+        Search for an return a :class:`~wavelink.abc.Playable` given an identifier.
+
+        Parameters
+        ----------
+        cls: Type[:class:`~wavelink.abc.Playable`]
+            The type of which track should be returned, this must subclass :class:`~wavelink.abc.Playable`.
+        identifier: str
+            The track's identifier. This may be a URL to a file or YouTube video for example.
+
+        Returns
+        -------
+        Union[:class:`~wavelink.abc.Playable`, None]:
+            The related wavelink track object or ``None`` if none was found.
+
+        Raises
+        ------
+        LoadTrackError
+            Loading the track failed.
+        WavelinkException
+            An unspecified error occured when loading the track.
+        """
         data, _ = await self._get_data('loadtracks', {'identifier': identifier})
         load_type = LoadType.try_value(data['loadType'])
 
@@ -112,6 +165,29 @@ class Node:
         return cls(track_data['track'], track_data['info'])
 
     async def get_playlist(self, cls: Type[U], identifier: str) -> Optional[U]:
+        """|coro|
+
+        Search for an return a :class:`~wavelink.abc.Playlist` given an identifier.
+
+        Parameters
+        ----------
+        cls: Type[:class:`~wavelink.abc.Playlist`]
+            The type of which playlist should be returned, this must subclass :class:`~wavelink.abc.Playlist`.
+        identifier: str
+            The playlist's identifier. This may be a YouTube playlist URL for example.
+
+        Returns
+        -------
+        Union[:class:`~wavelink.abc.Playlist`, None]:
+            The related wavelink track object or ``None`` if none was found.
+
+        Raises
+        ------
+        LoadTrackError
+            Loading the playlist failed.
+        WavelinkException
+            An unspecified error occured when loading the playlist.
+        """
         data, _ = await self._get_data('loadtracks', {'identifier': identifier})
         load_type = LoadType.try_value(data['loadType'])
 
@@ -127,6 +203,29 @@ class Node:
         return cls(data)
 
     async def get_tracks(self, cls: Type[V], query: str) -> List[V]:
+        """|coro|
+
+        Search for and return a list of :class:`~wavelink.abc.Playable` for a given query.
+
+        Parameters
+        ----------
+        cls: Type[:class:`~wavelink.abc.Playable`]
+            The type of which track should be returned, this must subclass :class:`~wavelink.abc.Playable`.
+        query: str
+            A query to use to search for tracks.
+
+        Returns
+        -------
+        List[:class:`~wavelink.abc.Playable`]:
+            A list of wavelink track objects.
+
+        Raises
+        ------
+        LoadTrackError
+            Loading the track failed.
+        WavelinkException
+            An unspecified error occured when loading the track.
+        """
         data, _ = await self._get_data('loadtracks', {'identifier': query})
         load_type = LoadType.try_value(data['loadType'])
 
@@ -151,6 +250,27 @@ class Node:
         return tracks
 
     async def build_track(self, cls: Type[T], identifier: str) -> T:
+        """|coro|
+
+        Build a track object with a valid track identifier.
+
+        Parameters
+        ------------
+        cls: Type[:class:`~wavelink.abc.Playable`]
+            The type of which track should be returned, this must subclass :class:`~wavelink.abc.Playable`.
+        identifier: str
+            The tracks unique Base64 encoded identifier. This is usually retrieved from various lavalink events.
+
+        Returns
+        ---------
+        :class:`wavelink.player.Track`
+            The track built from a Base64 identifier.
+
+        Raises
+        --------
+        BuildTrackError
+            Decoding and building the track failed.
+        """
         data, resp = await self._get_data('decodetrack', {'track': identifier})
 
         if resp.status != 200:
@@ -159,6 +279,17 @@ class Node:
         return cls(identifier, data)
 
     def get_player(self, guild: discord.Guild) -> Optional[Player]:
+        """Returns a :class:`~wavelink.player.Player` object playing in a specific :class:`~discord.Guild`.
+
+        Parameters
+        ----------
+        guild: :class:`~discord.Guild`
+            The Guild the player is in.
+
+        Returns
+        -------
+        Optional[:class:`~wavelink.player.Player`]
+        """
         for player in self.players:
             if player.guild == guild:
                 return player
@@ -179,10 +310,81 @@ class Node:
 
     @classmethod
     def get_nodes(cls, client: discord.Client) -> List[Node]:
+        """Returns all nodes attached to a given discord client.
+
+        Parameters
+        ----------
+        client: :class:`~discord.Client`
+            The discord client attached to the nodes.
+
+        Returns
+        -------
+        List[:class:`~wavelink.node.Node`]
+        """
         return cls._all_nodes[client]
 
     @classmethod
+    def get_node(cls, client: discord.Client, identifier: str) -> Optional[Node]:
+        """Returns the node attached to the given discord client with matching identifier.
+
+        Parameters
+        ----------
+        client: :class:`~discord.Client`
+            The discord client attached to the nodes.
+        identifier: str
+            The unique identifier for the node.
+
+        Returns
+        -------
+        Optional[:class:`~wavelink.node.Node`]
+
+        """
+        for node in cls.get_nodes(client):
+            if node.identifier == identifier:
+                return node
+        return None
+
+    @classmethod
     async def create(cls, client: discord.Client, **kwargs) -> Node:
+        """|coro|
+
+        Create a new Wavelink Node.
+
+        Parameters
+        ----------
+
+        client: :class:`~discord.Client`
+            The discord client this :class:`~wavelink.node.Node` is attached to.
+        identifier: str
+            A unique identifier for the :class:`~wavelink.node.Node`.
+        host: str
+            The host address to connect to.
+        port: int
+            The port to connect to.
+        rest_uri: str
+            The URI to use to connect to the REST server.
+        password: str
+            The password to authenticate on the server.
+        region: :class:`~discord.VoiceRegion`
+            The discord voice region to associate the :class:`~wavelink.node.Node` with.
+        shard_id: Optional[int]
+            An optional Shard ID to associate with the :class:`~wavelink.node.Node`. Could be None.
+        secure: bool
+            Whether the websocket should be started with the secure wss protocol. Defaults to ``False``.
+        heartbeat: Optional[float]
+            Send ping message every heartbeat seconds and wait pong response, if pong response is not received then close connection.
+
+        Returns
+        -------
+        :class:`~wavelink.node.Node`
+            The newly created Wavelink node.
+
+        Raises
+        ------
+        NodeOccupied
+            A node with provided identifier already exists.
+
+        """
         loop = client.loop or asyncio.get_event_loop()
         if cls._session is None or cls._session.closed:
             cls._session = aiohttp.ClientSession(loop=loop)

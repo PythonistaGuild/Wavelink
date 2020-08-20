@@ -21,7 +21,7 @@ from __future__ import annotations
 import datetime
 import logging
 
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 
 import discord
 
@@ -35,6 +35,23 @@ log = logging.getLogger(__name__)
 
 
 class Player(discord.VoiceProtocol):
+    """Represents a Wavelink Player.
+
+    .. warning::
+        You should not create :class:`~wavelink.player.Player` objects manually.
+        Instead you should use the :func:`~discord.VoiceChannel.connect` method.
+
+    Attributes
+    ----------
+    client: :class:`~discord.Client`
+        The discord :class:`~discord.Client` attached to this :class:`~wavelink.player.Player`.
+    node: :class:`~wavelink.node.Node`
+        The node this :class:`~wavelink.player.Player` belongs to.
+    channel: Optional[:class:`~discord.VoiceChannel`]
+        The :class:`~discord.VoiceChannel` the :class:`~discord.Client` is connected to. Could be ``None``.
+    volume: int
+        The :class:`~wavelink.player.Player`'s current volume.
+    """
 
     def __init__(self, client: discord.Client, channel: discord.VoiceChannel):
         self.client = client
@@ -60,10 +77,12 @@ class Player(discord.VoiceProtocol):
 
     @property
     def guild(self) -> discord.Guild:
+        """The :class:`~discord.Guild` this :class:`~wavelink.player.Player` is in."""
         return self.channel.guild
 
     @property
     def user(self) -> discord.ClientUser:
+        """The :class:`~discord.ClientUser` of the :class:`~discord.Client`"""
         return self.client.user
 
     @property
@@ -71,19 +90,18 @@ class Player(discord.VoiceProtocol):
         """The currently applied Equalizer."""
         return self._equalizer
 
-    @property
-    def eq(self) -> Equalizer:
-        """Alias to :func:`equalizer`."""
-        return self.equalizer
+    equaliser = eq = equalizer
 
     @property
     def source(self) -> Optional[wavelink.abc.Playable]:
+        """The currently playing audio source."""
         return self._source
 
     track = source
 
     @property
     def position(self):
+        """The current seek position of the playing source in seconds. If nothing is playing this defaults to ``0``."""
         if not self.is_playing():
             return 0
 
@@ -142,9 +160,6 @@ class Player(discord.VoiceProtocol):
             self._connected = False
         finally:
             self.cleanup()
-
-    async def get_tracks(self, cls: Type[wavelink.abc.Searchable], query: str):
-        return await self.node.get_tracks(cls, query)
 
     async def move_to(self, channel: discord.VoiceChannel):
         """|coro|

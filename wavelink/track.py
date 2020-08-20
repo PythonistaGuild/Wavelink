@@ -34,26 +34,49 @@ __all__ = ('Track',
 
 
 class Track(wavelink.abc.Playable):
+    """a Lavalink track object.
 
-    def __init__(self, id: str, data: Dict[str, Any]):
-        super().__init__(id, data)
+    Attributes
+    ------------
+    id: str
+        The Base64 Track ID, can be used to rebuild track objects.
+    info: Dict[str, Any]
+        The raw track info.
+    title: str
+        The track title.
+    identifier: Optional[str]
+        The tracks identifier. could be None depending on track type.
+    length:
+        The duration of the track.
+    duration:
+        Alias to ``length``.
+    uri: Optional[str]
+        The tracks URI. Could be None.
+    author: Optional[str]
+        The author of the track. Could be None
+    """
 
-        self.title = data.get('title')
-        self.identifier = data.get('identifier')
-        self.length = self.duration = data.get('length')
-        self.uri = data.get('uri')
-        self.author = data.get('author')
+    def __init__(self, id: str, info: Dict[str, Any]):
+        self.id = id
+        self.info = info
+        self.title = info.get('title')
+        self.identifier = info.get('identifier')
+        self.length = self.duration = info.get('length')
+        self.uri = info.get('uri')
+        self.author = info.get('author')
 
-        self._stream = data.get('isStream')
+        self._stream: bool = info.get('isStream')  # type: ignore
         self._dead = False
 
     def __str__(self):
         return self.title
 
-    def is_stream(self):
+    def is_stream(self) -> bool:
+        """Indicates whether the track is a stream or not."""
         return self._stream
 
-    def is_dead(self):
+    def is_dead(self) -> bool:
+        """Indicates whether the track is dead or not."""
         return self._dead
 
 
@@ -61,10 +84,32 @@ T = TypeVar('T', bound='SearchableTrack')
 
 
 class SearchableTrack(Track, wavelink.abc.Searchable):
+    """Reperesents a Lavalink track object which type can be searched for.
+
+    This class is a subclas of :class:`~wavelink.track.Track` and as a result
+    inherits it's attributes.
+    """
+
     _search_type: str = None  # type: ignore
 
     @classmethod
     async def search(cls: Type[T], node: Node, query: str) -> List[T]:
+        """|coro|
+
+        Search for tracks of this type which match a query.
+
+        Parameters
+        ----------
+        node: :class:`~wavelink.node.Node`
+            The :class:`~wavelink.node.Node` to use when searching.
+        query: str
+            The query to search for tracks which relate to.
+
+        Returns
+        -------
+        List[`~wavelink.track.SearchableTrack`]
+            A list of search results.
+        """
         return await node.get_tracks(cls, f'{cls._search_type}:{query}')
 
     @classmethod
@@ -79,25 +124,51 @@ class SearchableTrack(Track, wavelink.abc.Searchable):
 
 
 class YouTubeVideo(SearchableTrack):
+    """Reperesents a Lavalink YouTube video object.
+
+    This class is a subclas of :class:`~wavelink.track.SearchableTrack` and as a result
+    inherits it's attributes.
+    """
+
     _search_type = 'ytsearch'
 
     @property
-    def thumbnail(self):
+    def thumbnail(self) -> str:
+        """The URL to the thumbnail of this video."""
         return f"https://img.youtube.com/vi/{self.identifier}/maxresdefault.jpg"
 
     thumb = thumbnail
 
 
 class SoundCloudTrack(SearchableTrack):
+    """Reperesents a Lavalink SoundCloud track object.
+
+    This class is a subclas of :class:`~wavelink.track.SearchableTrack` and as a result
+    inherits it's attributes.
+    """
+
     _search_type = 'scsearch'
 
 
 class YouTubePlaylist(wavelink.abc.Playlist):
+    """Reperesents a Lavalink YouTube playlist object.
+
+    Attributes
+    ----------
+    name: str
+        The name of the playlist.
+    tracks: :class:`~wavelink.track.YouTubeVideo`
+        The list of :class:`~wavelink.track.YouTubeVideo` in the playlist.
+    selected_track: Optional[int]
+        The selected video in the playlist. This could be ``None``.
+    """
 
     def __init__(self, data: Dict[str, Any]):
         self.tracks: List[YouTubeVideo] = []
         self.name = data['playlistInfo']['name']
-        self.selected_track = int(data['playlistInfo']['selectedTrack'])
+        self.selected_track = data['playlistInfo'].get('selectedTrack')
+        if self.selected_track is not None:
+            self.selected_track = int(self.selected_track)
 
         for track_data in data['tracks']:
             track = YouTubeVideo(track_data['track'], track_data['info'])
