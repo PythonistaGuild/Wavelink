@@ -45,18 +45,12 @@ class Music(commands.Cog):
         await ctx.author.voice.channel.connect(cls=wavelink.Player)
 
     @commands.command()
-    async def play(self, ctx, *, query: str):
+    async def play(self, ctx, *, video: wavelink.YouTubeVideo):
         if ctx.guild.voice_client is None:
             await ctx.invoke(self.connect_)
 
-        player = ctx.guild.voice_client
-        tracks = await player.get_tracks(f'ytsearch:{query}')
-
-        if not tracks:
-            return await ctx.send('Could not find any songs with that query.')
-
-        await ctx.send(f'Added {str(tracks[0])} to the queue.')
-        await player.play(tracks[0])
+        await ctx.send(f'Added {str(video)} to the queue.')
+        await ctx.guild.voice_client.play(video)
 
 
 bot = Bot()

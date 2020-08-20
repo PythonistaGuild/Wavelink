@@ -25,10 +25,10 @@ from typing import Any, Dict, Optional
 
 import discord
 
+import wavelink.abc
 from .equalizer import Equalizer
 from .errors import WavelinkException, ZeroConnectedNodes
 from .node import Node
-from .playable import Playable
 
 
 log = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class Player(discord.VoiceProtocol):
 
         self.volume = 100
         self._paused = False
-        self._source: Optional[Playable] = None
+        self._source: Optional[wavelink.abc.Playable] = None
         self._equalizer = Equalizer.flat()
 
     @property
@@ -77,7 +77,7 @@ class Player(discord.VoiceProtocol):
         return self.equalizer
 
     @property
-    def source(self) -> Optional[Playable]:
+    def source(self) -> Optional[wavelink.abc.Playable]:
         return self._source
 
     track = source
@@ -157,7 +157,7 @@ class Player(discord.VoiceProtocol):
         await self.guild.change_voice_state(channel=channel)
         log.info(f'PLAYER | Moving to voice channel:: {channel.id}')
 
-    async def play(self, source: Playable, replace: bool = True, start: int = 0, end: int = 0):
+    async def play(self, source: wavelink.abc.Playable, replace: bool = True, start: int = 0, end: int = 0):
         """|coro|
         Play a WaveLink Track.
         Parameters

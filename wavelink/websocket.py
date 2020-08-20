@@ -125,7 +125,7 @@ class WebSocket:
             return
 
         try:
-            player: Player = self.node.get_player(self.client.get_guild(int(data['guildId'])))
+            player: Player = self.node.get_player(self.client.get_guild(int(data['guildId'])))  # type: ignore
         except KeyError:
             return
 

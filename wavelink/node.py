@@ -26,9 +26,9 @@ from typing import Any, DefaultDict, Dict, Generator, List, Optional, Tuple, Typ
 import aiohttp
 import discord
 
+import wavelink.abc
 from .enums import LoadType
 from .errors import BuildTrackError, LoadTrackError, WavelinkException
-from .playable import Playable, Track, Playlist
 from .websocket import WebSocket
 
 if TYPE_CHECKING:
@@ -36,8 +36,8 @@ if TYPE_CHECKING:
     from .stats import Stats
 
 
-T = TypeVar('T', bound=Playable)
-U = TypeVar('U', bound=Playlist)
+T = TypeVar('T', bound=wavelink.abc.Playable)
+U = TypeVar('U', bound=wavelink.abc.Playlist)
 
 
 class Node:
@@ -94,7 +94,7 @@ class Node:
 
         return data, resp
 
-    async def get_tracks(self, query: str, cls: Type[T] = Track) -> List[T]:  # type: ignore
+    async def get_tracks(self, query: str, cls: Type[T] = wavelink.abc.Track) -> List[T]:  # type: ignore
         data, _ = await self._get_data('loadtracks', {'identifier': query})
         load_type = LoadType.try_value(data['loadType'])
 
@@ -118,7 +118,7 @@ class Node:
 
         return tracks
 
-    async def get_track(self, identifier: str, cls: Type[T] = Track) -> Optional[T]:  # type: ignore
+    async def get_track(self, identifier: str, cls: Type[T] = wavelink.abc.Track) -> Optional[T]:  # type: ignore
         data, _ = await self._get_data('loadtracks', {'identifier': identifier})
         load_type = LoadType.try_value(data['loadType'])
 
@@ -134,7 +134,7 @@ class Node:
         track_data = data['tracks'][0]
         return cls(track_data['track'], track_data['info'])
 
-    async def get_playlist(self, identifier: str, cls: Type[U] = Playlist) -> Optional[U]:  # type: ignore
+    async def get_playlist(self, identifier: str, cls: Type[U] = wavelink.abc.Playlist) -> Optional[U]:  # type: ignore
         data, _ = await self._get_data('loadtracks', {'identifier': identifier})
         load_type = LoadType.try_value(data['loadType'])
 
@@ -149,7 +149,7 @@ class Node:
 
         return cls(data)
 
-    async def build_track(self, identifier: str, cls: Type[T] = Track) -> T:  # type: ignore
+    async def build_track(self, identifier: str, cls: Type[T] = wavelink.abc.Track) -> T:  # type: ignore
         data, resp = await self._get_data('decodetrack', {'track': identifier})
 
         if resp.status != 200:

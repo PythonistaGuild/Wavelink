@@ -18,38 +18,17 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Type, TypeVar, TYPE_CHECKING
+import abc
 
-if TYPE_CHECKING:
-    from .node import Node
-
-
-__all__ = ('Playable',
-           'Searchable',
-           'Track',
-           'Playlist',
-           'YouTubeVideo',
-           'SoundCloudTrack',
-           'YouTubePlaylist')
+from typing import Any, Dict
 
 
-class Playable:
+class Playable(metaclass=abc.ABCMeta):
     def __init__(self, id: str, data: Dict[str, Any]):
         self.id = id
 
 
-T = TypeVar('T', bound='Searchable')
-
-
-class Searchable(Playable):
-    _search_type: str = None  # type: ignore
-
-    @classmethod
-    async def search(cls: Type[T], node: Node, query: str) -> List[T]:
-        return await node.get_tracks(f'{cls._search_type}:{query}', cls=cls)
-
-
-class Playlist:
+class Playlist(metaclass=abc.ABCMeta):
     def __init__(self, data: Dict[str, Any]):
         raise NotImplementedError
 
@@ -76,29 +55,3 @@ class Track(Playable):
 
     def is_dead(self):
         return self._dead
-
-
-class YouTubeVideo(Track, Searchable):
-    _search_type = 'ytsearch'
-
-    @property
-    def thumbnail(self):
-        return f"https://img.youtube.com/vi/{self.identifier}/maxresdefault.jpg"
-
-    thumb = thumbnail
-
-
-class SoundCloudTrack(Track, Searchable):
-    _search_type = 'scsearch'
-
-
-class YouTubePlaylist(Playlist):
-
-    def __init__(self, data: Dict[str, Any]):
-        self.tracks: List[YouTubeVideo] = []
-        self.name = data['playlistInfo']['name']
-        self.selected_track = int(data['playlistInfo']['selectedTrack'])
-
-        for track_data in data['tracks']:
-            track = YouTubeVideo(track_data['track'], track_data['info'])
-            self.tracks.append(track)
