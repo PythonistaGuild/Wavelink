@@ -28,7 +28,7 @@ import discord
 from .equalizer import Equalizer
 from .errors import WavelinkException, ZeroConnectedNodes
 from .node import Node
-from .track import Track
+from .playable import Playable
 
 
 log = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class Player(discord.VoiceProtocol):
 
         self.volume = 100
         self._paused = False
-        self._track: Optional[Track] = None
+        self._source: Optional[Playable] = None
         self._equalizer = Equalizer.flat()
 
     @property
@@ -77,8 +77,10 @@ class Player(discord.VoiceProtocol):
         return self.equalizer
 
     @property
-    def track(self) -> Optional[Track]:
-        return self._track
+    def source(self) -> Optional[Playable]:
+        return self._source
+
+    track = source
 
     @property
     def position(self):
@@ -155,12 +157,12 @@ class Player(discord.VoiceProtocol):
         await self.guild.change_voice_state(channel=channel)
         log.info(f'PLAYER | Moving to voice channel:: {channel.id}')
 
-    async def play(self, track: Track, replace: bool = True, start: int = 0, end: int = 0):
+    async def play(self, source: Playable, replace: bool = True, start: int = 0, end: int = 0):
         """|coro|
         Play a WaveLink Track.
         Parameters
         ------------
-        track: :class:`Track`
+        source: :class:`Playable`
             The :class:`Track` to initiate playing.
         replace: bool
             Whether or not the current track, if there is one, should be replaced or not. Defaults to True.
@@ -176,14 +178,12 @@ class Player(discord.VoiceProtocol):
         else:
             return
 
-        no_replace = not replace
-
-        self._track = track
+        self._source = source
 
         payload = {'op': 'play',
                    'guildId': str(self.guild.id),
-                   'track': track.id,
-                   'noReplace': no_replace,
+                   'track': source.id,
+                   'noReplace': not replace,
                    'startTime': str(start)
                    }
         if end > 0:
@@ -191,7 +191,7 @@ class Player(discord.VoiceProtocol):
 
         await self.node.websocket.send(**payload)
 
-        log.debug(f'PLAYER | Started playing track:: {str(track)} ({self.channel.id})')
+        log.debug(f'PLAYER | Started playing track:: {str(source)} ({self.channel.id})')
 
     def is_connected(self) -> bool:
         """Indicates whether the player is connected to voice."""
@@ -199,7 +199,7 @@ class Player(discord.VoiceProtocol):
 
     def is_playing(self) -> bool:
         """Indicates wether a track is currently being played."""
-        return self.is_connected() and self._track is not None
+        return self.is_connected() and self._source is not None
 
     def is_paused(self) -> bool:
         """Indicates wether the currently playing track is paused."""
@@ -211,7 +211,7 @@ class Player(discord.VoiceProtocol):
         """
         await self.node.websocket.send(op='stop', guildId=str(self.guild.id))
         log.debug(f'PLAYER | Current track stopped:: {str(self.track)} ({self.channel.id})')
-        self._track = None
+        self._source = None
 
     async def set_pause(self, pause: bool) -> None:
         """|coro|
@@ -288,8 +288,8 @@ class Player(discord.VoiceProtocol):
         if self._voice_state:
             await self._dispatch_voice_update(self._voice_state)
 
-        if self._track:
-            await self.node.websocket.send(op='play', guildId=str(self.guild.id), track=self._track.id, startTime=int(self.position))
+        if self._source is not None:
+            await self.node.websocket.send(op='play', guildId=str(self.guild.id), track=self._source.id, startTime=int(self.position))
             self.last_update = datetime.datetime.utcnow()
 
             if self.is_paused():

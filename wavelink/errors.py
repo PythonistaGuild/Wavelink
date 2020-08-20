@@ -18,9 +18,13 @@ SOFTWARE.
 """
 from __future__ import annotations
 
+from typing import Any, Dict
+
+from .enums import ErrorSeverity
 
 __all__ = ('WavelinkException',
            'AuthorizationFailure',
+           'LoadTrackError',
            'BuildTrackError',
            'NodeOccupied',
            'InvalidIDProvided',
@@ -35,8 +39,20 @@ class AuthorizationFailure(WavelinkException):
     """Exception raised when an invalid password is provided toa node."""
 
 
+class LoadTrackError(WavelinkException):
+    """Exception raised when an error occured when loading a track."""
+
+    def __init__(self, data: Dict[str, Any]):
+        exception = data['exception']
+        self.severity = ErrorSeverity.try_value(exception['severity'])
+        super().__init__(exception['message'])
+
+
 class BuildTrackError(WavelinkException):
     """Exception raised when a track is failed to be decoded and re-built."""
+
+    def __init__(self, data: Dict[str, Any]):
+        super().__init__(data['error'])
 
 
 class NodeOccupied(WavelinkException):

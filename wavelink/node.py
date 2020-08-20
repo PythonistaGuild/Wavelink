@@ -21,18 +21,23 @@ from __future__ import annotations
 import asyncio
 
 from collections import defaultdict
-from typing import DefaultDict, Generator, List, Optional, TYPE_CHECKING, Union
+from typing import Any, DefaultDict, Dict, Generator, List, Optional, Tuple, Type, TypeVar, TYPE_CHECKING
 
 import aiohttp
 import discord
 
-from .errors import BuildTrackError
-from .track import Track, Playlist
+from .enums import LoadType
+from .errors import BuildTrackError, LoadTrackError, WavelinkException
+from .playable import Playable, Track, Playlist
 from .websocket import WebSocket
 
 if TYPE_CHECKING:
     from .player import Player
     from .stats import Stats
+
+
+T = TypeVar('T', bound=Playable)
+U = TypeVar('U', bound=Playlist)
 
 
 class Node:
@@ -82,31 +87,75 @@ class Node:
         self.websocket = websocket = WebSocket(self, self.host, self.port, self.password, self.secure)
         await websocket.connect()
 
-    async def get_tracks(self, query: str) -> Union[List[Track], Playlist]:
+    async def _get_data(self, endpoint: str, params: Dict[str, str]) -> Tuple[Dict[str, Any], aiohttp.ClientResponse]:
         headers = {'Authorization': self.password}
-        async with self._session.get(f'{self.rest_uri}/loadtracks?identifier={query}', headers=headers) as resp:
+        async with self._session.get(f'{self.rest_uri}/{endpoint}', headers=headers, params=params) as resp:
             data = await resp.json()
 
-        if data['playlistInfo']:
-            return Playlist(data)
+        return data, resp
+
+    async def get_tracks(self, query: str, cls: Type[T] = Track) -> List[T]:  # type: ignore
+        data, _ = await self._get_data('loadtracks', {'identifier': query})
+        load_type = LoadType.try_value(data['loadType'])
+
+        if load_type == LoadType.load_failed:
+            raise LoadTrackError(data)
+
+        if load_type == LoadType.no_matches:
+            return []
+
+        if load_type == LoadType.track_loaded:
+            track_data = data['tracks'][0]
+            return [cls(track_data['track'], track_data['info'])]
+
+        if load_type != LoadType.search_result:
+            raise WavelinkException
 
         tracks = []
-        for track in data['tracks']:
-            tracks.append(Track(track))
+        for track_data in data['tracks']:
+            track = cls(track_data['track'], track_data['info'])
+            tracks.append(track)
 
         return tracks
 
-    async def build_track(self, identifier: str) -> Track:
-        headers = {'Authorization': self.password}
-        params = {'track': identifier}
-        async with self._session.get(f'{self.rest_uri}/decodetrack?',
-                                     headers=headers, params=params) as resp:
-            data = await resp.json()
+    async def get_track(self, identifier: str, cls: Type[T] = Track) -> Optional[T]:  # type: ignore
+        data, _ = await self._get_data('loadtracks', {'identifier': identifier})
+        load_type = LoadType.try_value(data['loadType'])
 
-            if resp.status != 200:
-                raise BuildTrackError
+        if load_type == LoadType.load_failed:
+            raise LoadTrackError(data)
 
-        return Track(data)
+        if load_type == LoadType.no_matches:
+            return None
+
+        if load_type != LoadType.track_loaded:
+            raise WavelinkException
+
+        track_data = data['tracks'][0]
+        return cls(track_data['track'], track_data['info'])
+
+    async def get_playlist(self, identifier: str, cls: Type[U] = Playlist) -> Optional[U]:  # type: ignore
+        data, _ = await self._get_data('loadtracks', {'identifier': identifier})
+        load_type = LoadType.try_value(data['loadType'])
+
+        if load_type == LoadType.load_failed:
+            raise LoadTrackError(data)
+
+        if load_type == LoadType.no_matches:
+            return None
+
+        if load_type != LoadType.playlist_loaded:
+            raise WavelinkException
+
+        return cls(data)
+
+    async def build_track(self, identifier: str, cls: Type[T] = Track) -> T:  # type: ignore
+        data, resp = await self._get_data('decodetrack', {'track': identifier})
+
+        if resp.status != 200:
+            raise BuildTrackError(data)
+
+        return cls(identifier, data)
 
     def get_player(self, guild: discord.Guild) -> Optional[Player]:
         for player in self.players:

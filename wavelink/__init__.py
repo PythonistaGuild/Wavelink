@@ -8,4 +8,4 @@ from .equalizer import Equalizer
 from .errors import *
 from .node import Node
 from .player import Player
-from .track import *
+from .playable import *
