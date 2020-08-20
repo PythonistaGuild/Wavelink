@@ -41,7 +41,6 @@ T = TypeVar('T', bound='Searchable')
 
 
 class Searchable(Playable):
-    _search_type: str = None  # type: ignore
 
     @classmethod
     @abc.abstractmethod

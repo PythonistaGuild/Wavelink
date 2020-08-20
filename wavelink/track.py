@@ -61,6 +61,7 @@ T = TypeVar('T', bound='SearchableTrack')
 
 
 class SearchableTrack(Track, wavelink.abc.Searchable):
+    _search_type: str = None  # type: ignore
 
     @classmethod
     async def search(cls: Type[T], node: Node, query: str) -> List[T]:
