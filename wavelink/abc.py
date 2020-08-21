@@ -36,11 +36,16 @@ class Playable(metaclass=abc.ABCMeta):
         The base64 identifier for this object.
     info: Dict[str, Any]
         The raw data supplied by Lavalink.
+    length:
+        The duration of the track.
+    duration:
+        Alias to ``length``.
     """
 
     def __init__(self, id: str, info: Dict[str, Any]):
         self.id = id
         self.info = info
+        self.length = self.duration = info.get('length', 0) / 1000
 
 
 class Playlist(metaclass=abc.ABCMeta):

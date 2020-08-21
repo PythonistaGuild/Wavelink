@@ -47,7 +47,7 @@ class Track(wavelink.abc.Playable):
     identifier: Optional[str]
         The tracks identifier. could be None depending on track type.
     length:
-        The duration of the track.
+        The duration of the track in seconds.
     duration:
         Alias to ``length``.
     uri: Optional[str]
@@ -57,11 +57,9 @@ class Track(wavelink.abc.Playable):
     """
 
     def __init__(self, id: str, info: Dict[str, Any]):
-        self.id = id
-        self.info = info
+        super().__init__(id, info)
         self.title = info.get('title')
         self.identifier = info.get('identifier')
-        self.length = self.duration = info.get('length')
         self.uri = info.get('uri')
         self.author = info.get('author')
 

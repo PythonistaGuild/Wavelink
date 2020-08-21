@@ -68,7 +68,6 @@ class Player(discord.VoiceProtocol):
 
         self.last_update: datetime.datetime = None  # type: ignore
         self.last_position: float = None  # type: ignore
-        self.position_timestamp: float = None  # type: ignore
 
         self.volume = 100
         self._paused = False
@@ -100,28 +99,24 @@ class Player(discord.VoiceProtocol):
     track = source
 
     @property
-    def position(self):
+    def position(self) -> float:
         """The current seek position of the playing source in seconds. If nothing is playing this defaults to ``0``."""
         if not self.is_playing():
             return 0
 
         if self.is_paused():
-            return min(self.last_position, self.track.duration)
+            return min(self.last_position, self.source.duration)  # type: ignore
 
-        difference = (datetime.datetime.utcnow() - self.last_update).total_seconds()
-        position = self.last_position + difference
+        delta = (datetime.datetime.now(datetime.timezone.utc) - self.last_update).total_seconds()
+        position = round(self.last_position + delta, 1)
 
-        if position > self.track.duration:
-            return 0
-
-        return min(position, self.track.duration)
+        return min(position, self.source.duration)  # type: ignore
 
     async def update_state(self, state: Dict[str, Any]):
         state = state['state']
 
-        self.last_update = datetime.datetime.utcnow()
-        self.last_position = state.get('position', 0)
-        self.position_timestamp = state.get('time', 0)
+        self.last_update = datetime.datetime.fromtimestamp(state.get('time', 0) / 1000, datetime.timezone.utc)
+        self.last_position = round(state.get('position', 0) / 1000, 1)
 
     async def on_voice_server_update(self, data: Dict[str, Any]):
         self._voice_state.update({
@@ -230,7 +225,7 @@ class Player(discord.VoiceProtocol):
         Stop the Player's currently playing song.
         """
         await self.node.websocket.send(op='stop', guildId=str(self.guild.id))
-        log.debug(f'PLAYER | Current track stopped:: {str(self.track)} ({self.channel.id})')
+        log.debug(f'PLAYER | Current track stopped:: {str(self.source)} ({self.channel.id})')
         self._source = None
 
     async def set_pause(self, pause: bool) -> None:
@@ -320,7 +315,7 @@ class Player(discord.VoiceProtocol):
 
         if self._source is not None:
             await self.node.websocket.send(op='play', guildId=str(self.guild.id), track=self._source.id, startTime=int(self.position))
-            self.last_update = datetime.datetime.utcnow()
+            self.last_update = datetime.datetime.now(datetime.timezone.utc)
 
             if self.is_paused():
                 await self.node.websocket.send(op='pause', guildId=str(self.guild.id), pause=self._paused)
