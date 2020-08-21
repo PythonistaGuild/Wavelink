@@ -304,11 +304,11 @@ class Player(discord.VoiceProtocol):
                 raise WavelinkException('No Nodes available for changeover.')
 
         old_node = self.node
-        del old_node.players[self.guild.id]
+        old_node.players.remove(self)
         await old_node.websocket.send(op='destroy', guildId=str(self.guild.id))
 
         self.node = node
-        self.node.players[self.guild.id] = self
+        self.node.players.append(self)
 
         if self._voice_state:
             await self._dispatch_voice_update(self._voice_state)
