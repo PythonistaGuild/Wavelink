@@ -28,7 +28,7 @@ import discord
 
 import wavelink.abc
 from .enums import LoadType
-from .errors import BuildTrackError, LoadTrackError, NodeOccupied, WavelinkException
+from .errors import BuildTrackError, LoadTrackError, NodeOccupied, LavalinkException
 from .websocket import WebSocket
 
 if TYPE_CHECKING:
@@ -146,11 +146,15 @@ class Node:
         ------
         LoadTrackError
             Loading the track failed.
-        WavelinkException
+        LavalinkException
             An unspecified error occurred when loading the track.
         """
-        data, _ = await self._get_data('loadtracks', {'identifier': identifier})
-        load_type = LoadType.try_value(data['loadType'])
+        data, resp = await self._get_data('loadtracks', {'identifier': identifier})
+
+        if resp.status != 200:
+            raise LavalinkException('Invalid response from Lavalink server.')
+
+        load_type = LoadType.try_value(data.get('loadType'))
 
         if load_type == LoadType.load_failed:
             raise LoadTrackError(data)
@@ -159,7 +163,7 @@ class Node:
             return None
 
         if load_type != LoadType.track_loaded:
-            raise WavelinkException
+            raise LavalinkException('Track failed to load.')
 
         track_data = data['tracks'][0]
         return cls(track_data['track'], track_data['info'])
@@ -185,11 +189,15 @@ class Node:
         ------
         LoadTrackError
             Loading the playlist failed.
-        WavelinkException
+        LavalinkException
             An unspecified error occurred when loading the playlist.
         """
-        data, _ = await self._get_data('loadtracks', {'identifier': identifier})
-        load_type = LoadType.try_value(data['loadType'])
+        data, resp = await self._get_data('loadtracks', {'identifier': identifier})
+
+        if resp.status != 200:
+            raise LavalinkException('Invalid response from Lavalink server.')
+
+        load_type = LoadType.try_value(data.get('loadType'))
 
         if load_type == LoadType.load_failed:
             raise LoadTrackError(data)
@@ -198,7 +206,7 @@ class Node:
             return None
 
         if load_type != LoadType.playlist_loaded:
-            raise WavelinkException
+            raise LavalinkException('Track failed to load.')
 
         return cls(data)
 
@@ -223,11 +231,15 @@ class Node:
         ------
         LoadTrackError
             Loading the track failed.
-        WavelinkException
+        LavalinkException
             An unspecified error occurred when loading the track.
         """
-        data, _ = await self._get_data('loadtracks', {'identifier': query})
-        load_type = LoadType.try_value(data['loadType'])
+        data, resp = await self._get_data('loadtracks', {'identifier': query})
+
+        if resp.status != 200:
+            raise LavalinkException('Invalid response from Lavalink server.')
+
+        load_type = LoadType.try_value(data.get('loadType'))
 
         if load_type == LoadType.load_failed:
             raise LoadTrackError(data)
@@ -240,7 +252,7 @@ class Node:
             return [cls(track_data['track'], track_data['info'])]
 
         if load_type != LoadType.search_result:
-            raise WavelinkException
+            raise LavalinkException('Track failed to load.')
 
         tracks = []
         for track_data in data['tracks']:

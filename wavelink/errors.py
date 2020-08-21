@@ -39,7 +39,11 @@ class AuthorizationFailure(WavelinkException):
     """Exception raised when an invalid password is provided toa node."""
 
 
-class LoadTrackError(WavelinkException):
+class LavalinkException(WavelinkException):
+    """Exception raised when an error occurs talking to Lavalink."""
+
+
+class LoadTrackError(LavalinkException):
     """Exception raised when an error occurred when loading a track."""
 
     def __init__(self, data: Dict[str, Any]):
@@ -48,7 +52,7 @@ class LoadTrackError(WavelinkException):
         super().__init__(exception['message'])
 
 
-class BuildTrackError(WavelinkException):
+class BuildTrackError(LavalinkException):
     """Exception raised when a track is failed to be decoded and re-built."""
 
     def __init__(self, data: Dict[str, Any]):
