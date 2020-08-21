@@ -24,6 +24,7 @@ from .enums import ErrorSeverity
 
 __all__ = ('WavelinkException',
            'AuthorizationFailure',
+           'LavalinkException',
            'LoadTrackError',
            'BuildTrackError',
            'NodeOccupied',
