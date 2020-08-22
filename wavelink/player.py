@@ -154,6 +154,7 @@ class Player(discord.VoiceProtocol):
             await self.guild.change_voice_state(channel=None)
             self._connected = False
         finally:
+            self.node.players.remove(self)
             self.cleanup()
 
     async def move_to(self, channel: discord.VoiceChannel):
