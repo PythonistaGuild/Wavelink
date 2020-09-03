@@ -1,6 +1,6 @@
 Wavelink
 ================
-Welcome to WaveLink's Documentation. WaveLink is a robust and powerful Lavalink warppper for discord.py.
+Welcome to WaveLink's Documentation. WaveLink is a robust and powerful Lavalink wrapper for discord.py.
 
 Support
 ---------------------------
