@@ -10,7 +10,7 @@
 .. image:: https://img.shields.io/github/license/EvieePy/Wavelink.svg
     :target: LICENSE
 
-A robust and powerful Lavalink wrapper for discord.py@rewrite!
+A robust and powerful Lavalink wrapper for `Discord.py <https://github.com/Rapptz/discord.py>`_!
 
 Documentation
 ---------------------------
