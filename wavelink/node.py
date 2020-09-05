@@ -20,12 +20,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import asyncio
 import inspect
 import logging
 from discord.ext import commands
 from typing import Optional, Union
 from urllib.parse import quote
 
+from .backoff import ExponentialBackoff
 from .errors import *
 from .player import Player, Track, TrackPlaylist
 from .websocket import WebSocket
@@ -130,7 +132,7 @@ class Node:
 
         __log__.info(f'NODE | {self.identifier} connected:: {self.__repr__()}')
 
-    async def get_tracks(self, query: str) -> Union[list, TrackPlaylist, None]:
+    async def get_tracks(self, query: str, *, retry_on_failure: bool = True) -> Union[list, TrackPlaylist, None]:
         """|coro|
 
         Search for and return a list of Tracks for the given query.
@@ -140,6 +142,10 @@ class Node:
         query: str
             The query to use to search for tracks. If a valid URL is not provided, it's best to default to
             "ytsearch:query", which allows the REST server to search YouTube for Tracks.
+        retry_on_failure: bool
+            Bool indicating whether the Node should retry upto a maximum of 5 attempts on load failure.
+            If this is set to True, the Node will attempt to retrieve tracks with an exponential backoff delay
+            between retries. Defaults to True.
 
         Returns
         ---------
@@ -147,24 +153,43 @@ class Node:
             A list of or TrackPlaylist instance of :class:`wavelink.player.Track` objects.
             This could be None if no tracks were found.
         """
-        async with self.session.get(f'{self.rest_uri}/loadtracks?identifier={quote(query)}',
-                                    headers={'Authorization': self.password}) as resp:
-            data = await resp.json()
+        backoff = ExponentialBackoff(base=1)
 
-            if not data['tracks']:
-                __log__.info(f'REST | No tracks with query:: <{query}> found.')
-                return None
+        for attempt in range(5):
+            async with self.session.get(f'{self.rest_uri}/loadtracks?identifier={quote(query)}',
+                                        headers={'Authorization': self.password}) as resp:
 
-            if data['playlistInfo']:
-                return TrackPlaylist(data=data)
+                if not resp.status == 200 and retry:
+                    retry = backoff.delay()
 
-            tracks = []
-            for track in data['tracks']:
-                tracks.append(Track(id_=track['track'], info=track['info']))
+                    __log__.info(f'REST | Status code ({resp.status}) while retrieving tracks. '
+                                 f'Attempt {attempt} of 5, retrying in {retry} seconds.')
 
-            __log__.debug(f'REST | Found <{len(tracks)}> tracks with query:: <{query}> ({self.__repr__()})')
+                    await asyncio.sleep(retry)
+                    continue
 
-            return tracks
+                elif not resp.status == 200 and not retry:
+                    __log__.info(f'REST | Status code ({resp.status}) while retrieving tracks. Not retrying.')
+                    return
+
+                data = await resp.json()
+
+                if not data['tracks']:
+                    __log__.info(f'REST | No tracks with query <{query}> found.')
+                    return None
+
+                if data['playlistInfo']:
+                    return TrackPlaylist(data=data)
+
+                tracks = []
+                for track in data['tracks']:
+                    tracks.append(Track(id_=track['track'], info=track['info']))
+
+                __log__.debug(f'REST | Found <{len(tracks)}> tracks with query <{query}> ({self.__repr__()})')
+
+                return tracks
+
+        __log__.warning('REST | Failure to load tracks after 5 attempts.')
 
     async def build_track(self, identifier: str) -> Track:
         """|coro|
@@ -193,7 +218,7 @@ class Node:
 
             if not resp.status == 200:
                 raise BuildTrackError(f'Failed to build track. Status: {data["status"]}, Error: {data["error"]}.'
-                                      f'Check the identfier is correct and try again.')
+                                      f'Check the identifier is correct and try again.')
 
             track = Track(id_=identifier, info=data)
             return track

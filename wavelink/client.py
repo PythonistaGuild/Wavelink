@@ -130,7 +130,7 @@ class Client:
         if fut.exception():
             self.loop.create_task(cog.on_wavelink_error(listener, fut.exception()))
 
-    async def get_tracks(self, query: str) -> Optional[list]:
+    async def get_tracks(self, query: str, *, retry_on_failure: bool = True) -> Optional[list]:
         """|coro|
 
         Search for and return a list of Tracks for the given query.
@@ -140,6 +140,10 @@ class Client:
         query: str
             The query to use to search for tracks. If a valid URL is not provided, it's best to default to
             "ytsearch:query", which allows the REST server to search YouTube for Tracks.
+        retry_on_failure: bool
+            Bool indicating whether the Node should retry upto a maximum of 5 attempts on load failure.
+            If this is set to True, the Node will attempt to retrieve tracks with an exponential backoff delay
+            between retries. Defaults to True.
 
         Returns
         ---------
@@ -157,7 +161,7 @@ class Client:
         if node is None:
             raise ZeroConnectedNodes
 
-        return await node.get_tracks(query)
+        return await node.get_tracks(query, retry_on_failure=retry_on_failure)
 
     async def build_track(self, identifier: str):
         """|coro|
