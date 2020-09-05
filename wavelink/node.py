@@ -159,7 +159,7 @@ class Node:
             async with self.session.get(f'{self.rest_uri}/loadtracks?identifier={quote(query)}',
                                         headers={'Authorization': self.password}) as resp:
 
-                if not resp.status == 200 and retry:
+                if not resp.status == 200 and retry_on_failure:
                     retry = backoff.delay()
 
                     __log__.info(f'REST | Status code ({resp.status}) while retrieving tracks. '
@@ -168,7 +168,7 @@ class Node:
                     await asyncio.sleep(retry)
                     continue
 
-                elif not resp.status == 200 and not retry:
+                elif not resp.status == 200 and not retry_on_failure:
                     __log__.info(f'REST | Status code ({resp.status}) while retrieving tracks. Not retrying.')
                     return
 
