@@ -66,7 +66,7 @@ class Client:
     def __init__(self, bot: Union[commands.Bot, commands.AutoShardedBot]):
         self.bot = bot
         self.loop = bot.loop or asyncio.get_event_loop()
-        self.session = aiohttp.ClientSession(loop=self.loop)
+        self.session = aiohttp.ClientSession()
 
         self.nodes = {}
 
