@@ -137,6 +137,8 @@ class Player:
         The node the player belongs to.
     volume: int
         The players volume.
+    position: int
+        The players seek position in the currently playing track in milliseconds. Returns 0 when there is no current track.
     channel_id: int
         The channel the player is connected to. Could be None if the player is not connected.
     """
