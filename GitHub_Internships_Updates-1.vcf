@@ -1,0 +1,10 @@
+BEGIN:VCARD
+VERSION;TYPE=WORK:3.0
+FN;CHARSET=UTF-8:John Britton
+N;CHARSET=UTF-8:John Britton;;;;
+PROFILE:VCARD
+ADR;CHARSET=UTF-8:;;88 Colin P Kelly Jr Street;San Francisco;CA;94107;USA
+EMAIL:education@github.com
+ORG;CHARSET=UTF-8:GitHub\, Inc
+URL:http://github.com
+END:VCARD
