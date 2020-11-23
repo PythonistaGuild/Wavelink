@@ -4,5 +4,6 @@
 .. image:: https://img.shields.io/github/license/EvieePy/Wavelink.svg
     :target: LICENSE
 
-# Wavelink Rewrite
+Wavelink Rewrite
+================
 A current WIP for the new version of Wavelink.
