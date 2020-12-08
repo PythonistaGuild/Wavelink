@@ -28,7 +28,7 @@ from discord.gateway import DiscordWebSocket
 from typing import Optional, Union
 
 from .errors import *
-from .filters import Filter
+from .filters import *
 from .events import *
 
 
@@ -158,12 +158,8 @@ class Player:
         self.paused = False
         self.current = None
         self._filter = Filter()
+        self._equalizer = Filter(equalizer=Equalizer.flat())
         self.channel_id = None
-
-    @property
-    def filter(self):
-        """The currently applied :class:`Filter`."""
-        return self._filter
 
     @property
     def is_connected(self) -> bool:
@@ -198,6 +194,21 @@ class Player:
             return 0
 
         return min(position, self.current.duration)
+
+    @property
+    def equalizer(self):
+        """The currently applied Equalizer."""
+        return self._equalizer
+
+    @property
+    def eq(self):
+        """Alias to :func:`equalizer`."""
+        return self.equalizer
+
+    @property
+    def filter(self):
+        """The currently applied :class:`Filter`."""
+        return self._filter
 
     async def update_state(self, state: dict) -> None:
         state = state['state']
@@ -338,6 +349,29 @@ class Player:
 
         await self.node._send(op='destroy', guildId=str(self.guild_id))
         del self.node.players[self.guild_id]
+
+    async def set_eq(self, equalizer: Equalizer) -> None:
+        """|coro|
+        Set the Players Equalizer.
+
+        .. versionchanged:: 0.5.0
+            set_eq now accepts an :class:`Equalizer` instead of raw band/gain pairs.
+
+        Parameters
+        ------------
+        equalizer: :class:`Equalizer`
+            The Equalizer to set.
+        """
+
+        await self.node._send(op='filters', guildId=str(self.guild_id), **Filter(equalizer=equalizer).payload)
+        self._equalizer = equalizer
+
+    async def set_equalizer(self, equalizer: Equalizer) -> None:
+        """|coro|
+        An alias to :func:`set_eq`.
+        """
+
+        await self.set_eq(equalizer)
 
     async def set_filter(self, filter: Filter) -> None:
         """|coro|
