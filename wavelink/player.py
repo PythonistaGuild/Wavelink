@@ -28,7 +28,7 @@ from discord.gateway import DiscordWebSocket
 from typing import Optional, Union
 
 from .errors import *
-from .eqs import *
+from .filters import Filter
 from .events import *
 
 
@@ -157,18 +157,13 @@ class Player:
         self.volume = 100
         self.paused = False
         self.current = None
-        self._equalizer = Equalizer.flat()
+        self._filter = Filter()
         self.channel_id = None
 
     @property
-    def equalizer(self):
-        """The currently applied Equalizer."""
-        return self._equalizer
-
-    @property
-    def eq(self):
-        """Alias to :func:`equalizer`."""
-        return self.equalizer
+    def filter(self):
+        """The currently applied :class:`Filter`."""
+        return self._filter
 
     @property
     def is_connected(self) -> bool:
@@ -344,28 +339,21 @@ class Player:
         await self.node._send(op='destroy', guildId=str(self.guild_id))
         del self.node.players[self.guild_id]
 
-    async def set_eq(self, equalizer: Equalizer) -> None:
+    async def set_filter(self, filter: Filter) -> None:
         """|coro|
 
-        Set the Players Equalizer.
+        Sets the players filter.
 
-        .. versionchanged:: 0.5.0
-            set_eq now accepts an :class:`Equalizer` instead of raw band/gain pairs.
+        .. versionadded:: 0.10.0
 
         Parameters
         ------------
-        equalizer: :class:`Equalizer`
-            The Equalizer to set.
+        filter: :class:`Filter`
+            The Filter to add to the player.
         """
-        await self.node._send(op='equalizer', guildId=str(self.guild_id), bands=equalizer.eq)
-        self._equalizer = equalizer
 
-    async def set_equalizer(self, equalizer: Equalizer) -> None:
-        """|coro|
-
-        An alias to :func:`set_eq`.
-        """
-        await self.set_eq(equalizer)
+        await self.node._send(op='filters', guildId=str(self.guild_id), **filter.payload)
+        self._filter = filter
 
     async def set_pause(self, pause: bool) -> None:
         """|coro|
