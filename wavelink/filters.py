@@ -141,17 +141,17 @@ class Karaoke:
     Parameters
     ------------
     level: Optional[float]
-    monoLevel: Optional[float]
-    filterBand: Optional[float]
-    filterWidth: Optional[float]
+    mono_level: Optional[float]
+    filter_band: Optional[float]
+    filter_width: Optional[float]
     """
 
-    def __init__(self, *, level: float = 1.0, monoLevel: float = 1.0, filterBand: float = 220.0, filterWidth: float = 100.0):
+    def __init__(self, *, level: float = 1.0, mono_level: float = 1.0, filter_band: float = 220.0, filter_width: float = 100.0):
 
         self.level = level
-        self.monoLevel = monoLevel
-        self.filterBand = filterBand
-        self.filterWidth = filterWidth
+        self.mono_level = mono_level
+        self.filter_band = filter_band
+        self.filter_width = filter_width
 
         self._name = 'Karaoke'
 
@@ -163,11 +163,11 @@ class Karaoke:
         return self._name
 
     def __repr__(self):
-        return f'<wavelink.filters.Karaoke: level={self.level}, monoLevel={self.monoLevel}, filterBand={self.filterBand}, filterWidth={self.filterWidth}>'
+        return f'<wavelink.filters.Karaoke: level={self.level}, mono_level={self.mono_level}, filter_band={self.filter_band}, filter_width={self.filter_width}>'
 
     @property
     def payload(self) -> dict:
-        return {'level': self.level, 'monoLevel': self.monoLevel, 'filterBand': self.filterBand, 'filterWidth': self.filterWidth}
+        return {'level': self.level, 'mono_level': self.mono_level, 'filter_band': self.filter_band, 'filter_width': self.filter_width}
 
 
 class Timescale:
