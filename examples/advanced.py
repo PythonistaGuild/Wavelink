@@ -438,7 +438,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         required = math.ceil((len(channel.members) - 1) / 2.5)
 
         if ctx.command.name == 'stop':
-            if len(channel.members) - 1 == 2:
+            if len(channel.members) == 3:
                 required = 2
 
         return required
