@@ -272,8 +272,9 @@ class Client:
 
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
-    def get_player(self, guild_id: int, *, cls=None, node_id=None, **kwargs) -> Player:
-        """Retrieve a player for the given guild ID. If None, a player will be created and returned.
+    def get_player(self, guild_id: int, *, no_connect=False, cls=None, node_id=None, **kwargs) -> Player:
+        """Retrieve a player for the given guild ID. If None and no_connect is False,
+        a player will be created and returned.
 
         .. versionchanged:: 0.3.0
             cls is now a keyword only argument.
@@ -285,6 +286,8 @@ class Client:
         ------------
         guild_id: int
             The guild ID to retrieve a player for.
+        no_connect: Optional[Boolean]
+            An optional case to return the player without creating one if the return is None
         cls: Optional[class]
             An optional class to pass to build from, overriding the default :class:`Player` class.
             This must be similar to :class:`Player`. E.g a subclass.
@@ -306,11 +309,8 @@ class Client:
         """
         players = self.players
 
-        try:
-            player = players[guild_id]
-        except KeyError:
-            pass
-        else:
+        player = players.get(guild_id)
+        if player or no_connect:
             return player
 
         guild = self.bot.get_guild(guild_id)
