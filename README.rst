@@ -47,7 +47,7 @@ The following commands are currently the valid ways of installing WaveLink.
 Getting Started
 ----------------------------
 
-A quick and easy bot example:
+A quick and **easy bot** example:
 
 .. code:: py
 
