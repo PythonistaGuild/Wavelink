@@ -44,7 +44,7 @@ The following commands are currently the valid ways of installing WaveLink.
 
     python3.7 -m pip install Wavelink
 
-Getting Started
+Getting Started.
 ----------------------------
 
 A quick and **easy bot** example:
