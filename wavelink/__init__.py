@@ -1,7 +1,7 @@
 __title__ = 'WaveLink'
 __author__ = 'EvieePy'
 __license__ = 'MIT'
-__copyright__ = 'Copyright 2019-2020 (c) PythonistaGuild'
+__copyright__ = 'Copyright 2020-2021 (c) PythonistaGuild'
 __version__ = '0.9.6'
 
 from .client import Client
