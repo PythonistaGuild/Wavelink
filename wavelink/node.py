@@ -271,12 +271,12 @@ class Node:
 
         self.hook = func
 
-    async def destroy(self) -> None:
+    async def destroy(self, *, force: bool = False) -> None:
         """Destroy the node and all it's players."""
         players = self.players.copy()
 
         for player in players.values():
-            await player.destroy()
+            await player.destroy(force=force)
 
         try:
             self._websocket._task.cancel()

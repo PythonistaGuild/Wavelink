@@ -269,12 +269,16 @@ class Player:
         await self._get_shard_socket(guild.shard_id).voice_state(self.guild_id, str(channel_id))
         __log__.info(f'PLAYER | Connected to voice channel:: {self.channel_id}')
 
-    async def disconnect(self) -> None:
+    async def disconnect(self, *, force: bool = False) -> None:
         """|coro|
 
         Disconnect from a Discord Voice Channel.
         """
         guild = self.bot.get_guild(self.guild_id)
+        if not guild and force is True:
+            self.channel_id = None
+            return
+
         if not guild:
             raise InvalidIDProvided(f'No guild found for id <{self.guild_id}>')
 
@@ -333,16 +337,20 @@ class Player:
         __log__.debug(f'PLAYER | Current track stopped:: {str(self.current)} ({self.channel_id})')
         self.current = None
 
-    async def destroy(self) -> None:
+    async def destroy(self, *, force: bool = False) -> None:
         """|coro|
 
         Stop the player, and remove any internal references to it.
         """
         await self.stop()
-        await self.disconnect()
+        await self.disconnect(force=force)
 
         await self.node._send(op='destroy', guildId=str(self.guild_id))
-        del self.node.players[self.guild_id]
+
+        try:
+            del self.node.players[self.guild_id]
+        except KeyError:
+            pass
 
     async def set_eq(self, equalizer: Equalizer) -> None:
         """|coro|
