@@ -1,4 +1,4 @@
-MIT License
+"""MIT License
 
 Copyright (c) 2019-2021 PythonistaGuild
 
@@ -19,3 +19,48 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+"""
+
+import abc
+
+from .pool import Node
+
+
+__all__ = ('Playable', 'Searchable', 'Playlist')
+
+
+class Playable(metaclass=abc.ABCMeta):
+    """An ABC that defines the basic structure of a lavalink track resource.
+
+    Attributes
+    ----------
+    id: str
+        The base64 identifier for this object.
+    info: Dict[str, Any]
+        The raw data supplied by Lavalink.
+    length:
+        The duration of the track.
+    duration:
+        Alias to ``length``.
+    """
+
+    def __init__(self, id: str, info: dict):
+        self.id = id
+        self.info = info
+        self.length = self.duration = info.get('length', 0) / 1000
+
+
+class Searchable(metaclass=abc.ABCMeta):
+
+    @classmethod
+    @abc.abstractmethod
+    async def search(cls, query: str, *, node: Node = None):
+        raise NotImplementedError
+
+
+class Playlist(metaclass=abc.ABCMeta):
+
+    # TODO
+
+    def __init__(self, data: dict):
+        self.data = data

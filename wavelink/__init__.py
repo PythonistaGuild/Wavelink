@@ -1,4 +1,4 @@
-MIT License
+"""MIT License
 
 Copyright (c) 2019-2021 PythonistaGuild
 
@@ -19,3 +19,10 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+"""
+
+from .enums import *
+from .errors import *
+from .player import Player
+from .pool import Node, NodePool
+from .tracks import *
