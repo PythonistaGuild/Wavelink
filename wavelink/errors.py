@@ -33,7 +33,10 @@ __all__ = (
     "NodeOccupied",
     "InvalidIDProvided",
     "ZeroConnectedNodes",
-    "NoMatchingNode"
+    "NoMatchingNode",
+    "QueueException",
+    "QueueFull",
+    "QueueEmpty"
 )
 
 
@@ -79,3 +82,15 @@ class ZeroConnectedNodes(WavelinkError):
 
 class NoMatchingNode(WavelinkError):
     """Exception raised when a Node is attempted to be retrieved with a incorrect identifier."""
+
+
+class QueueException(WavelinkError):
+    pass
+
+
+class QueueFull(QueueException):
+    pass
+
+
+class QueueEmpty(QueueException):
+    pass
