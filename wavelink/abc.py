@@ -59,8 +59,13 @@ class Searchable(metaclass=abc.ABCMeta):
 
 
 class Playlist(metaclass=abc.ABCMeta):
+    """An ABC that defines the basic structure of a lavalink playlist resource.
 
-    # TODO
+    Attributes
+    ----------
+    data: Dict[str, Any]
+        The raw data supplied by Lavalink.
+    """
 
     def __init__(self, data: dict):
         self.data = data
