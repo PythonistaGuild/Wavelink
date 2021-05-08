@@ -41,7 +41,8 @@ class Websocket:
         self.session = aiohttp.ClientSession()
         self.listener = None
 
-        self.host: str = None
+        self.host: str = f'{"https://" if self.node._https else "http://"}{self.node.host}:{self.node.port}'
+        self.ws_host: str = f'ws://{self.node.host}:{self.node.port}'
 
     @property
     def headers(self) -> dict:
@@ -57,14 +58,12 @@ class Websocket:
         return self.websocket is not None and not self.websocket.closed
 
     async def connect(self) -> None:
-        self.host = f'{"https://" if self.node._https else "http://"}{self.node.host}:{self.node.port}'
-
         if self.is_connected():
-            await self.websocket.close(code=0, message=b"WaveLink: Attempting reconnection.")
+            await self.websocket.close(code=1006, message=b"WaveLink: Attempting reconnection.")
 
         try:
             self.websocket = await self.session.ws_connect(
-                url=self.host, headers=self.headers, heartbeat=self.node._heartbeat
+                self.ws_host, headers=self.headers, heartbeat=self.node._heartbeat
             )
         except Exception as error:
             if isinstance(error, aiohttp.WSServerHandshakeError) and error.status == 401:
