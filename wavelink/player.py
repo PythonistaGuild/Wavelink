@@ -28,6 +28,7 @@ import discord
 
 from .abc import *
 from .pool import Node, NodePool
+from .queue import WaitQueue
 
 
 logger = logging.getLogger(__name__)
@@ -35,17 +36,17 @@ logger = logging.getLogger(__name__)
 
 class Player(discord.VoiceProtocol):
 
-    _node: Node = None
+    def __call__(self, client: discord.Client, channel: discord.VoiceChannel):
+        self.client = client
+        self.channel = channel
 
-    def __init__(self, client: discord.Client, channel: discord.VoiceChannel):
-        super().__init__(client=client, channel=channel)
+        return self
 
-        if self._node is not None:
-            self.node = self._node
-            Player._node = None
-        else:
-            self.node = NodePool.get_node()
+    def __init__(self, client: discord.Client = None, channel: discord.VoiceChannel = None, /, *, node: Node = None):
+        self.client = client
+        self.channel = channel
 
+        self.node = node or NodePool.get_node()
         self.node._players.append(self)
 
         self._voice_state = {}
@@ -58,18 +59,7 @@ class Player(discord.VoiceProtocol):
         self._source = None
         # self._equalizer = Equalizer.flat()
 
-    @classmethod
-    def factory(cls, *, node: Node = None):
-        """Factory method for passing a Node to the Player when connecting.
-
-        Returns
-        ---------
-        Player
-            The Player class uninitialised.
-        """
-        cls._node = node
-
-        return cls
+        self.queue = WaitQueue()
 
     @property
     def guild(self) -> discord.Guild:
