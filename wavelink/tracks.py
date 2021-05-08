@@ -145,3 +145,29 @@ class SoundCloudTrack(SearchableTrack):
     """A track created using a search to SoundCloud."""
 
     _search_type: str = 'scsearch'
+
+
+class YouTubePlaylist(Playlist):
+    """Represents a Lavalink YouTube playlist object.
+
+    Attributes
+    ----------
+    name: str
+        The name of the playlist.
+    tracks: :class:`YouTubeTrack`
+        The list of :class:`YouTubeTrack` in the playlist.
+    selected_track: Optional[int]
+        The selected video in the playlist. This could be ``None``.
+    """
+
+    def __init__(self, data: dict):
+        self.tracks = []
+        self.name = data['playlistInfo']['name']
+
+        self.selected_track = data['playlistInfo'].get('selectedTrack')
+        if self.selected_track is not None:
+            self.selected_track = int(self.selected_track)
+
+        for track_data in data['tracks']:
+            track = YouTubeTrack(track_data['track'], track_data['info'])
+            self.tracks.append(track)
