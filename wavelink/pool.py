@@ -163,6 +163,77 @@ class Node:
 
         return tracks
 
+    async def get_playlist(self, cls, identifier: str):
+        """|coro|
+
+        Search for an return a :class:`abc.Playlist` given an identifier.
+
+        Parameters
+        ----------
+        cls: Type[:class:`abc.Playlist`]
+            The type of which playlist should be returned, this must subclass :class:`abc.Playlist`.
+        identifier: str
+            The playlist's identifier. This may be a YouTube playlist URL for example.
+
+        Returns
+        -------
+        Union[:class:`abc.Playlist`, None]:
+            The related wavelink track object or ``None`` if none was found.
+
+        Raises
+        ------
+        LoadTrackError
+            Loading the playlist failed.
+        LavalinkException
+            An unspecified error occurred when loading the playlist.
+        """
+        data, resp = await self._get_data("loadtracks", {"identifier": identifier})
+
+        if resp.status != 200:
+            raise LavalinkException("Invalid response from Lavalink server.")
+
+        load_type = LoadType.try_value(data.get("loadType"))
+
+        if load_type == LoadType.load_failed:
+            raise LoadTrackError(data)
+
+        if load_type == LoadType.no_matches:
+            return None
+
+        if load_type != LoadType.playlist_loaded:
+            raise LavalinkException("Track failed to load.")
+
+        return cls(data)
+
+    async def build_track(self, cls, identifier: str):
+        """|coro|
+
+        Build a track object with a valid track identifier.
+
+        Parameters
+        ------------
+        cls: Type[:class:`abc.Playable`]
+            The type of which track should be returned, this must subclass :class:`abc.Playable`.
+        identifier: str
+            The tracks unique Base64 encoded identifier. This is usually retrieved from various lavalink events.
+
+        Returns
+        ---------
+        :class:`abc.Playable`
+            The track built from a Base64 identifier.
+
+        Raises
+        --------
+        BuildTrackError
+            Decoding and building the track failed.
+        """
+        data, resp = await self._get_data("decodetrack", {"track": identifier})
+
+        if resp.status != 200:
+            raise BuildTrackError(data)
+
+        return cls(identifier, data)
+
     def get_player(self, guild: discord.Guild):
         """Returns a :class:`Player` object playing in a specific :class:`~discord.Guild`.
 
