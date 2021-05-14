@@ -37,7 +37,7 @@ __log__ = logging.getLogger(__name__)
 
 
 class Track:
-    """Wavelink Tack object.
+    """Wavelink Track object.
 
     Attributes
     ------------
