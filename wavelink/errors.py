@@ -85,12 +85,15 @@ class NoMatchingNode(WavelinkError):
 
 
 class QueueException(WavelinkError):
+    """Base WaveLink Queue exception."""
     pass
 
 
 class QueueFull(QueueException):
+    """Exception raised when attempting to add to a full Queue."""
     pass
 
 
 class QueueEmpty(QueueException):
+    """Exception raised when attempting to retrieve from an empty Queue."""
     pass
