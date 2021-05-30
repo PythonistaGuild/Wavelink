@@ -1,20 +1,20 @@
 .. image:: logo.png?raw=true
     :align: center
 
-.. image:: https://img.shields.io/badge/Python-3.7%20%7C%203.8%20%7C%203.9-blue.svg
+.. image:: https://img.shields.io/badge/Python-3.7%20%7C%203.8-blue.svg
     :target: https://www.python.org
-    :align: center
-    
+
+.. image:: https://api.codacy.com/project/badge/Grade/d020ed97fd2a46fcb1f42bd3bc397e63
+   :target: https://app.codacy.com/app/mysterialpy/Wavelink?utm_source=github.com&utm_medium=referral&utm_content=EvieePy/Wavelink&utm_campaign=Badge_Grade_Dashboard
+
 .. image:: https://img.shields.io/github/license/EvieePy/Wavelink.svg
     :target: LICENSE
-    :align: center
 
-Wavelink is robust and powerful Lavalink wrapper for `Discord.py <https://github.com/Rapptz/discord.py>`_!
-Wavelink features a fully asynchronous API that's intuitive and easy to use.
+A robust and powerful Lavalink wrapper for `Discord.py <https://github.com/Rapptz/discord.py>`_!
 
 Documentation
 ---------------------------
-`Official Documentation <https://wavelink.readthedocs.io/en/1.0/wavelink.html>`_.
+`Official Documentation <https://wavelink.readthedocs.io/en/latest/wavelink.html#>`_.
 
 Support
 ---------------------------
@@ -30,19 +30,19 @@ Installation
 ---------------------------
 The following commands are currently the valid ways of installing WaveLink.
 
-**WaveLink requires Python 3.8+**
+**WaveLink requires Python 3.7+**
 
 **Windows**
 
 .. code:: sh
 
-    py -3.9 -m pip install Wavelink --pre
+    py -3.7 -m pip install Wavelink
 
 **Linux**
 
 .. code:: sh
 
-    python3.9 -m pip install Wavelink --pre
+    python3.7 -m pip install Wavelink
 
 Getting Started
 ----------------------------
@@ -50,7 +50,8 @@ Getting Started
 A quick and easy bot example:
 
 .. code:: py
-    
+
+    import discord
     import wavelink
     from discord.ext import commands
 
@@ -58,48 +59,62 @@ A quick and easy bot example:
     class Bot(commands.Bot):
 
         def __init__(self):
-            super().__init__(command_prefix='>?')
+            super(Bot, self).__init__(command_prefix=['audio ', 'wave ','aw '])
+
+            self.add_cog(Music(self))
 
         async def on_ready(self):
-            print('Bot is ready!')
+            print(f'Logged in as {self.user.name} | {self.user.id}')
 
 
     class Music(commands.Cog):
-        """Music cog to hold Wavelink related commands and listeners."""
 
-        def __init__(self, bot: commands.Bot):
+        def __init__(self, bot):
             self.bot = bot
 
-            bot.loop.create_task(self.connect_nodes())
+            if not hasattr(bot, 'wavelink'):
+                self.bot.wavelink = wavelink.Client(bot=self.bot)
 
-        async def connect_nodes(self):
-            """Connect to our Lavalink nodes."""
+            self.bot.loop.create_task(self.start_nodes())
+
+        async def start_nodes(self):
             await self.bot.wait_until_ready()
 
-            await wavelink.NodePool.create_node(bot=bot,
-                                                host='0.0.0.0',
-                                                port=2333,
-                                                password='YOUR_LAVALINK_PASSWORD')
+            # Initiate our nodes. For this example we will use one server.
+            # Region should be a discord.py guild.region e.g sydney or us_central (Though this is not technically required)
+            await self.bot.wavelink.initiate_node(host='127.0.0.1',
+                                                  port=2333,
+                                                  rest_uri='http://127.0.0.1:2333',
+                                                  password='youshallnotpass',
+                                                  identifier='TEST',
+                                                  region='us_central')
 
-        @commands.Cog.listener()
-        async def on_wavelink_node_ready(self, node: wavelink.Node):
-            """Event fired when a node has finished connecting."""
-            print(f'Node: <{node.identifier}> is ready!')
+        @commands.command(name='connect')
+        async def connect_(self, ctx, *, channel: discord.VoiceChannel=None):
+            if not channel:
+                try:
+                    channel = ctx.author.voice.channel
+                except AttributeError:
+                    raise discord.DiscordException('No channel to join. Please either specify a valid channel or join one.')
+
+            player = self.bot.wavelink.get_player(ctx.guild.id)
+            await ctx.send(f'Connecting to **`{channel.name}`**')
+            await player.connect(channel.id)
 
         @commands.command()
-        async def play(self, ctx: commands.Context, *, search: wavelink.YouTubeTrack):
-            """Play a song with the given search query.
+        async def play(self, ctx, *, query: str):
+            tracks = await self.bot.wavelink.get_tracks(f'ytsearch:{query}')
 
-            If not connected, connect to our voice channel.
-            """
-            if not ctx.voice_client:
-                vc: wavelink.Player = await ctx.author.voice.channel.connect(cls=wavelink.Player)
-            else:
-                vc: wavelink.Player = ctx.voice_client
+            if not tracks:
+                return await ctx.send('Could not find any songs with that query.')
 
-            await vc.play(search)
+            player = self.bot.wavelink.get_player(ctx.guild.id)
+            if not player.is_connected:
+                await ctx.invoke(self.connect_)
+
+            await ctx.send(f'Added {str(tracks[0])} to the queue.')
+            await player.play(tracks[0])
 
 
     bot = Bot()
-    bot.add_cog(Music(bot))
-    bot.run('YOUR_BOT_TOKEN')
+    bot.run('TOKEN')
