@@ -21,9 +21,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+__title__ = "WaveLink"
+__author__ = "PythonistaGuild, EvieePy"
+__license__ = "MIT"
+__copyright__ = "Copyright 2019-2021 (c) Pythonista, EvieePy"
+__version__ = "{{__VERSION__}}"
+
+
 from .enums import *
 from .errors import *
 from .player import Player
 from .pool import Node, NodePool
 from .tracks import *
+from .queue import Queue, WaitQueue
 from . import abc
