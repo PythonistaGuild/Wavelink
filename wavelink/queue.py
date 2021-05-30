@@ -33,14 +33,15 @@ from .errors import *
 
 
 class Queue(Iterable[Playable]):
-    """
-    Basic Queue implementation for Playable objects.
+    """Basic Queue implementation for Playable objects.
 
-    `max_size=None` allows for no maximum.
+    .. warning::
+        This Queue class only accepts Playable objects. E.g YouTubeTrack, SoundCloudTrack.
 
-    `overflow=False` sets QueueFull to be raised when max_size is reached.
-
-    Pass alternative queue containers to `queue_cls` to replace default of `collections.deque`.
+    Parameters
+    ----------
+    max_size: Optional[int]
+        The maximum allowed tracks in the Queue. If None, no maximum is used. Defaults to None.
     """
 
     __slots__ = ("max_size", "_queue", "_overflow")
@@ -51,11 +52,11 @@ class Queue(Iterable[Playable]):
         self._overflow = overflow
 
     def __str__(self) -> str:
-        """String showing all members appearing as a list."""
+        """String showing all Playable objects appearing as a list."""
         return str(list(f"'{t}'" for t in self))
 
     def __repr__(self) -> str:
-        """Official representation with max_size and member count. <BaseQueue max_size=None members=32>"""
+        """Official representation with max_size and member count."""
         return f"<{self.__class__.__name__} max_size={self.max_size} members={self.count}>"
 
     def __bool__(self) -> bool:
@@ -131,43 +132,22 @@ class Queue(Iterable[Playable]):
         raise TypeError(f"Adding '{type(other)}' type to the queue is not supported.")
 
     def _get(self):
-        """Get an item from the internal queue.
-
-        Suitable for overriding in subclasses to change get behaviour.
-        """
         return self._queue.popleft()
 
     def _drop(self) -> Playable:
-        """Drop an item from the end of the internal queue.
-
-        Suitable for overriding in subclasses to change drop behaviour.
-        """
         return self._queue.pop()
 
     def _index(self, item: Playable) -> int:
-        """Get the index of an item in the internal queue.
-
-        Suitable for overriding in subclasses to change index behaviour.
-        """
         return self._queue.index(item)
 
     def _put(self, item: Playable):
-        """Add an item to the internal queue.
-
-        Suitable for overriding in subclasses to change put behaviour.
-        """
         self._queue.append(item)
 
     def _insert(self, index: int, item: Playable):
-        """Inserts an item at a given index to the internal queue.
-
-        Suitable for overriding in subclasses to change insert behaviour.
-        """
         self._queue.insert(index, item)
 
     @staticmethod
     def _check_playable(item) -> Playable:
-        """Check if an item is a Playable object."""
         if not isinstance(item, Playable):
             raise TypeError("Only Playable objects are supported.")
 
@@ -175,7 +155,6 @@ class Queue(Iterable[Playable]):
 
     @classmethod
     def _check_playable_container(cls, iterable: Iterable) -> List[Playable]:
-        """Check if an iterable has only Playable objects."""
         iterable = list(iterable)
         for item in iterable:
             cls._check_playable(item)
@@ -225,8 +204,7 @@ class Queue(Iterable[Playable]):
         return self._put(self._check_playable(item))
 
     def put_at_index(self, index: int, item: Playable):
-        """Put the given item into the queue at the specified index.
-        """
+        """Put the given item into the queue at the specified index."""
         if self.is_full:
             if not self._overflow:
                 raise QueueFull(f"Queue max_size of {self.max_size} has been reached.")
@@ -277,12 +255,15 @@ class Queue(Iterable[Playable]):
 
 
 class WaitQueue(Queue):
-    """
-    Queue for Playable objects designed for Player that allows waiting for new items with `get_wait`.
+    """Queue for Playable objects designed for Players that allow waiting for new items with `get_wait`.
 
-    `max_size=None` allows for no maximum.
+    .. note::
+        WaitQueue is the default Player queue.
 
-    Pass alternative history queues to `history_cls` to replace default of `Queue`.
+    Attributes
+    ----------
+    history: :class:`~Queue`
+        A history Queue of previously played tracks.
     """
 
     __slots__ = ("history", "_waiters", "_finished")
@@ -304,27 +285,20 @@ class WaitQueue(Queue):
             yield await self.get_wait()
 
     def _get(self) -> Playable:
-        """Get an item from the end of the internal queue and adds item to history queue."""
         item = super()._get()
         self.history.put(item)
 
         return item
 
     def _put(self, item):
-        """Add an item to the internal queue and wake up next waiter."""
         super()._put(item)
         self._wakeup_next()
 
     def _insert(self, index: int, item: Playable):
-        """Inserts an item at a given index to the internal queue.
-
-        Suitable for overriding in subclasses to change insert behaviour.
-        """
         super()._queue.insert(index, item)
         self._wakeup_next()
 
     def _wakeup_next(self):
-        """Wake up next get waiter."""
         while self._waiters:
             waiter = self._waiters.popleft()
             if not waiter.done():
@@ -332,7 +306,14 @@ class WaitQueue(Queue):
                 break
 
     async def get_wait(self) -> Playable:
-        """Return the next item in queue once available."""
+        """|coro|
+
+        Return the next item in queue once available.
+
+
+        .. note::
+            This will wait until an item is available to be retrieved.
+        """
         while self.is_empty:
             loop = asyncio.get_event_loop()
             waiter = loop.create_future()
@@ -357,7 +338,10 @@ class WaitQueue(Queue):
         return self.get()
 
     async def put_wait(self, item: Playable):
-        """Put an item into the queue using await."""
+        """|coro|
+
+        Put an item into the queue using await.
+        """
         self._put(item)
         await asyncio.sleep(0)
 
@@ -371,6 +355,3 @@ class WaitQueue(Queue):
 
         self._waiters.clear()
 
-    def shuffle(self):
-        """Rearrange items in queue to be in a random-like order."""
-        pass

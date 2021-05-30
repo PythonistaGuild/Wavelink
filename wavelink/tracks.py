@@ -31,7 +31,8 @@ __all__ = ("Track",
            "SearchableTrack",
            "YouTubeTrack",
            "YouTubeMusicTrack",
-           "SoundCloudTrack"
+           "SoundCloudTrack",
+           "YouTubePlaylist"
            )
 
 

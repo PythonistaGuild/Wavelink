@@ -38,6 +38,17 @@ logger = logging.getLogger(__name__)
 
 
 class Node:
+    """WaveLink Node object.
+
+    Attributes
+    ----------
+    bot: :class:`~commands.Bot`
+        The discord.py Bot object.
+
+
+    .. warning::
+        This class should not be created manually. Please use :meth:`NodePool.create_node()` instead.
+    """
     def __init__(self, **attrs):
         self.bot = attrs.get("bot")
         self._host: str = attrs.get("host")
@@ -253,15 +264,23 @@ class Node:
         return None
 
     async def disconnect(self, *, force: bool = False):
-        """Disconnect this Node and remove it from the NodePool."""
+        """Disconnect this Node and remove it from the NodePool.
+
+        This is a graceful shutdown of the node.
+        """
         for player in self.players:
             await player.disconnect(force=force)
 
-        self.cleanup()
+        await self.cleanup()
 
-    def cleanup(self):
+    async def cleanup(self):
         try:
             self._websocket.listener.cancel()
+        except Exception:
+            pass
+
+        try:
+            await self._websocket.session.close()
         except Exception:
             pass
 
@@ -269,8 +288,17 @@ class Node:
 
 
 class NodePool:
+    """Wavelink NodePool class.
+
+    This class holds all the Node objects created with :meth:`create_node()`.
+    """
 
     _nodes = {}
+
+    @property
+    def nodes(self) -> dict:
+        """A mapping of created Node objects."""
+        return self._nodes
 
     @classmethod
     async def create_node(
@@ -286,6 +314,35 @@ class NodePool:
         identifier: Optional[str] = None,
         dumps=json.dumps,
     ) -> Node:
+
+        """|coro|
+
+        Classmethod that creates a :class:`Node` object and stores it for use with WaveLink.
+
+        Parameters
+        ----------
+        bot: Union[discord.Client, commands.Bot]
+            The discord.py Bot or Client class.
+        host: str
+            The lavalink host address.
+        port: int
+            The lavalink port.
+        password: str
+            The lavalink password for authentication.
+        https: Optional[bool]
+            Connect to lavalink over https. Defaults to False.
+        heartbeat: Optional[float]
+            The heartbeat in seconds for the node. Defaults to 30 seconds.
+        region: Optional[discord.VoiceRegion]
+            The discord.py VoiceRegion to assign to the node. This is useful for node region balancing.
+        identifier: Optional[str]
+            The unique identifier for this Node. By default this will be generated for you.
+
+        Returns
+        -------
+        Node
+            The WaveLink Node object.
+        """
 
         if not identifier:
             identifier = str(uuid.uuid4())
@@ -324,6 +381,7 @@ class NodePool:
         Returns
         --------
         Node
+            The WaveLink Node object.
 
         Raises
         --------

@@ -35,6 +35,25 @@ logger = logging.getLogger(__name__)
 
 
 class Player(discord.VoiceProtocol):
+    """WaveLink Player object.
+
+    This class subclasses :class:`~discord.VoiceProtocol` and such should be treated as one with additions.
+
+    Examples
+    --------
+
+        .. code::
+
+            @commands.command()
+            async def connect(self, channel: discord.VoiceChannel):
+
+                voice_client = await channel.connect(cls=wavelink.Player)
+
+
+    .. warning::
+        This class should not be created manually but can be subclassed to add additional functionality.
+        You should instead use :meth:`~discord.VoiceChannel.connect()` and pass the player object to the cls kwarg.
+    """
 
     def __call__(self, client: discord.Client, channel: discord.VoiceChannel):
         self.client = client
