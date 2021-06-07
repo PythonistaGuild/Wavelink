@@ -280,7 +280,10 @@ class Player(discord.VoiceProtocol):
         """|coro|
 
         Set the player's filter.
-
+        
+        .. note::
+            Filters usually take 5~ ish seconds to apply, unless the seek parameter is set to True in which case it will apply instantly.
+        
         Parameters
         ----------
         filter: :class:`~wavelink.Filter`
@@ -300,7 +303,7 @@ class Player(discord.VoiceProtocol):
         """|coro|
 
         Seek to the given position in the song.
-
+        
         Parameters
         ----------
         position: int
