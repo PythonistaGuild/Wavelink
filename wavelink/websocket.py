@@ -115,6 +115,9 @@ class Websocket:
         except KeyError:
             return
 
+        if not player:
+            return
+
         if op == 'event':
             event, payload = self._get_event_payload(data['type'], data)
             logger.debug(f'op: event:: {data}')
