@@ -24,11 +24,13 @@ SOFTWARE.
 import datetime
 import logging
 
+from typing import Optional
 import discord
 
 from .abc import *
 from .pool import Node, NodePool
 from .queue import WaitQueue
+from .filters import Filter
 
 
 logger = logging.getLogger(__name__)
@@ -74,6 +76,7 @@ class Player(discord.VoiceProtocol):
         self.last_position: float = None
 
         self.volume = 100
+        self._filter: Optional[Filter] = None
         self._paused = False
         self._source = None
         # self._equalizer = Equalizer.flat()
@@ -273,7 +276,27 @@ class Player(discord.VoiceProtocol):
         await self.node._websocket.send(op='volume', guildId=str(self.guild.id), volume=self.volume)
         logger.debug(f'Set volume:: {self.volume} ({self.channel.id})')
 
-    async def seek(self, position: int = 0):
+    async def set_filter(self, filter: Filter, *, seek: bool = False) -> None:
+        """|coro|
+
+        Set the player's filter.
+
+        Parameters
+        ----------
+        filter: :class:`~wavelink.Filter`
+            The filter to set on the player.
+        seek: bool
+            Whether or not to seek to the current position, this has the effect of enabling the filter instantly.
+        """
+
+        await self.node._websocket.send(op='filters', guildId=str(self.guild.id), **filter._payload)
+
+        if seek:
+            await self.seek(self.position)
+
+        self._filter = filter
+
+    async def seek(self, position: float = 0):
         """|coro|
 
         Seek to the given position in the song.
