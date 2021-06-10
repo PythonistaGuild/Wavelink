@@ -123,6 +123,8 @@ class Websocket:
 
         elif op == 'playerUpdate':
             logger.debug(f'op: playerUpdate:: {data}')
+            if player is None:
+                return
             try:
                 await player.update_state(data)
             except KeyError:
