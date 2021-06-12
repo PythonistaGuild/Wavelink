@@ -131,7 +131,7 @@ class YouTubeTrack(SearchableTrack):
     @property
     def thumbnail(self) -> str:
         """The URL to the thumbnail of this video."""
-        return f"https://img.youtube.com/vi/{self.identifier}/maxresdefault.jpg"
+        return f"https://img.youtube.com/vi/{self.identifier}/hqdefault.jpg"
 
     thumb = thumbnail
 
