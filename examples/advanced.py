@@ -22,7 +22,7 @@ DEALINGS IN THE SOFTWARE.
 -------------------------------------------------------------------------------
 This example uses the following which must be installed prior to running:
 
-    - Discord.py version >= 1.3.1 (pip install -U discord.py)
+    - Discord.py version >= 1.7.1 (pip install -U discord.py)
     - Wavelink version >= 0.5.1 (pip install -U wavelink)
     - menus version >= 1.0.0-a (pip install -U git+https://github.com/Rapptz/discord-ext-menus.git)
     - Python 3.7+
@@ -450,7 +450,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         return player.dj == ctx.author or ctx.author.guild_permissions.kick_members
 
     @commands.command()
-    async def connect(self, ctx: commands.Context, *, channel: discord.VoiceChannel = None):
+    async def connect(self, ctx: commands.Context, *, channel: typing.Union[discord.VoiceChannel, discord.StageChannel] = None):
         """Connect to a voice channel."""
         player: Player = self.bot.wavelink.get_player(guild_id=ctx.guild.id, cls=Player, context=ctx)
 
