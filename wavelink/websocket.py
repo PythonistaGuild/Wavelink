@@ -35,6 +35,8 @@ from .utils import MISSING
 if TYPE_CHECKING:
     from .pool import Node
 
+__all__ = ("Websocket",)
+
 logger: logging.Logger = logging.getLogger(__name__)
 
 

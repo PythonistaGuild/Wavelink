@@ -25,6 +25,12 @@ if TYPE_CHECKING:
     from .pool import Node
 
 
+__all__ = (
+    "Penalty",
+    "Status",
+)
+
+
 class Penalty:
     def __init__(self, stats: Stats):
         self.player_penalty: int = stats.playing_players

@@ -41,7 +41,11 @@ from .utils import MISSING
 if TYPE_CHECKING:
     from .pool import Node
 
-__all__ = ("Playable", "Searchable", "Playlist")
+__all__ = (
+    "Playable",
+    "Searchable",
+    "Playlist",
+)
 
 ST = TypeVar("ST", bound="Searchable")
 

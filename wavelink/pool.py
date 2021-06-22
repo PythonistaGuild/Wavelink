@@ -54,8 +54,15 @@ if TYPE_CHECKING:
     from .player import Player
 
 
+__all__ = (
+    "Node",
+    "NodePool",
+)
+
+
 PT = TypeVar("PT", bound=abc.Playable)
 PLT = TypeVar("PLT", bound=abc.Playlist)
+
 
 logger: logging.Logger = logging.getLogger(__name__)
 

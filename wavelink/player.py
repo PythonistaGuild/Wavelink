@@ -34,6 +34,9 @@ from .queue import WaitQueue
 from .utils import MISSING
 
 
+__all__ = ("Player",)
+
+
 logger: logging.Logger = logging.getLogger(__name__)
 
 

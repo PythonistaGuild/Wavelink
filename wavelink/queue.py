@@ -40,10 +40,15 @@ from typing import (
 
 from . import abc
 from .errors import *
-from .types.queue import Queue
+from .types.queue import Queue as QueueBase
+
+__all__ = (
+    "Queue",
+    "WaitQueue",
+)
 
 
-QT = TypeVar("QT", bound=Queue)
+QT = TypeVar("QT", bound=QueueBase)
 
 
 class Queue(Iterable[abc.Playable], Generic[QT]):
