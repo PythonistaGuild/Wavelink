@@ -132,9 +132,9 @@ class Websocket:
         if player is None:
             return
 
-        if op == "event":
-            event, payload = self._get_event_payload(data["type"], data)
-            logger.debug(f"op: event:: {data}")
+        if op == 'event':
+            event, payload = self._get_event_payload(data['type'], data)
+            logger.debug(f'op: event:: {data}')
 
             self.dispatch(event, player, **payload)
 

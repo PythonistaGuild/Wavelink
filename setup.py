@@ -34,7 +34,7 @@ with open("requirements.txt") as f:
     requirements = f.read().splitlines()
 
 if on_rtd:
-    with open("docs/requirements.txt") as f:
+    with open("docs/requirements_rtd.txt") as f:
         requirements.extend(f.read().splitlines())
 
 version = "{{__VERSION__}}"
