@@ -1,4 +1,4 @@
-sphinx==3.4.3
+sphinx==4.0.2
 sphinxcontrib-napoleon
 sphinxcontrib-asyncio
 sphinxcontrib-websupport

@@ -72,7 +72,7 @@ class Node:
 
     Attributes
     ----------
-    bot: :class:`~discord.Client`
+    bot: :class:`discord.Client`
         The discord.py Bot object.
 
 
@@ -288,11 +288,11 @@ class Node:
         return cls(identifier, data)
 
     def get_player(self, guild: discord.Guild) -> Optional[Player]:
-        """Returns a :class:`Player` object playing in a specific :class:`~discord.Guild`.
+        """Returns a :class:`Player` object playing in a specific :class:`discord.Guild`.
 
         Parameters
         ----------
-        guild: :class:`~discord.Guild`
+        guild: :class:`discord.Guild`
             The Guild the player is in.
 
         Returns
@@ -363,26 +363,26 @@ class NodePool:
 
         Parameters
         ----------
-        bot: Union[discord.Client, commands.Bot]
+        bot: Union[:class:`discord.Client`]
             The discord.py Bot or Client class.
-        host: str
+        host: :class:`str`
             The lavalink host address.
-        port: int
+        port: :class:`int`
             The lavalink port.
-        password: str
+        password: :class:`str`
             The lavalink password for authentication.
-        https: bool
+        https: :class:`bool`
             Connect to lavalink over https. Defaults to False.
-        heartbeat: float
+        heartbeat: :class:`float`
             The heartbeat in seconds for the node. Defaults to 30 seconds.
-        region: Optional[discord.VoiceRegion]
+        region: Optional[:class:`discord.VoiceRegion`]
             The discord.py VoiceRegion to assign to the node. This is useful for node region balancing.
-        identifier: str
+        identifier: :class:`str`
             The unique identifier for this Node. By default this will be generated for you.
 
         Returns
         -------
-        Node
+        :class:`Node`
             The WaveLink Node object.
         """
 
@@ -419,21 +419,21 @@ class NodePool:
 
         Parameters
         ------------
-        identifier: str
+        identifier: :class:`str`
             If provided this method will attempt to return the Node with the provided identifier.
         region: :class:`discord.VoiceRegion`
             If provided this method will attempt to find the best Node with the provided region.
 
         Returns
         --------
-        Node
+        :class:`Node`
             The WaveLink Node object.
 
         Raises
         --------
-        ZeroConnectedNodes
+        :class:`ZeroConnectedNodes`
             There are no currently connected Nodes on the pool with the provided options.
-        NoMatchingNode
+        :class:`NoMatchingNode`
             No Node exists with the provided identifier.
         """
         if not cls._nodes:

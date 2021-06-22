@@ -69,7 +69,11 @@ rst_prolog = """
 # source_suffix = ['.rst', '.md']
 source_suffix = ".rst"
 
-intersphinx_mapping = {"py": ("https://docs.python.org/3", None)}
+intersphinx_mapping = {
+    "py": ("https://docs.python.org/3", None),
+    "aio": ('https://docs.aiohttp.org/en/stable/', None),
+    "dpy": ('https://discordpy.readthedocs.io/en/latest/', None),
+}
 
 
 # List of patterns, relative to source directory, that match files and

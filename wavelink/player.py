@@ -48,7 +48,7 @@ VoiceChannel = Union[
 class Player(discord.VoiceProtocol):
     """WaveLink Player object.
 
-    This class subclasses :class:`~discord.VoiceProtocol` and such should be treated as one with additions.
+    This class subclasses :class:`discord.VoiceProtocol` and such should be treated as one with additions.
 
     Examples
     --------
@@ -63,7 +63,7 @@ class Player(discord.VoiceProtocol):
 
     .. warning::
         This class should not be created manually but can be subclassed to add additional functionality.
-        You should instead use :meth:`~discord.VoiceChannel.connect()` and pass the player object to the cls kwarg.
+        You should instead use :meth:`discord.VoiceChannel.connect()` and pass the player object to the cls kwarg.
     """
 
     def __call__(self, client: discord.Client, channel: VoiceChannel):
@@ -102,12 +102,12 @@ class Player(discord.VoiceProtocol):
 
     @property
     def guild(self) -> discord.Guild:
-        """The :class:`~discord.Guild` this :class:`Player` is in."""
+        """The :class:`discord.Guild` this :class:`Player` is in."""
         return self.channel.guild
 
     @property
     def user(self) -> discord.ClientUser:
-        """The :class:`~discord.ClientUser` of the :class:`~discord.Client`"""
+        """The :class:`discord.ClientUser` of the :class:`discord.Client`"""
         return self.client.user  # type: ignore
 
     @property
@@ -188,7 +188,7 @@ class Player(discord.VoiceProtocol):
 
         Parameters
         -----------
-        channel: :class:`~discord,VoiceChannel`
+        channel: :class:`discord.VoiceChannel`
             The channel to move to. Must be a voice channel.
         """
         await self.guild.change_voice_state(channel=channel)

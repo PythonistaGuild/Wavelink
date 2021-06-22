@@ -1,4 +1,4 @@
-.. py:currentmodule:: wavelink
+.. currentmodule:: wavelink
 
 
 Event Reference
