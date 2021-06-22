@@ -30,8 +30,8 @@ __version__ = "{{__VERSION__}}"
 
 from .enums import *
 from .errors import *
-from .player import Player
-from .pool import Node, NodePool
+from .player import *
+from .pool import *
 from .tracks import *
-from .queue import Queue, WaitQueue
-from . import abc
+from .queue import *
+from . import abc as abc

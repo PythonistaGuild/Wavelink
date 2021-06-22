@@ -1,7 +1,7 @@
 import requests
 
 
-def getrev():
+def getrev() -> str:
     resp = requests.get("https://pypi.org/pypi/wavelink/json")
     data = resp.json()["releases"]
 

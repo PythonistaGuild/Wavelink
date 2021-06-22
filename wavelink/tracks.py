@@ -20,20 +20,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from __future__ import annotations
+
+from typing import (
+    ClassVar,
+    List,
+    Literal,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from discord.ext import commands
 
 from .abc import *
 from .pool import Node, NodePool
+from .utils import MISSING
 
+__all__ = (
+    "Track",
+    "SearchableTrack",
+    "YouTubeTrack",
+    "YouTubeMusicTrack",
+    "SoundCloudTrack",
+    "YouTubePlaylist",
+)
 
-__all__ = ("Track",
-           "SearchableTrack",
-           "YouTubeTrack",
-           "YouTubeMusicTrack",
-           "SoundCloudTrack",
-           "YouTubePlaylist"
-           )
+ST = TypeVar("ST", bound="SearchableTrack")
 
 
 class Track(Playable):
@@ -61,15 +76,15 @@ class Track(Playable):
 
     def __init__(self, id: str, info: dict):
         super().__init__(id, info)
-        self.title = info.get('title')
-        self.identifier = info.get('identifier')
-        self.uri = info.get('uri')
-        self.author = info.get('author')
+        self.title: str = info["title"]
+        self.identifier: Optional[str] = info.get("identifier")
+        self.uri: Optional[str] = info.get("uri")
+        self.author: Optional[str] = info.get("author")
 
-        self._stream: bool = info.get('isStream')  # type: ignore
-        self._dead = False
+        self._stream: bool = info.get("isStream")  # type: ignore
+        self._dead: bool = False
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.title
 
     def is_stream(self) -> bool:
@@ -79,10 +94,34 @@ class Track(Playable):
 
 class SearchableTrack(Track, Searchable):
 
-    _search_type: str = None
+    _search_type: ClassVar[str]
+
+    @overload
+    @classmethod
+    async def search(
+        cls: Type[ST],
+        query: str,
+        *,
+        node: Node = ...,
+        return_first: Literal[False] = ...,
+    ) -> List[ST]:
+        ...
+
+    @overload
+    @classmethod
+    async def search(
+        cls: Type[ST],
+        query: str,
+        *,
+        node: Node = ...,
+        return_first: Literal[True] = ...,
+    ) -> Optional[ST]:
+        ...
 
     @classmethod
-    async def search(cls, query: str, *, node: Node = None, return_first: bool = False):
+    async def search(
+        cls: Type[ST], query: str, *, node: Node = MISSING, return_first: bool = False
+    ) -> Union[Optional[ST], List[ST]]:
         """|coro|
 
         Search for tracks with the given query.
@@ -98,11 +137,12 @@ class SearchableTrack(Track, Searchable):
 
         Returns
         -------
-        Union[Track, List[Track]]
+        Union[Optional[Track], List[Track]]
         """
-        node = node or NodePool.get_node()
+        if node is MISSING:
+            node = NodePool.get_node()
 
-        tracks = await node.get_tracks(cls, f'{cls._search_type}:{query}')
+        tracks = await node.get_tracks(cls, f"{cls._search_type}:{query}")
 
         if return_first:
             return tracks[0]
@@ -110,7 +150,7 @@ class SearchableTrack(Track, Searchable):
         return tracks
 
     @classmethod
-    async def convert(cls, ctx: commands.Context, argument: str):
+    async def convert(cls: Type[ST], ctx: commands.Context, argument: str) -> ST:
         """Converter which searches for and returns the first track.
 
         Used as a type hint in a discord.py command.
@@ -118,7 +158,7 @@ class SearchableTrack(Track, Searchable):
         results = await cls.search(argument)
 
         if not results:
-            raise commands.BadArgument('Could not find any songs matching that query.')
+            raise commands.BadArgument("Could not find any songs matching that query.")
 
         return results[0]
 
@@ -126,7 +166,7 @@ class SearchableTrack(Track, Searchable):
 class YouTubeTrack(SearchableTrack):
     """A track created using a search to YouTube."""
 
-    _search_type: str = 'ytsearch'
+    _search_type: ClassVar[str] = "ytsearch"
 
     @property
     def thumbnail(self) -> str:
@@ -139,13 +179,13 @@ class YouTubeTrack(SearchableTrack):
 class YouTubeMusicTrack(SearchableTrack):
     """A track created using a search to YouTube Music."""
 
-    _search_type: str = 'ytmsearch'
+    _search_type: ClassVar[str] = "ytmsearch"
 
 
 class SoundCloudTrack(SearchableTrack):
     """A track created using a search to SoundCloud."""
 
-    _search_type: str = 'scsearch'
+    _search_type: ClassVar[str] = "scsearch"
 
 
 class YouTubePlaylist(Playlist):
@@ -162,13 +202,13 @@ class YouTubePlaylist(Playlist):
     """
 
     def __init__(self, data: dict):
-        self.tracks = []
-        self.name = data['playlistInfo']['name']
+        self.tracks: List[YouTubeTrack] = []
+        self.name: str = data["playlistInfo"]["name"]
 
-        self.selected_track = data['playlistInfo'].get('selectedTrack')
+        self.selected_track: Optional[int] = data["playlistInfo"].get("selectedTrack")
         if self.selected_track is not None:
             self.selected_track = int(self.selected_track)
 
-        for track_data in data['tracks']:
-            track = YouTubeTrack(track_data['track'], track_data['info'])
+        for track_data in data["tracks"]:
+            track = YouTubeTrack(track_data["track"], track_data["info"])
             self.tracks.append(track)

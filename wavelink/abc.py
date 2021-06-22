@@ -20,13 +20,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from __future__ import annotations
 
 import abc
+from typing import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    TYPE_CHECKING,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
-from .pool import Node
+from .utils import MISSING
 
+if TYPE_CHECKING:
+    from .pool import Node
 
-__all__ = ('Playable', 'Searchable', 'Playlist')
+__all__ = (
+    "Playable",
+    "Searchable",
+    "Playlist",
+)
+
+ST = TypeVar("ST", bound="Searchable")
 
 
 class Playable(metaclass=abc.ABCMeta):
@@ -44,17 +65,43 @@ class Playable(metaclass=abc.ABCMeta):
         Alias to ``length``.
     """
 
-    def __init__(self, id: str, info: dict):
-        self.id = id
-        self.info = info
-        self.length = self.duration = info.get('length', 0) / 1000
+    def __init__(self, id: str, info: Dict[str, Any]):
+        self.id: str = id
+        self.info: Dict[str, Any] = info
+        self.length: float = info.get("length", 0) / 1000
+        self.duration: float = self.length
 
 
 class Searchable(metaclass=abc.ABCMeta):
+    @overload
+    @classmethod
+    @abc.abstractmethod
+    async def search(
+        cls: Type[ST],
+        query: str,
+        *,
+        node: Node = ...,
+        return_first: Literal[True] = ...
+    ) -> Optional[ST]:
+        ...
+
+    @overload
+    @classmethod
+    @abc.abstractmethod
+    async def search(
+        cls: Type[ST],
+        query: str,
+        *,
+        node: Node = ...,
+        return_first: Literal[False] = ...
+    ) -> List[ST]:
+        ...
 
     @classmethod
     @abc.abstractmethod
-    async def search(cls, query: str, *, node: Node = None):
+    async def search(
+        cls: Type[ST], query: str, *, node: Node = MISSING, return_first: bool = False
+    ) -> Union[Optional[ST], List[ST]]:
         raise NotImplementedError
 
 
@@ -67,5 +114,5 @@ class Playlist(metaclass=abc.ABCMeta):
         The raw data supplied by Lavalink.
     """
 
-    def __init__(self, data: dict):
-        self.data = data
+    def __init__(self, data: Dict[str, Any]):
+        self.data: Dict[str, Any] = data

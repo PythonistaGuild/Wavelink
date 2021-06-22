@@ -22,6 +22,7 @@ SOFTWARE.
 """
 
 from .enums import ErrorSeverity
+from discord.enums import try_enum
 
 
 __all__ = (
@@ -36,7 +37,7 @@ __all__ = (
     "NoMatchingNode",
     "QueueException",
     "QueueFull",
-    "QueueEmpty"
+    "QueueEmpty",
 )
 
 
@@ -57,7 +58,7 @@ class LoadTrackError(LavalinkException):
 
     def __init__(self, data):
         exception = data["exception"]
-        self.severity = ErrorSeverity.try_value(exception["severity"])
+        self.severity: ErrorSeverity = try_enum(ErrorSeverity, exception["severity"])
         super().__init__(exception["message"])
 
 
@@ -86,14 +87,17 @@ class NoMatchingNode(WavelinkError):
 
 class QueueException(WavelinkError):
     """Base WaveLink Queue exception."""
+
     pass
 
 
 class QueueFull(QueueException):
     """Exception raised when attempting to add to a full Queue."""
+
     pass
 
 
 class QueueEmpty(QueueException):
     """Exception raised when attempting to retrieve from an empty Queue."""
+
     pass
