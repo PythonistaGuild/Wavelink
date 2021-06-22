@@ -21,20 +21,43 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from __future__ import annotations
+
 import json
 import logging
-import uuid
-from typing import Optional, Union
+import os
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+)
 
+import aiohttp
 import discord
-from discord.ext import commands
+from discord.enums import try_enum
 
+from . import abc
 from .enums import *
 from .errors import *
+from .stats import Stats
+from .utils import MISSING
 from .websocket import Websocket
 
+if TYPE_CHECKING:
+    from .player import Player
 
-logger = logging.getLogger(__name__)
+
+PT = TypeVar("PT", bound=abc.Playable)
+PLT = TypeVar("PLT", bound=abc.Playlist)
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class Node:
@@ -42,31 +65,43 @@ class Node:
 
     Attributes
     ----------
-    bot: :class:`~commands.Bot`
+    bot: :class:`~discord.Client`
         The discord.py Bot object.
 
 
     .. warning::
         This class should not be created manually. Please use :meth:`NodePool.create_node()` instead.
     """
-    def __init__(self, **attrs):
-        self.bot = attrs.get("bot")
-        self._host: str = attrs.get("host")
-        self._port: int = attrs.get("port")
-        self._password: str = attrs.get("password")
-        self._https: bool = attrs.get("https")
-        self._heartbeat: float = attrs.get("heartbeat")
-        self._region: discord.VoiceRegion = attrs.get("region")
-        self._identifier: str = attrs.get("identifier")
 
-        self._players = []
+    def __init__(
+        self,
+        bot: discord.Client,
+        host: str,
+        port: int,
+        password: str,
+        https: bool,
+        heartbeat: float,
+        region: Optional[discord.VoiceRegion],
+        identifier: str,
+        dumps: Callable[[Any], str],
+    ):
+        self.bot: discord.Client = bot
+        self._host: str = host
+        self._port: int = port
+        self._password: str = password
+        self._https: bool = https
+        self._heartbeat: float = heartbeat
+        self._region: Optional[discord.VoiceRegion] = region
+        self._identifier: str = identifier
 
-        self._dumps = attrs.get("dumps")
-        self._websocket: Websocket = None
+        self._players: List[Player] = []
 
-        self.stats = None
+        self._dumps: Callable[[Any], str] = dumps
+        self._websocket: Websocket = MISSING
 
-    def __repr__(self):
+        self.stats: Stats = MISSING
+
+    def __repr__(self) -> str:
         return f"<WaveLink Node: <{self.identifier}>, Region: <{self.region}>, Players: <{len(self._players)}>>"
 
     @property
@@ -80,7 +115,7 @@ class Node:
         return self._port
 
     @property
-    def region(self) -> discord.VoiceRegion:
+    def region(self) -> Optional[discord.VoiceRegion]:
         """The voice region of the Node."""
         return self._region
 
@@ -90,7 +125,7 @@ class Node:
         return self._identifier
 
     @property
-    def players(self) -> list:
+    def players(self) -> List[Player]:
         """A list of currently connected Players."""
         return self._players
 
@@ -102,19 +137,21 @@ class Node:
 
         return self.stats.penalty.total
 
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """Bool indicating whether or not this Node is currently connected to Lavalink."""
         if self._websocket is None:
             return False
 
         return self._websocket.is_connected()
 
-    async def _connect(self):
+    async def _connect(self) -> None:
         self._websocket = Websocket(node=self)
 
         await self._websocket.connect()
 
-    async def _get_data(self, endpoint: str, params: dict):
+    async def _get_data(
+        self, endpoint: str, params: dict
+    ) -> Tuple[Dict[str, Any], aiohttp.ClientResponse]:
         headers = {"Authorization": self._password}
         async with self._websocket.session.get(
             f"{self._websocket.host}/{endpoint}", headers=headers, params=params
@@ -123,7 +160,7 @@ class Node:
 
         return data, resp
 
-    async def get_tracks(self, cls, query: str):
+    async def get_tracks(self, cls: Type[PT], query: str) -> List[PT]:
         """|coro|
 
         Search for and return a list of :class:`abc.Playable` for a given query.
@@ -152,29 +189,27 @@ class Node:
         if resp.status != 200:
             raise LavalinkException("Invalid response from Lavalink server.")
 
-        load_type = LoadType.try_value(data.get("loadType"))
+        load_type = try_enum(LoadType, data.get("loadType"))
 
-        if load_type == LoadType.load_failed:
+        if load_type is LoadType.load_failed:
             raise LoadTrackError(data)
 
-        if load_type == LoadType.no_matches:
+        if load_type is LoadType.no_matches:
             return []
 
-        if load_type == LoadType.track_loaded:
+        if load_type is LoadType.track_loaded:
             track_data = data["tracks"][0]
             return [cls(track_data["track"], track_data["info"])]
 
-        if load_type != LoadType.search_result:
+        if load_type is not LoadType.search_result:
             raise LavalinkException("Track failed to load.")
 
-        tracks = []
-        for track_data in data["tracks"]:
-            track = cls(track_data["track"], track_data["info"])
-            tracks.append(track)
+        return [
+            cls(track_data["track"], track_data["info"])
+            for track_data in data["tracks"]
+        ]
 
-        return tracks
-
-    async def get_playlist(self, cls, identifier: str):
+    async def get_playlist(self, cls: Type[PLT], identifier: str) -> Optional[PLT]:
         """|coro|
 
         Search for an return a :class:`abc.Playlist` given an identifier.
@@ -188,7 +223,7 @@ class Node:
 
         Returns
         -------
-        Union[:class:`abc.Playlist`, None]:
+        Optional[:class:`abc.Playlist`]:
             The related wavelink track object or ``None`` if none was found.
 
         Raises
@@ -203,20 +238,20 @@ class Node:
         if resp.status != 200:
             raise LavalinkException("Invalid response from Lavalink server.")
 
-        load_type = LoadType.try_value(data.get("loadType"))
+        load_type = try_enum(LoadType, data.get("loadType"))
 
-        if load_type == LoadType.load_failed:
+        if load_type is LoadType.load_failed:
             raise LoadTrackError(data)
 
-        if load_type == LoadType.no_matches:
+        if load_type is LoadType.no_matches:
             return None
 
-        if load_type != LoadType.playlist_loaded:
+        if load_type is not LoadType.playlist_loaded:
             raise LavalinkException("Track failed to load.")
 
         return cls(data)
 
-    async def build_track(self, cls, identifier: str):
+    async def build_track(self, cls: Type[PT], identifier: str) -> PT:
         """|coro|
 
         Build a track object with a valid track identifier.
@@ -245,7 +280,7 @@ class Node:
 
         return cls(identifier, data)
 
-    def get_player(self, guild: discord.Guild):
+    def get_player(self, guild: discord.Guild) -> Optional[Player]:
         """Returns a :class:`Player` object playing in a specific :class:`~discord.Guild`.
 
         Parameters
@@ -263,7 +298,7 @@ class Node:
 
         return None
 
-    async def disconnect(self, *, force: bool = False):
+    async def disconnect(self, *, force: bool = False) -> None:
         """Disconnect this Node and remove it from the NodePool.
 
         This is a graceful shutdown of the node.
@@ -273,7 +308,7 @@ class Node:
 
         await self.cleanup()
 
-    async def cleanup(self):
+    async def cleanup(self) -> None:
         try:
             self._websocket.listener.cancel()
         except Exception:
@@ -293,10 +328,10 @@ class NodePool:
     This class holds all the Node objects created with :meth:`create_node()`.
     """
 
-    _nodes = {}
+    _nodes: ClassVar[Dict[str, Node]] = {}
 
     @property
-    def nodes(self) -> dict:
+    def nodes(self) -> Dict[str, Node]:
         """A mapping of created Node objects."""
         return self._nodes
 
@@ -304,15 +339,15 @@ class NodePool:
     async def create_node(
         cls,
         *,
-        bot: Union[discord.Client, commands.Bot],
+        bot: discord.Client,
         host: str,
         port: int,
         password: str,
-        https: Optional[bool] = False,
-        heartbeat: Optional[float] = 30,
+        https: bool = False,
+        heartbeat: float = 30,
         region: Optional[discord.VoiceRegion] = None,
-        identifier: Optional[str] = None,
-        dumps=json.dumps,
+        identifier: str = MISSING,
+        dumps: Callable[[Any], str] = json.dumps,
     ) -> Node:
 
         """|coro|
@@ -329,13 +364,13 @@ class NodePool:
             The lavalink port.
         password: str
             The lavalink password for authentication.
-        https: Optional[bool]
+        https: bool
             Connect to lavalink over https. Defaults to False.
-        heartbeat: Optional[float]
+        heartbeat: float
             The heartbeat in seconds for the node. Defaults to 30 seconds.
         region: Optional[discord.VoiceRegion]
             The discord.py VoiceRegion to assign to the node. This is useful for node region balancing.
-        identifier: Optional[str]
+        identifier: str
             The unique identifier for this Node. By default this will be generated for you.
 
         Returns
@@ -344,11 +379,13 @@ class NodePool:
             The WaveLink Node object.
         """
 
-        if not identifier:
-            identifier = str(uuid.uuid4())
+        if identifier is MISSING:
+            identifier = os.urandom(8).hex()
 
         if identifier in cls._nodes:
-            raise NodeOccupied(f"A node with identifier <{identifier}> already exists in this pool.")
+            raise NodeOccupied(
+                f"A node with identifier <{identifier}> already exists in this pool."
+            )
 
         node = Node(
             bot=bot,
@@ -368,14 +405,16 @@ class NodePool:
         return node
 
     @classmethod
-    def get_node(cls, *, identifier: str = None, region: discord.VoiceRegion = None) -> Node:
+    def get_node(
+        cls, *, identifier: str = MISSING, region: discord.VoiceRegion = MISSING
+    ) -> Node:
         """Retrieve a Node from the NodePool.
 
         Parameters
         ------------
-        identifier: Optional[str]
+        identifier: str
             If provided this method will attempt to return the Node with the provided identifier.
-        region: Optional[:class:`discord.VoiceRegion`]
+        region: :class:`discord.VoiceRegion`
             If provided this method will attempt to find the best Node with the provided region.
 
         Returns
@@ -393,7 +432,7 @@ class NodePool:
         if not cls._nodes:
             raise ZeroConnectedNodes("There are no connected Nodes on this pool.")
 
-        if identifier:
+        if identifier is not MISSING:
             try:
                 node = cls._nodes[identifier]
             except KeyError:
@@ -401,10 +440,12 @@ class NodePool:
             else:
                 return node
 
-        elif region:
+        elif region is not MISSING:
             nodes = [n for n in cls._nodes.values() if n._region is region]
             if not nodes:
-                raise ZeroConnectedNodes(f"No Nodes for region <{region}> exist on this pool.")
+                raise ZeroConnectedNodes(
+                    f"No Nodes for region <{region}> exist on this pool."
+                )
         else:
             nodes = cls._nodes.values()
 
