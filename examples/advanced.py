@@ -20,7 +20,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 -------------------------------------------------------------------------------
-This example uses the following whihch must be installed prior to running:
+This example uses the following which must be installed prior to running:
 
     - Discord.py version >= 1.3.1 (pip install -U discord.py)
     - Wavelink version >= 0.5.1 (pip install -U wavelink)
