@@ -52,6 +52,7 @@ from .websocket import Websocket
 
 if TYPE_CHECKING:
     from .player import Player
+    from .ext import spotify
 
 
 __all__ = (
@@ -89,6 +90,7 @@ class Node:
         https: bool,
         heartbeat: float,
         region: Optional[discord.VoiceRegion],
+        spotify: Optional[spotify.SpotifyClient],
         identifier: str,
         dumps: Callable[[Any], str],
     ):
@@ -99,6 +101,7 @@ class Node:
         self._https: bool = https
         self._heartbeat: float = heartbeat
         self._region: Optional[discord.VoiceRegion] = region
+        self._spotify = spotify
         self._identifier: str = identifier
 
         self._players: List[Player] = []
@@ -353,6 +356,7 @@ class NodePool:
         https: bool = False,
         heartbeat: float = 30,
         region: Optional[discord.VoiceRegion] = None,
+        spotify_client: Optional[spotify.SpotifyClient] = None,
         identifier: str = MISSING,
         dumps: Callable[[Any], str] = json.dumps,
     ) -> Node:
@@ -377,6 +381,8 @@ class NodePool:
             The heartbeat in seconds for the node. Defaults to 30 seconds.
         region: Optional[:class:`discord.VoiceRegion`]
             The discord.py VoiceRegion to assign to the node. This is useful for node region balancing.
+        spotify_client: Optional[:class:`wavelink.ext.spotify.SpotifyClient`]
+            An optional SpotifyClient with credentials to use when searching for spotify tracks.
         identifier: :class:`str`
             The unique identifier for this Node. By default this will be generated for you.
 
@@ -402,6 +408,7 @@ class NodePool:
             https=https,
             heartbeat=heartbeat,
             region=region,
+            spotify=spotify_client,
             identifier=identifier,
             dumps=dumps,
         )

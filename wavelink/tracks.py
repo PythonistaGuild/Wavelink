@@ -23,6 +23,7 @@ SOFTWARE.
 from __future__ import annotations
 
 from typing import (
+    TYPE_CHECKING,
     ClassVar,
     List,
     Literal,
@@ -38,6 +39,10 @@ from discord.ext import commands
 from .abc import *
 from .pool import Node, NodePool
 from .utils import MISSING
+
+if TYPE_CHECKING:
+    from .ext import spotify
+
 
 __all__ = (
     "Track",
@@ -99,6 +104,30 @@ class SearchableTrack(Track, Searchable):
     @overload
     @classmethod
     async def search(
+            cls: Type[ST],
+            query: str,
+            *,
+            node: Node = ...,
+            type: spotify.SpotifySearchType = ...,
+            return_first: Literal[False] = ...,
+    ) -> List[ST]:
+        ...
+
+    @overload
+    @classmethod
+    async def search(
+            cls: Type[ST],
+            query: str,
+            *,
+            node: Node = ...,
+            type: spotify.SpotifySearchType = ...,
+            return_first: Literal[True] = ...,
+    ) -> Optional[ST]:
+        ...
+
+    @overload
+    @classmethod
+    async def search(
         cls: Type[ST],
         query: str,
         *,
@@ -120,7 +149,12 @@ class SearchableTrack(Track, Searchable):
 
     @classmethod
     async def search(
-        cls: Type[ST], query: str, *, node: Node = MISSING, return_first: bool = False
+        cls: Type[ST],
+            query: str,
+            *,
+            spotify_type: spotify.SpotifySearchType = None,
+            node: Node = MISSING,
+            return_first: bool = False
     ) -> Union[Optional[ST], List[ST]]:
         """|coro|
 
@@ -130,6 +164,8 @@ class SearchableTrack(Track, Searchable):
         ----------
         query: str
             The song to search for.
+        spotify_type: Optional[:class:`spotify.SpotifySearchType`]
+            An optional enum value to use when searching with Spotify.
         node: Optional[:class:`wavelink.Node`]
             An optional Node to use to make the search with.
         return_first: Optional[bool]
