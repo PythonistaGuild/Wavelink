@@ -74,9 +74,8 @@ class Player(discord.VoiceProtocol):
 
     def __init__(
         self,
-        client: discord.Client,
-        channel: VoiceChannel,
-        /,
+        client: discord.Client = MISSING,
+        channel: VoiceChannel = MISSING,
         *,
         node: Node = MISSING,
     ):
