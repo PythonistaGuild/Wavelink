@@ -48,7 +48,7 @@ setup(
     author="PythonistaGuild, EvieePy",
     url="https://github.com/PythonistaGuild/Wavelink",
     version=version,
-    packages=["wavelink", "wavelink.ext.spotify"],
+    packages=["wavelink", "wavelink.ext.spotify", "wavelink.types"],
     license="MIT",
     description="A robust and powerful Lavalink wrapper for discord.py.",
     long_description=readme,
