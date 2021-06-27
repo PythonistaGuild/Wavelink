@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Dict, TYPE_CHECKING, Tuple
+from typing import Any, Dict, TYPE_CHECKING, Tuple, Optional
 
 import aiohttp
 from discord.backoff import ExponentialBackoff
@@ -44,30 +44,29 @@ class Websocket:
     def __init__(self, *, node: Node, session: aiohttp.ClientSession = MISSING):
         self.node: Node = node
 
-        self.websocket: aiohttp.ClientWebSocketResponse = MISSING
+        self.websocket: Optional[aiohttp.ClientWebSocketResponse] = None
         if session is MISSING:
             session = aiohttp.ClientSession()
         self.session: aiohttp.ClientSession = session
-        self.listener: asyncio.Task = MISSING
+        self.listener: Optional[asyncio.Task] = None
 
         self.host: str = f'{"https://" if self.node._https else "http://"}{self.node.host}:{self.node.port}'
         self.ws_host: str = f"ws://{self.node.host}:{self.node.port}"
 
     @property
     def headers(self) -> Dict[str, Any]:
-        headers = {
+        return {
             "Authorization": self.node._password,
-            "User-Id": str(self.node.bot.user.id),  # type: ignore
+            "User-Id": str(self.node.bot.user.id),
             "Client-Name": "WaveLink",
         }
-
-        return headers
 
     def is_connected(self) -> bool:
         return self.websocket is not None and not self.websocket.closed
 
     async def connect(self) -> None:
         if self.is_connected():
+            assert isinstance(self.websocket, aiohttp.ClientWebSocketResponse)
             await self.websocket.close(
                 code=1006, message=b"WaveLink: Attempting reconnection."
             )
@@ -87,10 +86,10 @@ class Websocket:
 
             return
 
-        if not self.listener:
+        if self.listener is None:
             self.listener = asyncio.create_task(self.listen())
 
-        if self.is_connected:
+        if self.is_connected():
             self.dispatch("node_ready", self.node)
             logger.debug(f"Connection established...{self.node.__repr__()}")
 
@@ -98,6 +97,7 @@ class Websocket:
         backoff = ExponentialBackoff(base=7)
 
         while True:
+            assert isinstance(self.websocket, aiohttp.ClientWebSocketResponse)
             msg = await self.websocket.receive()
 
             if msg.type is aiohttp.WSMsgType.CLOSED:
@@ -109,8 +109,8 @@ class Websocket:
 
                 await asyncio.sleep(retry)
 
-                if not self.is_connected:
-                    asyncio.create_task(self.connect())
+                if not self.is_connected():
+                    await self.connect()
             else:
                 logger.debug(f"Received Payload:: <{msg.data}>")
                 asyncio.create_task(self.process_data(msg.json()))
@@ -125,7 +125,8 @@ class Websocket:
             return
 
         try:
-            player = self.node.get_player(self.node.bot.get_guild(int(data["guildId"])))  # type: ignore
+            player = self.node.get_player(self.node.bot.get_guild(
+                int(data["guildId"])))  # type: ignore
         except KeyError:
             return
 
@@ -182,7 +183,8 @@ class Websocket:
         self.node.bot.dispatch(f"wavelink_{event}", *args, **kwargs)
 
     async def send(self, **data: Any) -> None:
-        if self.is_connected:
+        if self.is_connected():
+            assert isinstance(self.websocket, aiohttp.ClientWebSocketResponse)
             logger.debug(f"Sending Payload:: {data}")
 
             data_str = self.node._dumps(data)

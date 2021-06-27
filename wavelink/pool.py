@@ -106,7 +106,7 @@ class Node:
         self._dumps: Callable[[Any], str] = dumps
         self._websocket: Websocket = MISSING
 
-        self.stats: Stats = MISSING
+        self.stats: Optional[Stats] = None
 
     def __repr__(self) -> str:
         return f"<WaveLink Node: <{self.identifier}>, Region: <{self.region}>, Players: <{len(self._players)}>>"
@@ -146,7 +146,7 @@ class Node:
 
     def is_connected(self) -> bool:
         """Bool indicating whether or not this Node is currently connected to Lavalink."""
-        if self._websocket is None:
+        if self._websocket is MISSING:
             return False
 
         return self._websocket.is_connected()
