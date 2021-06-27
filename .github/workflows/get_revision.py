@@ -3,10 +3,12 @@ import requests
 
 def getrev() -> str:
     resp = requests.get("https://pypi.org/pypi/wavelink/json")
-    data = resp.json()["releases"]
+    data = sorted(resp.json()["releases"])
 
-    pre = max(data).split("b")
-    final = f"{pre[0]}b{int(pre[1]) + 1}"
+    first = max(data).split('b')[0]
+    second = sorted([int(p.split('b')[1]) for p in data if 'b' in p], reverse=True)[0]
+
+    final = f"{first}b{int(second) + 1}"
 
     return final
 
