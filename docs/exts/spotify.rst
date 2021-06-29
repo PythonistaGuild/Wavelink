@@ -26,6 +26,8 @@ for an appropriate YouTube Track.
 Reference
 =========
 
+.. autofunction:: decode_url
+
 .. autoclass:: SpotifyClient
     :members:
 

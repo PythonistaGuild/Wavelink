@@ -39,7 +39,8 @@ from wavelink.utils import MISSING
 __all__ = ('SpotifySearchType',
            'SpotifyClient',
            'SpotifyTrack',
-           'SpotifyRequestError')
+           'SpotifyRequestError',
+           'decode_url')
 
 
 GRANTURL = 'https://accounts.spotify.com/api/token?grant_type=client_credentials'
@@ -47,6 +48,48 @@ URLREGEX = re.compile(r'https://open\.spotify\.com/(?P<entity>.+)/(?P<identifier
 BASEURL = 'https://api.spotify.com/v1/{entity}s/{identifier}'
 
 ST = TypeVar("ST", bound="SearchableTrack")
+
+
+def decode_url(url: str) -> Optional[dict]:
+    """Check whether the given URL is a valid Spotify URL and return it's type and ID.
+
+    Parameters
+    ----------
+    url: str
+        The URL to check.
+
+    Returns
+    -------
+    Optional[dict]
+        An mapping of :class:`SpotifySearchType` and Spotify ID. Type will be either track, album or playlist.
+        If type is not track, album or playlist, a special unusable type is returned.
+
+        Could return None if the URL is invalid.
+
+    Examples
+    --------
+
+    .. code:: python3
+
+        from wavelink.ext import spotify
+
+        ...
+
+        decoded = spotify.decode_url("https://open.spotify.com/track/6BDLcvvtyJD2vnXRDi1IjQ?si=e2e5bd7aaf3d4a2a")
+
+        if decoded and decoded['type'] is spotify.SpotifySearchType.track:
+            track = await spotify.SpotifyTrack.search(query=decoded["id"], type=decoded["type"])
+    """
+    match = URLREGEX.match(url)
+    if match:
+        try:
+            type_ = SpotifySearchType[match['entity']]
+        except KeyError:
+            type_ = SpotifySearchType.unusable
+
+        return {'type': type_, 'id': match['identifier']}
+
+    return None
 
 
 class SpotifySearchType(enum.Enum):
@@ -62,6 +105,7 @@ class SpotifySearchType(enum.Enum):
     track = 0
     album = 1
     playlist = 2
+    unusable = 3
 
 
 class SpotifyAsyncIterator:
