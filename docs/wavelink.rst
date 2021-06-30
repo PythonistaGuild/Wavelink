@@ -123,6 +123,14 @@ YouTubePlaylist
 .. autoclass:: YouTubePlaylist
     :members:
 
+PartialTrack
+~~~~~~~~~~~~
+
+.. attributetable:: PartialTrack
+
+.. autoclass:: PartialTrack
+    :members:
+
 Player
 ------
 
