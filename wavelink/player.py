@@ -31,6 +31,7 @@ from discord.channel import VoiceChannel
 from . import abc
 from .pool import Node, NodePool
 from .queue import WaitQueue
+from .tracks import PartialTrack
 from .utils import MISSING
 
 
@@ -211,12 +212,20 @@ class Player(discord.VoiceProtocol):
         end: int
             The position to end the track on in milliseconds.
             By default this always allows the current song to finish playing.
+
+        Returns
+        -------
+        :class:`wavelink.abc.Playable`
+            The track that is now playing.
         """
         if replace or not self.is_playing():
             await self.update_state({"state": {}})
             self._paused = False
         else:
             return
+
+        if isinstance(source, PartialTrack):
+            source = await source._search()
 
         self._source = source
 
@@ -233,6 +242,7 @@ class Player(discord.VoiceProtocol):
         await self.node._websocket.send(**payload)
 
         logger.debug(f"Started playing track:: {str(source)} ({self.channel.id})")
+        return source
 
     def is_connected(self) -> bool:
         """Indicates whether the player is connected to voice."""

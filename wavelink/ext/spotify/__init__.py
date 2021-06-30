@@ -32,7 +32,7 @@ import aiohttp
 from discord.ext import commands
 
 import wavelink
-from wavelink import Node, NodePool, YouTubeTrack
+from wavelink import Node, NodePool, PartialTrack, YouTubeTrack
 from wavelink.utils import MISSING
 
 
@@ -110,11 +110,13 @@ class SpotifySearchType(enum.Enum):
 
 class SpotifyAsyncIterator:
 
-    def __init__(self, *, query: str, limit: int, type: SpotifySearchType, node: Node):
+    def __init__(self, *, query: str, limit: int, type: SpotifySearchType, node: Node, partial: bool):
         self._query = query
         self._limit = limit
         self._type = type
         self._node = node
+
+        self._partial = partial
 
         self._first = True
         self._count = 0
@@ -142,8 +144,11 @@ class SpotifyAsyncIterator:
         except asyncio.QueueEmpty:
             raise StopAsyncIteration
 
-        track = (await wavelink.YouTubeTrack.search(query=f'{track["name"]} -'
-                                                          f' {track["artists"][0]["name"]}'))[0]
+        if self._partial:
+            track = PartialTrack(query=f'{track["name"]} - {track["artists"][0]["name"]}')
+        else:
+            track = (await wavelink.YouTubeTrack.search(query=f'{track["name"]} -'
+                                                              f' {track["artists"][0]["name"]}'))[0]
 
         self._count += 1
         return track
@@ -315,7 +320,9 @@ class SpotifyTrack(YouTubeTrack):
                  query: str,
                  limit: Optional[int] = None,
                  type: SpotifySearchType = SpotifySearchType.playlist,
-                 node: Optional[Node] = MISSING):
+                 node: Optional[Node] = MISSING,
+                 partial_tracks: bool = False
+                 ):
         """An async iterator version of search.
 
         This can be useful when searching for large playlists or albums with Spotify.
@@ -330,6 +337,10 @@ class SpotifyTrack(YouTubeTrack):
             The type of search. Must be either playlist or album. Defaults to playlist.
         node: Optional[:class:`Node`]
             An optional node to use when querying for tracks. Defaults to best available.
+        partial_tracks: Optional[bool]
+            Whether or not to create :class:`wavelink.tracks.PartialTrack` objects for search at playtime.
+            This can make queuing large albums or playlists considerably faster, but with less information.
+            Defaults to False.
 
         Examples
         --------
@@ -346,7 +357,7 @@ class SpotifyTrack(YouTubeTrack):
         if node is MISSING:
             node = NodePool.get_node()
 
-        return SpotifyAsyncIterator(query=query, limit=limit, node=node, type=type)
+        return SpotifyAsyncIterator(query=query, limit=limit, node=node, type=type, partial=partial_tracks)
 
     @classmethod
     async def convert(cls: Type[ST], ctx: commands.Context, argument: str) -> ST:
