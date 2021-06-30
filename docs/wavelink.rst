@@ -129,7 +129,6 @@ PartialTrack
 .. attributetable:: PartialTrack
 
 .. autoclass:: PartialTrack
-    :members:
 
 Player
 ------
