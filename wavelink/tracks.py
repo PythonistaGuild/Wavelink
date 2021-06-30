@@ -51,6 +51,7 @@ __all__ = (
     "YouTubeMusicTrack",
     "SoundCloudTrack",
     "YouTubePlaylist",
+    "PartialTrack"
 )
 
 ST = TypeVar("ST", bound="SearchableTrack")
@@ -152,7 +153,7 @@ class SearchableTrack(Track, Searchable):
         cls: Type[ST],
             query: str,
             *,
-            spotify_type: spotify.SpotifySearchType = None,
+            type: spotify.SpotifySearchType = None,
             node: Node = MISSING,
             return_first: bool = False
     ) -> Union[Optional[ST], List[ST]]:
@@ -248,3 +249,47 @@ class YouTubePlaylist(Playlist):
         for track_data in data["tracks"]:
             track = YouTubeTrack(track_data["track"], track_data["info"])
             self.tracks.append(track)
+
+
+class PartialTrack(Searchable):
+    """A PartialTrack object that searches for the given query at playtime.
+
+    Parameters
+    ----------
+    query: str
+        The query to search for at playtime.
+    node: Optional[:class:`wavelink.Node`]
+        An optional node to use when searching. Defaults to the best node.
+    cls: Optional[:class:`SearchableTrack`]
+        An optional Non-Partial Track object to use when searching.
+
+    .. warning::
+
+        This object will only search for the given query at playtime.
+        Full track information will be missing until it has been searched.
+    """
+
+    def __init__(self,
+                 *,
+                 query: str,
+                 node: Optional[Node] = MISSING,
+                 cls: Optional[SearchableTrack] = YouTubeTrack):
+        self.query = query
+        self.title = query
+        self._node = node
+        self._cls = cls
+
+        if not issubclass(cls, SearchableTrack):
+            raise TypeError(f"cls parameter must be of type {SearchableTrack!r} not {cls!r}")
+
+    async def _search(self):
+        node = self._node
+        if node is MISSING:
+            node = NodePool.get_node()
+
+        tracks = await self._cls.search(query=self.query, node=node)
+
+        return tracks[0]
+
+    async def search(self):
+        raise NotImplementedError
