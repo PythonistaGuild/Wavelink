@@ -263,7 +263,8 @@ class PartialTrack(Searchable):
     cls: Optional[:class:`SearchableTrack`]
         An optional Non-Partial Track object to use when searching.
 
-    .. warning::
+
+    ... warning::
 
         This object will only search for the given query at playtime.
         Full track information will be missing until it has been searched.
