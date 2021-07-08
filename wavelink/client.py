@@ -404,7 +404,7 @@ class Client:
         NodeOccupied
             A node with provided identifier already exists.
         """
-        await self.bot.wait_until_ready()
+        # await self.bot.wait_until_ready()
 
         if identifier in self.nodes:
             node = self.nodes[identifier]
