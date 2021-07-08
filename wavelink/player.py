@@ -160,6 +160,8 @@ class Player:
         self._equalizer = Equalizer.flat()
         self.channel_id = None
 
+        self._new_track = False
+
     @property
     def equalizer(self):
         """The currently applied Equalizer."""
@@ -239,8 +241,9 @@ class Player:
             await self.node._send(op='voiceUpdate', guildId=str(self.guild_id), **self._voice_state)
 
     async def hook(self, event) -> None:
-        if isinstance(event, TrackEnd):
+        if isinstance(event, TrackEnd) and not self._new_track:
             self.current = None
+        self._new_track = False
 
     def _get_shard_socket(self, shard_id: int) -> Optional[DiscordWebSocket]:
         if isinstance(self.bot, commands.AutoShardedBot):
@@ -315,6 +318,9 @@ class Player:
             return
 
         no_replace = not replace
+
+        if self.current:
+            self._new_track = True
 
         self.current = track
 
