@@ -64,7 +64,7 @@ class WebSocket:
         return self._websocket is not None and not self._websocket.closed
 
     async def _connect(self):
-        await self.bot.wait_until_ready()
+        # await self.bot.wait_until_ready()
 
         try:
             if self.secure is True:
