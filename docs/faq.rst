@@ -23,7 +23,7 @@ After Java has been successfully installed, open a new terminal for PATH variabl
 - Create a Folder/Directory for storing Lavalink.jar and application.yml
 - Download the latest `Lavalink.jar` from `CI Server <https://ci.fredboat.com/viewLog.html?buildId=lastSuccessful&buildTypeId=Lavalink_Build&tab=artifacts&guest=1>`_
 - Create an application.yml. `Example <https://github.com/freyacodes/Lavalink/blob/master/LavalinkServer/application.yml.example>`_
-- In your terminal, run: `java -jar Lavalink.jar`
+- In your terminal, run: `cd DIRECTORY_OF_LAVALINK && java -jar Lavalink.jar`
 
 That's it your server should now be running and ready to be connected to.
 
