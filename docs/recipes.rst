@@ -181,6 +181,7 @@ is easier and more intuitive. Below are some common examples of how to use the n
 **A Simple Player:**
 
 .. code:: python3
+
     import discord
     import wavelink
 
