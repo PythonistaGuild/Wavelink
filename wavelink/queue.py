@@ -213,6 +213,16 @@ class Queue(Iterable[abc.Playable], Generic[QT]):
 
         return self._get()
 
+    def pop(self) -> abc.Playable:
+        """Return item from the right end side of the queue.
+
+        Raises QueueEmpty if no items in queue.
+        """
+        if self.is_empty:
+            raise QueueEmpty("No items in the queue.")
+
+        return self._queue.pop()
+
     def find_position(self, item: abc.Playable) -> int:
         """Find the position a given item within the queue.
 
