@@ -1,4 +1,4 @@
-WaveLink Recipes and Examples
+Recipes and Examples
 =============================
 Below are common short examples and recipes for use with WaveLink 1.0.
 This is not an exhaustive list, for more detailed examples, see: `GitHub Examples <https://github.com/PythonistaGuild/Wavelink/tree/1.0/examples>`_
