@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 __all__ = (
     "Penalty",
-    "Status",
+    "Stats",
 )
 
 
