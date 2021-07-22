@@ -33,6 +33,7 @@ from .enums import *
 from .errors import *
 from .player import *
 from .pool import *
+from .stats import Stats
 from .tracks import *
 from .queue import *
 from . import abc as abc
