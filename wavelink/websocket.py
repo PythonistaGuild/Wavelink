@@ -27,9 +27,8 @@ import logging
 from typing import Any, Dict, TYPE_CHECKING, Tuple, Optional
 
 import aiohttp
-from discord.backoff import ExponentialBackoff
 
-from .stats import Stats
+import wavelink
 from .utils import MISSING
 
 if TYPE_CHECKING:
@@ -94,7 +93,7 @@ class Websocket:
             logger.debug(f"Connection established...{self.node.__repr__()}")
 
     async def listen(self) -> None:
-        backoff = ExponentialBackoff(base=7)
+        backoff = wavelink.Backoff(base=1, maximum_time=60, maximum_tries=None)
 
         while True:
             assert isinstance(self.websocket, aiohttp.ClientWebSocketResponse)
@@ -103,7 +102,7 @@ class Websocket:
             if msg.type is aiohttp.WSMsgType.CLOSED:
                 logger.debug(f"Websocket Closed: {msg.extra}")
 
-                retry = backoff.delay()
+                retry = backoff.calculate()
 
                 logger.warning(f"\nRetrying connection in <{retry}> seconds...\n")
 
@@ -113,6 +112,16 @@ class Websocket:
                     await self.connect()
             else:
                 logger.debug(f"Received Payload:: <{msg.data}>")
+
+                if msg.data == 1011:
+                    # Lavalink encountered an internal error which can not be fixed...
+                    # Consider updating Lavalink...
+                    logger.error('Internal Lavalink Error encountered. Terminating WaveLink without retries.'
+                                 'Consider updating your Lavalink Server.')
+
+                    self.listener.cancel()
+                    return
+
                 asyncio.create_task(self.process_data(msg.json()))
 
     async def process_data(self, data: Dict[str, Any]) -> None:
@@ -121,7 +130,7 @@ class Websocket:
             return
 
         if op == "stats":
-            self.node.stats = Stats(self.node, data)
+            self.node.stats = wavelink.Stats(self.node, data)
             return
 
         try:
@@ -134,7 +143,7 @@ class Websocket:
             return
 
         if op == 'event':
-            event, payload = self._get_event_payload(data['type'], data)
+            event, payload = await self._get_event_payload(data['type'], data)
             logger.debug(f'op: event:: {data}')
 
             self.dispatch(event, player, **payload)
@@ -146,7 +155,7 @@ class Websocket:
             except KeyError:
                 pass
 
-    def _get_event_payload(
+    async def _get_event_payload(
         self, name: str, data: Dict[str, Any]
     ) -> Tuple[str, Dict[str, Any]]:
         event = "event"
@@ -158,7 +167,10 @@ class Websocket:
             payload["code"] = data.get("code")
 
         if name.startswith("Track"):
-            payload["track"] = data.get("track")
+            base64_ = data.get('track')
+            track = await self.node.build_track(cls=wavelink.Track, identifier=base64_)
+
+            payload["track"] = track
 
             if name == "TrackEndEvent":
                 event = "track_end"
