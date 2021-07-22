@@ -28,6 +28,7 @@ __copyright__ = "Copyright 2019-2021 (c) Pythonista, EvieePy"
 __version__ = "{{__VERSION__}}"
 
 
+from .backoff import Backoff
 from .enums import *
 from .errors import *
 from .player import *
