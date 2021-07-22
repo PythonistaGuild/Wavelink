@@ -24,23 +24,23 @@ An event listener in a cog...
 
     Called when the Node you are connecting to has initialised and successfully connected to Lavalink.
 
-.. function:: on_wavelink_websocket_closed(reason, code)
+.. function:: on_wavelink_websocket_closed(player: Player, reason, code)
 
     Called when the Node websocket has been closed by Lavalink.
 
-.. function:: on_wavelink_track_start(track)
+.. function:: on_wavelink_track_start(player: Player, track: Track)
 
     Called when a track starts playing.
 
-.. function:: on_wavelink_track_end(track, reason)
+.. function:: on_wavelink_track_end(player: player, track: Track, reason)
 
     Called when the current track has finished playing.
 
-.. function:: on_wavelink_track_exception(track, error)
+.. function:: on_wavelink_track_exception(player: Player, track: Track, error)
 
     Called when a TrackException occurs in Lavalink.
 
-.. function:: on_wavelink_track_stuck(track, threshold)
+.. function:: on_wavelink_track_stuck(player: Player, track: Track, threshold)
 
     Called when a TrackStuck occurs in Lavalink.
 
