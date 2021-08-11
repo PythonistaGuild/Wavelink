@@ -251,7 +251,7 @@ class YouTubePlaylist(Playlist):
             self.tracks.append(track)
 
 
-class PartialTrack(Searchable):
+class PartialTrack(Searchable, Playable):
     """A PartialTrack object that searches for the given query at playtime.
 
     Parameters
