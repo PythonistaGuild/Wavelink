@@ -20,6 +20,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import typing
+
 import aiohttp
 import asyncio
 import logging
@@ -32,8 +34,10 @@ from .errors import *
 from .player import Player
 from .node import Node
 
-
 __log__ = logging.getLogger(__name__)
+
+# type obj for the return type annotation of the Client.get_player() method
+PlayerT = typing.TypeVar("PlayerT", bound="Player")
 
 
 class Client:
@@ -272,7 +276,8 @@ class Client:
 
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
-    def get_player(self, guild_id: int, *, cls=None, node_id=None, **kwargs) -> Player:
+    def get_player(self, guild_id: int, *, cls: Optional[typing.Type[PlayerT]] = None,
+                   node_id: str = None, **kwargs) -> PlayerT:
         """Retrieve a player for the given guild ID. If None, a player will be created and returned.
 
         .. versionchanged:: 0.3.0
