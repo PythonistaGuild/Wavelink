@@ -182,7 +182,7 @@ class SearchableTrack(Track, Searchable):
         if node is MISSING:
             node = NodePool.get_node()
 
-        search = f{cls._search_type}:" if not URL_REGEX.match(query) else ""
+        search = f"{cls._search_type}:" if not URL_REGEX.match(query) else ""
         tracks = await node.get_tracks(cls, f"{search}{query}")
 
         if return_first:
