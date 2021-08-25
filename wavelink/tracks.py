@@ -22,6 +22,8 @@ SOFTWARE.
 """
 from __future__ import annotations
 
+
+import re
 from typing import (
     TYPE_CHECKING,
     ClassVar,
@@ -55,6 +57,7 @@ __all__ = (
 )
 
 ST = TypeVar("ST", bound="SearchableTrack")
+URL_REGEX = re.compile(r'https?://(?:www\.)?.+')
 
 
 class Track(Playable):
@@ -179,7 +182,8 @@ class SearchableTrack(Track, Searchable):
         if node is MISSING:
             node = NodePool.get_node()
 
-        tracks = await node.get_tracks(cls, f"{cls._search_type}:{query}")
+        search = f{cls._search_type}:" if not URL_REGEX.match(query) else ""
+        tracks = await node.get_tracks(cls, f"{search}{query}")
 
         if return_first:
             return tracks[0]
