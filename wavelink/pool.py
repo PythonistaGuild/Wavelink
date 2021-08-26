@@ -367,7 +367,7 @@ class NodePool:
 
         Parameters
         ----------
-        bot: Union[:class:`discord.Client`]
+        bot: :class:`discord.Client`
             The discord.py Bot or Client class.
         host: :class:`str`
             The lavalink host address.
