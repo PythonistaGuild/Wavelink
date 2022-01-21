@@ -37,3 +37,4 @@ from .stats import Stats
 from .tracks import *
 from .queue import *
 from . import abc as abc
+from .filters import *
