@@ -51,7 +51,8 @@ __all__ = (
     "YouTubeMusicTrack",
     "SoundCloudTrack",
     "YouTubePlaylist",
-    "PartialTrack"
+    "PartialTrack",
+    "LocalTrack"
 )
 
 ST = TypeVar("ST", bound="SearchableTrack")
@@ -171,6 +172,7 @@ class SearchableTrack(Track, Searchable):
             An optional Node to use to make the search with.
         return_first: Optional[bool]
             An optional bool which when set to True will return only the first track found. Defaults to False.
+            Use this as True, when searching with LocalTrack.
 
         Returns
         -------
@@ -179,7 +181,10 @@ class SearchableTrack(Track, Searchable):
         if node is MISSING:
             node = NodePool.get_node()
 
-        tracks = await node.get_tracks(cls, f"{cls._search_type}:{query}")
+        if cls._search_type == 'local':
+            tracks = await node.get_tracks(cls, query)
+        else:
+            tracks = await node.get_tracks(cls, f"{cls._search_type}:{query}")
 
         if return_first:
             return tracks[0]
@@ -192,6 +197,9 @@ class SearchableTrack(Track, Searchable):
 
         Used as a type hint in a discord.py command.
         """
+        if argument.startswith('local:'):
+            argument.replace('local:', '')
+
         results = await cls.search(argument)
 
         if not results:
@@ -249,6 +257,12 @@ class YouTubePlaylist(Playlist):
         for track_data in data["tracks"]:
             track = YouTubeTrack(track_data["track"], track_data["info"])
             self.tracks.append(track)
+
+
+class LocalTrack(SearchableTrack):
+    """Represents a Lavalinkl Local Track Object."""
+
+    _search_type: ClassVar[str] = 'local'
 
 
 class PartialTrack(Searchable, Playable):
