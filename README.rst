@@ -1,4 +1,4 @@
-.. image:: https://raw.githubusercontent.com/PythonistaGuild/Wavelink/1.0/logo.png
+.. image:: https://raw.githubusercontent.com/PythonistaGuild/Wavelink/master/logo.png
 
 
 .. image:: https://img.shields.io/badge/Python-3.8%20%7C%203.9%20%7C%203.10-blue.svg
@@ -37,13 +37,13 @@ The following commands are currently the valid ways of installing WaveLink.
 
 .. code:: sh
 
-    py -3.9 -m pip install Wavelink --pre
+    py -3.9 -m pip install -U Wavelink
 
 **Linux**
 
 .. code:: sh
 
-    python3.9 -m pip install Wavelink --pre
+    python3.9 -m pip install -U Wavelink
 
 Getting Started
 ----------------------------

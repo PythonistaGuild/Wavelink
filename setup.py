@@ -24,10 +24,13 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
+import pathlib
 import os
+import re
 from setuptools import setup
 
 
+ROOT = pathlib.Path(__file__).parent
 on_rtd = os.getenv("READTHEDOCS") == "True"
 
 with open("requirements.txt") as f:
@@ -37,7 +40,8 @@ if on_rtd:
     with open("docs/requirements_rtd.txt") as f:
         requirements.extend(f.read().splitlines())
 
-version = "{{__VERSION__}}"
+with open(ROOT / "wavelink" / "__init__.py", encoding="utf-8") as f:
+    VERSION = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE).group(1)
 
 readme = ""
 with open("README.rst") as f:
@@ -47,10 +51,10 @@ setup(
     name="wavelink",
     author="PythonistaGuild, EvieePy",
     url="https://github.com/PythonistaGuild/Wavelink",
-    version=version,
+    version=VERSION,
     packages=["wavelink", "wavelink.ext.spotify", "wavelink.types"],
     license="MIT",
-    description="A robust and powerful Lavalink wrapper for discord.py.",
+    description="A robust and powerful Lavalink wrapper for discord.py and derivatives.",
     long_description=readme,
     include_package_data=True,
     install_requires=requirements,
@@ -61,6 +65,7 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Internet",
         "Topic :: Software Development :: Libraries",
         "Topic :: Software Development :: Libraries :: Python Modules",
