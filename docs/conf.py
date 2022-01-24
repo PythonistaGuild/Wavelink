@@ -58,10 +58,12 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # a list of builtin themes.
 #
 html_theme = "furo"
-html_logo = "logo.png"
+# html_logo = "logo.png"
 
 html_theme_options = {
     "sidebar_hide_name": True,
+    "light_logo": "logo.png",
+    "dark_logo": "wl_dark.png"
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
