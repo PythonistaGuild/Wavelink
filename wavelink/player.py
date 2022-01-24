@@ -21,6 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import contextlib
 import datetime
 import logging
 from typing import Any, Dict, Union, Optional
@@ -178,7 +179,9 @@ class Player(discord.VoiceProtocol):
             await self.guild.change_voice_state(channel=None)
             self._connected = False
         finally:
-            self.node.players.remove(self)
+            with contextlib.suppress(ValueError):
+                self.node._players.remove(self)
+
             self.cleanup()
 
     async def move_to(self, channel: discord.VoiceChannel) -> None:
