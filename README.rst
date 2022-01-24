@@ -4,13 +4,21 @@
 .. image:: https://img.shields.io/badge/Python-3.8%20%7C%203.9%20%7C%203.10-blue.svg
     :target: https://www.python.org
 
-    
+
 .. image:: https://img.shields.io/github/license/EvieePy/Wavelink.svg
     :target: LICENSE
 
+
 .. image:: https://img.shields.io/discord/490948346773635102?color=%237289DA&label=Pythonista&logo=discord&logoColor=white
    :target: https://discord.gg/RAKc3HF
-   
+
+
+.. image:: https://img.shields.io/maintenance/yes/2022?color=pink&style=for-the-badge   :alt: Maintenance
+
+
+.. image:: https://img.shields.io/pypi/dm/wavelink?color=black&style=for-the-badge   :alt: PyPI - Downloads
+
+
 Wavelink is robust and powerful Lavalink wrapper for `Discord.py <https://github.com/Rapptz/discord.py>`_ and certain supported forks.
 Wavelink features a fully asynchronous API that's intuitive and easy to use with built in Spotify Support and Node Pool Balancing.
 
