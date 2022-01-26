@@ -53,8 +53,6 @@ class Music(commands.Cog):
 
     @commands.command()
     async def play(self, ctx: commands.Context, *, search: wavelink.YouTubeTrack): 
-        channel = ctx.message.author.voice.channel
-        await ctx.guild.change_voice_state(channel=channel, self_mute=False, self_deaf=True)
         """Play a song with the given search query.
 
         If not connected, connect to our voice channel.
