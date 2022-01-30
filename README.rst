@@ -13,14 +13,15 @@
    :target: https://discord.gg/RAKc3HF
 
 
+.. image:: https://img.shields.io/pypi/dm/Wavelink?color=black
+    :target: https://pypi.org/project/Wavelink
+    :alt: PyPI - Downloads
+    
+    
 .. image:: https://img.shields.io/maintenance/yes/2022?color=pink&style=for-the-badge
     :target: https://github.com/PythonistaGuild/Wavelink/commits/main
     :alt: Maintenance
 
-
-.. image:: https://img.shields.io/pypi/dm/Wavelink?color=black&style=for-the-badge
-    :target: https://pypi.org/project/wavelink/
-    :alt: PyPI - Downloads
 
 
 Wavelink is a robust and powerful Lavalink wrapper for `Discord.py <https://github.com/Rapptz/discord.py>`_ and certain supported forks.
