@@ -58,6 +58,7 @@ class Websocket:
             "Authorization": self.node._password,
             "User-Id": str(self.node.bot.user.id),
             "Client-Name": "WaveLink",
+            'Resume-Key': self.node.resume_key
         }
 
     def is_connected(self) -> bool:
@@ -91,6 +92,13 @@ class Websocket:
         if self.is_connected():
             self.dispatch("node_ready", self.node)
             logger.debug(f"Connection established...{self.node.__repr__()}")
+
+            resume = {
+                "op": "configureResuming",
+                "key": f"{self.node.resume_key}",
+                "timeout": 60
+            }
+            await self.send(**resume)
 
     async def listen(self) -> None:
         backoff = wavelink.Backoff(base=1, maximum_time=60, maximum_tries=None)
