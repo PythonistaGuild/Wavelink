@@ -71,9 +71,11 @@ class Websocket:
                 code=1006, message=b"WaveLink: Attempting reconnection."
             )
 
+        host = self.host if self.node._https else self.ws_host
+
         try:
             self.websocket = await self.session.ws_connect(
-                self.ws_host, headers=self.headers, heartbeat=self.node._heartbeat
+                host, headers=self.headers, heartbeat=self.node._heartbeat
             )
         except Exception as error:
             if (
