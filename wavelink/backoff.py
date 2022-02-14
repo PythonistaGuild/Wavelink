@@ -1,7 +1,7 @@
 """
 The MIT License (MIT)
 
-Copyright (c) 2021 PythonistaGuild, EvieePy
+Copyright (c) 2021 PythonistaGuild, EvieePy, Rapptz
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
