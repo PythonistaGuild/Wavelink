@@ -22,7 +22,6 @@ SOFTWARE.
 """
 
 from .enums import ErrorSeverity
-from discord.enums import try_enum
 
 
 __all__ = (
@@ -58,7 +57,7 @@ class LoadTrackError(LavalinkException):
 
     def __init__(self, data):
         exception = data["exception"]
-        self.severity: ErrorSeverity = try_enum(ErrorSeverity, exception["severity"])
+        self.severity: ErrorSeverity
         super().__init__(exception["message"])
 
 
