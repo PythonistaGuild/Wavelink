@@ -5,3 +5,4 @@ sphinxcontrib-asyncio
 sphinxcontrib-websupport
 Pygments
 furo
+discord.py
