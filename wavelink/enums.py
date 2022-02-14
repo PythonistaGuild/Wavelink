@@ -23,7 +23,13 @@ SOFTWARE.
 
 from __future__ import annotations
 
-from enum import Enum
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from enum import Enum
+else:
+    from discord import Enum
 
 __all__ = (
     "ErrorSeverity",
