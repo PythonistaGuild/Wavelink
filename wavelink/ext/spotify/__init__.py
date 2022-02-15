@@ -32,7 +32,7 @@ import aiohttp
 from discord.ext import commands
 
 import wavelink
-from wavelink import Node, NodePool, PartialTrack, YouTubeTrack
+from wavelink import Node, NodePool, PartialTrack, YouTubeMusicTrack
 from wavelink.utils import MISSING
 
 
@@ -147,7 +147,7 @@ class SpotifyAsyncIterator:
         if self._partial:
             track = PartialTrack(query=f'{track["name"]} - {track["artists"][0]["name"]}')
         else:
-            track = (await wavelink.YouTubeTrack.search(query=f'{track["name"]} -'
+            track = (await wavelink.YouTubeMusicTrack.search(query=f'{track["name"]} -'
                                                               f' {track["artists"][0]["name"]}'))[0]
 
         self._count += 1
@@ -213,7 +213,7 @@ class SpotifyClient:
                       query: str,
                       type: SpotifySearchType = SpotifySearchType.track,
                       iterator: bool = False,
-                      ) -> Optional[List[YouTubeTrack]]:
+                      ) -> Optional[List[YouTubeMusicTrack]]:
 
         if not self._bearer_token or time.time() >= self._expiry:
             await self._get_bearer_token()
@@ -232,11 +232,11 @@ class SpotifyClient:
             data = await resp.json()
 
             if data['type'] == 'track':
-                return await wavelink.YouTubeTrack.search(f'{data["name"]} - {data["artists"][0]["name"]}')
+                return await wavelink.YouTubeMusicTrack.search(f'{data["name"]} - {data["artists"][0]["name"]}')
 
             elif data['type'] == 'album' and iterator is False:
                 tracks = data['tracks']['items']
-                return [(await wavelink.YouTubeTrack.search(f'{t["name"]} - {t["artists"][0]["name"]}'))[0]
+                return [(await wavelink.YouTubeMusicTrack.search(f'{t["name"]} - {t["artists"][0]["name"]}'))[0]
                         for t in tracks]
 
             elif data['type'] == 'playlist' and iterator is False:
@@ -245,7 +245,7 @@ class SpotifyClient:
 
                 for track in tracks:
                     t = track['track']
-                    ret.append((await wavelink.YouTubeTrack.search(f'{t["name"]} - {t["artists"][0]["name"]}'))[0])
+                    ret.append((await wavelink.YouTubeMusicTrack.search(f'{t["name"]} - {t["artists"][0]["name"]}'))[0])
 
                 return ret
 
@@ -270,8 +270,8 @@ class SpotifyClient:
             return data['tracks']['items']
 
 
-class SpotifyTrack(YouTubeTrack):
-    """A track retrieved via YouTube with a Spotify URL/ID."""
+class SpotifyTrack(YouTubeMusicTrack):
+    """A track retrieved via YouTube Music with a Spotify URL/ID."""
 
     @classmethod
     async def search(
