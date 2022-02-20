@@ -347,7 +347,15 @@ class NodePool:
     def nodes(self) -> Dict[str, Node]:
         """A mapping of created Node objects."""
         return self._nodes
-
+    
+    @property
+    def players(self) -> List[Player]:
+        """A list of currently connected Players."""
+        players = []
+        for node in self._nodes:
+            players.append(node.players)
+        return players
+        
     @classmethod
     async def create_node(
         cls,
