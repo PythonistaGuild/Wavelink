@@ -155,6 +155,9 @@ class Websocket:
         if op == 'event':
             event, payload = await self._get_event_payload(data['type'], data)
             logger.debug(f'op: event:: {data}')
+            
+            if event == 'track_end':
+                player._source = None
 
             self.dispatch(event, player, **payload)
 
