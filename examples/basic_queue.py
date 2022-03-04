@@ -70,11 +70,7 @@ class Music(commands.Cog):
         else:
             await vc.queue.put_wait(search)
             await ctx.send(f'Added `{search.title}` to the queue...', delete_after=10)
-
-        
-
-
-    
+                           
     @commands.command()
     async def queue(self, ctx: commands.Context):
       vc: wavelink.Player = ctx.voice_client
@@ -83,7 +79,6 @@ class Music(commands.Cog):
           return await ctx.send('No queue as we are not connected', delete_after=5)
 
       await ctx.send(vc.queue)
-
     
 bot = Bot()
 bot.add_cog(Music(bot))
