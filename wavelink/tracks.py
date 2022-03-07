@@ -212,6 +212,9 @@ class SearchableTrack(Track, Searchable):
         if not results:
             raise commands.BadArgument("Could not find any songs matching that query.")
 
+        if isinstance(cls, YouTubePlaylist):
+            return results  # type: ignore
+
         return results[0]
 
 
