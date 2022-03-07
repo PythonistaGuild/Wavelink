@@ -184,7 +184,7 @@ class SearchableTrack(Track, Searchable):
 
         check = yarl.URL(query)
 
-        if str(check.host).removeprefix('www.') == 'youtube.com' and check.query.get("list") or \
+        if cls.removePrefix(str(check.host), 'www.') == 'youtube.com' and check.query.get("list") or \
                 cls._search_type == 'ytpl':
 
             tracks = await node.get_playlist(cls=YouTubePlaylist, identifier=query)
@@ -213,6 +213,13 @@ class SearchableTrack(Track, Searchable):
             raise commands.BadArgument("Could not find any songs matching that query.")
 
         return results[0]
+
+    @staticmethod
+    def removePrefix(url: str, prefix: str) -> str:
+        if url.startswith(prefix):
+            return url[len(prefix):]
+        else:
+            return url
 
 
 class YouTubeTrack(SearchableTrack):
