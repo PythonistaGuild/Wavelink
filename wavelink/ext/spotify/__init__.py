@@ -144,6 +144,9 @@ class SpotifyAsyncIterator:
         except asyncio.QueueEmpty:
             raise StopAsyncIteration
 
+        if track is None:
+            return await self.__anext__()
+
         if self._partial:
             track = PartialTrack(query=f'{track["name"]} - {track["artists"][0]["name"]}')
         else:
