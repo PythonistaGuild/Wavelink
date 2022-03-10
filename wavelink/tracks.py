@@ -184,7 +184,7 @@ class SearchableTrack(Track, Searchable):
 
         check = yarl.URL(query)
 
-        if str(check.host).removeprefix('www.') == 'youtube.com' and check.query.get("list") or \
+        if str(check.host) == 'youtube.com' or str(check.host) == 'www.youtube.com' and check.query.get("list") or \
                 cls._search_type == 'ytpl':
 
             tracks = await node.get_playlist(cls=YouTubePlaylist, identifier=query)
