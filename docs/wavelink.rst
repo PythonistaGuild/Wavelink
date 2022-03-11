@@ -133,7 +133,7 @@ PartialTrack
 LocalTrack
 ~~~~~~~~~~
 
-.. attributeable:: LocalTrack
+.. attributetable:: LocalTrack
 
 .. autoclass:: LocalTrack
     :members:
