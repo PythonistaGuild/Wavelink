@@ -44,7 +44,9 @@ __all__ = ('SpotifySearchType',
 
 
 GRANTURL = 'https://accounts.spotify.com/api/token?grant_type=client_credentials'
-URLREGEX = re.compile(r'https://open\.spotify\.com/(?P<entity>.+)/(?P<identifier>.+)\?')
+URLREGEX = re.compile(r'(https?://open.)?(spotify)(.com/|:)'
+                      r'(?P<type>album|playlist|track|artist)([/:])'
+                      r'(?P<id>[a-zA-Z0-9]+)(\?si=[a-zA-Z0-9]+)?(&dl_branch=[0-9]+)?')
 BASEURL = 'https://api.spotify.com/v1/{entity}s/{identifier}'
 
 ST = TypeVar("ST", bound="SearchableTrack")
@@ -83,11 +85,11 @@ def decode_url(url: str) -> Optional[dict]:
     match = URLREGEX.match(url)
     if match:
         try:
-            type_ = SpotifySearchType[match['entity']]
+            type_ = SpotifySearchType[match['type']]
         except KeyError:
             type_ = SpotifySearchType.unusable
 
-        return {'type': type_, 'id': match['identifier']}
+        return {'type': type_, 'id': match['id']}
 
     return None
 
