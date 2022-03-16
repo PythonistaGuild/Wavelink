@@ -1,6 +1,6 @@
 """MIT License
 
-Copyright (c) 2019-2022 PythonistaGuild
+Copyright (c) 2019-present PythonistaGuild
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@ SOFTWARE.
 __title__ = "WaveLink"
 __author__ = "PythonistaGuild, EvieePy"
 __license__ = "MIT"
-__copyright__ = "Copyright 2019-2022 (c) PythonistaGuild, EvieePy"
+__copyright__ = "Copyright 2019-present (c) PythonistaGuild, EvieePy"
 __version__ = "1.0.0"
 
 
