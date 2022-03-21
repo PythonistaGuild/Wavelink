@@ -182,6 +182,9 @@ class Player(discord.VoiceProtocol):
             with contextlib.suppress(ValueError):
                 self.node._players.remove(self)
 
+            payload = {"op": "destroy", "guildId": str(self.guild.id)}
+            await self.node._websocket.send(**payload)
+
             self.cleanup()
 
     async def move_to(self, channel: discord.VoiceChannel) -> None:
