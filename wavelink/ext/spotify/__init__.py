@@ -228,7 +228,7 @@ class SpotifyClient:
         if not regex_result:
             url = BASEURL.format(entity=type.name, identifier=query)
         else:
-            url = BASEURL.format(entity=regex_result['entity'], identifier=regex_result['id'])
+            url = BASEURL.format(entity=regex_result['type'], identifier=regex_result['id'])
 
         async with self.session.get(url, headers=self.bearer_headers) as resp:
             if resp.status != 200:
