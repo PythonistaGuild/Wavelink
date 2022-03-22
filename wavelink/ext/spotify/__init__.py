@@ -152,8 +152,9 @@ class SpotifyAsyncIterator:
         if self._partial:
             track = PartialTrack(query=f'{track["name"]} - {track["artists"][0]["name"]}')
         else:
-            track = (await SpotifyTrack.search(query=f'{track["name"]} -'
+            track = (await YouTubeTrack.search(query=f'{track["name"]} -'
                                                               f' {track["artists"][0]["name"]}'))[0]
+            track = SpotifyTrack(track.id, track.info)
 
         self._count += 1
         return track
@@ -237,12 +238,15 @@ class SpotifyClient:
             data = await resp.json()
 
             if data['type'] == 'track':
-                return await SpotifyTrack.search(f'{data["name"]} - {data["artists"][0]["name"]}')
+                search_result = await YouTubeTrack.search(f'{data["name"]} - {data["artists"][0]["name"]}')
+                if search_result:
+                    return [SpotifyTrack(track.id, track.info) for track in search_result]
 
             elif data['type'] == 'album' and iterator is False:
                 tracks = data['tracks']['items']
-                return [(await SpotifyTrack.search(f'{t["name"]} - {t["artists"][0]["name"]}'))[0]
+                tracks = [(await YouTubeTrack.search(f'{t["name"]} - {t["artists"][0]["name"]}'))[0]
                         for t in tracks]
+                return [SpotifyTrack(track.id, track.info) for track in tracks]
 
             elif data['type'] == 'playlist' and iterator is False:
                 ret = []
@@ -250,7 +254,8 @@ class SpotifyClient:
 
                 for track in tracks:
                     t = track['track']
-                    ret.append((await SpotifyTrack.search(f'{t["name"]} - {t["artists"][0]["name"]}'))[0])
+                    track = (await YouTubeTrack.search(f'{t["name"]} - {t["artists"][0]["name"]}'))[0]
+                    ret.append(SpotifyTrack(track.id, track.info))
 
                 return ret
 
