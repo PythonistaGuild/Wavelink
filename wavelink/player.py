@@ -168,9 +168,13 @@ class Player(discord.VoiceProtocol):
 
     async def connect(self, *, timeout: float, reconnect: bool) -> None:
         await self.guild.change_voice_state(channel=self.channel)
-        self._connected = True
 
-        logger.info(f"Connected to voice channel:: {self.channel.id}")
+        if self.user.id in [m.id for m in self.channel.members]:
+            self._connected = True
+            logger.info(f"Connected to voice channel:: {self.channel.id}")
+        else:
+            self._connected = False
+            self.channel = None
 
     async def disconnect(self, *, force: bool = False) -> None:
         try:
@@ -199,6 +203,13 @@ class Player(discord.VoiceProtocol):
         """
         await self.guild.change_voice_state(channel=channel)
         logger.info(f"Moving to voice channel:: {channel.id}")
+        
+        if self.user.id in [m.id for m in channel.members]:
+            self._connected = True
+            self.channel = channel
+        else:
+            self._connected = False
+            self.channel = None
 
     async def play(
         self, source: abc.Playable, replace: bool = True, start: int = 0, end: int = 0
@@ -252,7 +263,11 @@ class Player(discord.VoiceProtocol):
 
     def is_connected(self) -> bool:
         """Indicates whether the player is connected to voice."""
-        return self._connected
+        if not self.channel:
+            return False
+        if self.user.id in [m.id for m in self.channel.members]:
+            return True
+        return False
 
     def is_playing(self) -> bool:
         """Indicates wether a track is currently being played."""
