@@ -167,9 +167,7 @@ class Player(discord.VoiceProtocol):
             )
 
     async def connect(self, *, timeout: float, reconnect: bool, **kwargs: Any) -> None:
-        self_mute = kwargs.pop("self_mute", False)
-        self_deaf = kwargs.pop("self_deaf", False)
-        await self.guild.change_voice_state(channel=self.channel, self_mute=self_mute, self_deaf=self_deaf)
+        await self.guild.change_voice_state(channel=self.channel, **kwargs)
         self._connected = True
 
         logger.info(f"Connected to voice channel:: {self.channel.id}")
