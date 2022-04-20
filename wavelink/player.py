@@ -199,7 +199,7 @@ class Player(discord.VoiceProtocol):
         channel: :class:`discord.VoiceChannel`
             The channel to move to. Must be a voice channel.
         """
-        await self.guild.change_voice_state(channel=channel)
+        await self.guild.change_voice_state(channel=channel, self_mute=False, self_deaf=False)
         logger.info(f"Moving to voice channel:: {channel.id}")
 
     async def play(
