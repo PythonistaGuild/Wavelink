@@ -192,7 +192,8 @@ class SearchableTrack(Track, Searchable):
             tracks = await node.get_tracks(cls, query)
         else:
             tracks = await node.get_tracks(cls, f"{cls._search_type}:{query}")
-
+        if len(tracks) <= 0:
+            return []
         if return_first:
             return tracks[0]
 
