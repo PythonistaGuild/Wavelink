@@ -193,6 +193,9 @@ class SearchableTrack(Track, Searchable):
         else:
             tracks = await node.get_tracks(cls, f"{cls._search_type}:{query}")
 
+        if not tracks:
+            raise commands.BadArgument("Could not find any songs matching that query.")
+
         if return_first:
             return tracks[0]
 
