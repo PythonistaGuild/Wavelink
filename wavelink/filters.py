@@ -25,7 +25,8 @@ from __future__ import annotations
 
 import abc
 import collections
-from typing import Any
+from typing import Any, Dict, List, Optional, Tuple
+
 
 __all__ = (
     "BaseFilter",
@@ -44,22 +45,11 @@ __all__ = (
 
 class BaseFilter(abc.ABC):
 
-    def __init__(self, name: str | None = None) -> None:
-        self._name: str | None = name
+    def __init__(self, name: Optional[str] = None) -> None:
+        self.name: str = name or "Unknown"
 
     def __repr__(self) -> str:
-        return f"<wavelink.BaseFilter name={self._name}>"
-
-    def __str__(self) -> str:
-        return self._name
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @name.setter
-    def name(self, name: str) -> None:
-        self._name = name
+        return f"<wavelink.BaseFilter name={self.name}>"
 
     @property
     @abc.abstractmethod
@@ -68,12 +58,21 @@ class BaseFilter(abc.ABC):
 
 
 class Equalizer(BaseFilter):
+    """An equalizer filter.
+
+    Parameters
+    ----------
+    name: str
+        The name of this filter. Can be used to differentiate between equalizer filters.
+    bands: List[Dict[str, int]]
+        A list of equalizer bands, each item is a dictionary with "band" and "gain" keys.
+    """
 
     def __init__(
         self,
         name: str = "CustomEqualizer",
         *,
-        bands: list[tuple[int, float]],
+        bands: List[Tuple[int, float]]
     ) -> None:
         super().__init__(name=name)
 
@@ -83,19 +82,18 @@ class Equalizer(BaseFilter):
         _dict = collections.defaultdict(float)
         _dict.update(bands)
 
-        self.bands = [{"band": i, "gain": _dict[i]} for i in range(15)]
+        self.bands = [{"band": band, "gain": _dict[band]} for band in range(15)]
 
     def __repr__(self) -> str:
-        return f"<wavelink.Equalizer name={self._name}>"
+        return f"<wavelink.Equalizer name={self.name}>"
 
     @property
-    def _payload(self) -> list[dict[str, float]]:
+    def _payload(self) -> List[Dict[str, float]]:
         return self.bands
-
-    #
 
     @classmethod
     def flat(cls) -> Equalizer:
+        """A flat equalizer."""
 
         bands = [
             (0, 0.0), (1, 0.0), (2, 0.0), (3, 0.0), (4, 0.0),
@@ -106,6 +104,7 @@ class Equalizer(BaseFilter):
 
     @classmethod
     def boost(cls) -> Equalizer:
+        """A boost equalizer."""
 
         bands = [
             (0, -0.075), (1, 0.125), (2, 0.125), (3, 0.1), (4, 0.1),
@@ -116,6 +115,7 @@ class Equalizer(BaseFilter):
 
     @classmethod
     def metal(cls) -> Equalizer:
+        """A metal equalizer."""
 
         bands = [
             (0, 0.0), (1, 0.1), (2, 0.1), (3, 0.15), (4, 0.13),
@@ -127,6 +127,7 @@ class Equalizer(BaseFilter):
 
     @classmethod
     def piano(cls) -> Equalizer:
+        """A piano equalizer."""
 
         bands = [
             (0, -0.25), (1, -0.25), (2, -0.125), (3, 0.0),
@@ -137,6 +138,22 @@ class Equalizer(BaseFilter):
 
 
 class Karaoke(BaseFilter):
+    """
+    A Karaoke filter.
+
+    The default values provided for all the parameters will play the track normally.
+
+    Parameters
+    ----------
+    level: float
+        How much of an effect this filter should have.
+    mono_level: float
+        How much of an effect this filter should have on mono tracks.
+    filter_band: float
+        The band this filter should target.
+    filter_width: float
+        The width of the band this filter should target.
+    """
 
     def __init__(
         self,
@@ -154,15 +171,11 @@ class Karaoke(BaseFilter):
         self.filter_width: float = filter_width
 
     def __repr__(self) -> str:
-        return f"<wavelink.Karaoke level={self.level} " \
-               f"mono_level={self.mono_level} " \
-               f"filter_band={self.filter_band}" \
-               f"filter_width={self.filter_width}>"
-
-    #
+        return f"<wavelink.Karaoke level={self.level}, mono_level={self.mono_level}, " \
+               f"filter_band={self.filter_band}, filter_width={self.filter_width}>"
 
     @property
-    def _payload(self) -> dict[str, float]:
+    def _payload(self) -> Dict[str, float]:
         return {
             "level":       self.level,
             "monoLevel":   self.mono_level,
@@ -172,6 +185,21 @@ class Karaoke(BaseFilter):
 
 
 class Timescale(BaseFilter):
+    """A timescale filter.
+
+    Increases or decreases the speed, pitch, and/or rate of tracks.
+
+    The default values provided for ``speed``, ``pitch`` and ``rate`` will play the track normally.
+
+    Parameters
+    ----------
+    speed: float
+        A multiplier for the track playback speed. Should be more than or equal to 0.0.
+    pitch: float
+        A multiplier for the track pitch. Should be more than or equal to 0.0.
+    rate: float
+        A multiplier for the track rate (pitch + speed). Should be more than or equal to 0.0.
+    """
 
     def __init__(
         self,
@@ -180,6 +208,14 @@ class Timescale(BaseFilter):
         pitch: float = 1.0,
         rate: float = 1.0,
     ) -> None:
+
+        if speed < 0:
+            raise ValueError("'speed' must be more than or equal to 0.")
+        if pitch < 0:
+            raise ValueError("'pitch' must be more than or equal to 0.")
+        if rate < 0:
+            raise ValueError("'rate' must be more than or equal to 0.")
+
         super().__init__(name="Timescale")
 
         self.speed: float = speed
@@ -187,10 +223,10 @@ class Timescale(BaseFilter):
         self.rate: float = rate
 
     def __repr__(self) -> str:
-        return f"<wavelink.Timescale speed={self.speed} pitch={self.pitch} rate={self.rate}>"
+        return f"<wavelink.Timescale speed={self.speed}, pitch={self.pitch}, rate={self.rate}>"
 
     @property
-    def _payload(self) -> dict[str, float]:
+    def _payload(self) -> Dict[str, float]:
         return {
             "speed": self.speed,
             "pitch": self.pitch,
@@ -199,6 +235,19 @@ class Timescale(BaseFilter):
 
 
 class Tremolo(BaseFilter):
+    """A tremolo filter.
+
+    Creates a shuddering effect by quickly changing the volume.
+
+    The default values provided for ``frequency`` and ``depth`` will play the track normally.
+
+    Parameters
+    ----------
+    frequency: float
+        How quickly the volume should change. Should be more than 0.0.
+    depth: float
+        How much the volume should change. Should be more than 0.0 and less than or equal to 1.0.
+    """
 
     def __init__(
         self,
@@ -206,21 +255,22 @@ class Tremolo(BaseFilter):
         frequency: float = 2.0,
         depth: float = 0.5
     ) -> None:
-        super().__init__(name="Tremolo")
 
         if frequency < 0:
-            raise ValueError("'frequency' must be more than 0.0")
+            raise ValueError("'frequency' must be more than 0.0.")
         if not 0 < depth <= 1:
-            raise ValueError("'depth' must be more than 0.0 and less than or equal to 1.0")
+            raise ValueError("'depth' must be more than 0.0 and less than or equal to 1.0.")
+
+        super().__init__(name="Tremolo")
 
         self.frequency: float = frequency
         self.depth: float = depth
 
     def __repr__(self) -> str:
-        return f"<wavelink.Tremolo frequency={self.frequency} depth={self.depth}>"
+        return f"<wavelink.Tremolo frequency={self.frequency}, depth={self.depth}>"
 
     @property
-    def _payload(self) -> dict[str, float]:
+    def _payload(self) -> Dict[str, float]:
         return {
             "frequency": self.frequency,
             "depth":     self.depth
@@ -228,6 +278,19 @@ class Tremolo(BaseFilter):
 
 
 class Vibrato(BaseFilter):
+    """A vibrato filter.
+
+    Creates a vibrating effect by quickly changing the pitch.
+
+    The default values provided for ``frequency`` and ``depth`` will play the track normally.
+
+    Parameters
+    ----------
+    frequency: float
+        How quickly the pitch should change. Should be more than 0.0 and less than or equal to 14.0.
+    depth: float
+        How much the pitch should change. Should be more than 0.0 and less than or equal to 1.0.
+    """
 
     def __init__(
         self,
@@ -235,21 +298,22 @@ class Vibrato(BaseFilter):
         frequency: float = 2.0,
         depth: float = 0.5
     ) -> None:
-        super().__init__(name="Vibrato")
 
         if not 0 < frequency <= 14:
-            raise ValueError("'frequency' must be more than 0.0 and less than or equal to 14.0")
+            raise ValueError("'frequency' must be more than 0.0 and less than or equal to 14.0.")
         if not 0 < depth <= 1:
-            raise ValueError("'depth' must be more than 0.0 and less than or equal to 1.0")
+            raise ValueError("'depth' must be more than 0.0 and less than or equal to 1.0.")
+
+        super().__init__(name="Vibrato")
 
         self.frequency: float = frequency
         self.depth: float = depth
 
     def __repr__(self) -> str:
-        return f"<wavelink.Vibrato frequency={self.frequency} depth={self.depth}>"
+        return f"<wavelink.Vibrato frequency={self.frequency}, depth={self.depth}>"
 
     @property
-    def _payload(self) -> dict[str, float]:
+    def _payload(self) -> Dict[str, float]:
         return {
             "frequency": self.frequency,
             "depth":     self.depth
@@ -257,28 +321,35 @@ class Vibrato(BaseFilter):
 
 
 class Rotation(BaseFilter):
+    """A rotation filter.
 
-    def __init__(
-        self,
-        hertz: float = 5
-    ) -> None:
+    Rotates the audio around stereo channels which can be used to create a 3D effect.
+
+    The default value provided for ``speed`` will play the track normally.
+
+    Parameters
+    ----------
+    speed: float
+        The speed at which the audio should rotate.
+    """
+
+    def __init__(self, speed: float = 5) -> None:
         super().__init__(name="Rotation")
 
-        self.hertz: float = hertz
+        self.speed: float = speed
 
     def __repr__(self) -> str:
-        return f"<wavelink.Rotation hertz={self.hertz}>"
-
-    #
+        return f"<wavelink.Rotation speed={self.speed}>"
 
     @property
-    def _payload(self) -> dict[str, float]:
+    def _payload(self) -> Dict[str, float]:
         return {
-            "rotationHz": self.hertz,
+            "rotationHz": self.speed,
         }
 
 
 class Distortion(BaseFilter):
+    """A distortion filter."""
 
     def __init__(
         self,
@@ -304,14 +375,15 @@ class Distortion(BaseFilter):
         self.scale: float = scale
 
     def __repr__(self) -> str:
-        return f"<wavelink.Distortion sin_offset={self.sin_offset} " \
-               f"sin_scale={self.sin_scale} cos_offset={self.cos_offset} " \
-               f"cos_scale={self.cos_scale} tan_offset={self.tan_offset} " \
-               f"tan_scale={self.tan_scale} offset={self.offset} " \
+        return f"<wavelink.Distortion " \
+               f"sin_offset={self.sin_offset}, " \
+               f"sin_scale={self.sin_scale}, cos_offset={self.cos_offset}, " \
+               f"cos_scale={self.cos_scale}, tan_offset={self.tan_offset}, " \
+               f"tan_scale={self.tan_scale}, offset={self.offset}, " \
                f"scale={self.scale}>"
 
     @property
-    def _payload(self) -> dict[str, float]:
+    def _payload(self) -> Dict[str, float]:
         return {
             "sinOffset": self.sin_offset,
             "sinScale":  self.sin_scale,
@@ -325,19 +397,46 @@ class Distortion(BaseFilter):
 
 
 class ChannelMix(BaseFilter):
+    """A channel mix filter.
+
+    Allows you to control what channel audio from the track is actually played on.
+
+    Setting `left_to_left` and `right_to_right` to 1.0 will result in no change.
+    Setting all channels to 0.5 will result in all channels receiving the same audio.
+
+    The default values provided for all the parameters will play the track normally.
+
+    Parameters
+    ----------
+    left_to_left: float
+        The "percentage" of audio from the left channel that should actually get played on the left channel.
+    left_to_right: float
+        The "percentage" of audio from the left channel that should play on the right channel.
+    right_to_left: float
+        The "percentage" of audio from the right channel that should actually get played on the right channel.
+    right_to_right: float
+        The "percentage" of audio from the right channel that should play on the left channel.
+    """
 
     def __init__(
         self,
         *,
-        left_to_left: float = 1,
-        left_to_right: float = 0,
-        right_to_left: float = 0,
-        right_to_right: float = 1,
+        left_to_left: float = 1.0,
+        left_to_right: float = 0.0,
+        right_to_left: float = 0.0,
+        right_to_right: float = 1.0,
     ) -> None:
-        super().__init__(name="Channel Mix")
 
-        if any(value for value in (left_to_left, left_to_right, right_to_left, right_to_right) if value < 0 or value > 1):
-            raise ValueError("'left_to_left', 'left_to_right', 'right_to_left', and 'right_to_right' must all be between 0.0 and 1.0")
+        _all = (left_to_left, left_to_right, right_to_left, right_to_right)
+
+        if any(value for value in _all if value < 0 or value > 1):
+            raise ValueError(
+                "'left_to_left', 'left_to_right', "
+                "'right_to_left', and 'right_to_right' "
+                "must all be between 0.0 and 1.0"
+            )
+
+        super().__init__(name="Channel Mix")
 
         self.left_to_left: float = left_to_left
         self.right_to_right: float = right_to_right
@@ -345,50 +444,68 @@ class ChannelMix(BaseFilter):
         self.right_to_left: float = right_to_left
 
     def __repr__(self) -> str:
-        return f"<slate.obsidian.ChannelMix left_to_left={self.left_to_left}, right_to_right{self.right_to_right}, left_to_right={self.left_to_right}, " \
+        return f"<wavelink.ChannelMix " \
+               f"left_to_left={self.left_to_left}, " \
+               f"right_to_right{self.right_to_right}, " \
+               f"left_to_right={self.left_to_right}, " \
                f"right_to_left={self.right_to_left}>"
 
     @property
-    def _payload(self) -> dict[str, float]:
+    def _payload(self) -> Dict[str, float]:
         return {
             "leftToLeft":   self.left_to_left,
-            "leftToRight": self.left_to_right,
+            "leftToRight":  self.left_to_right,
             "rightToLeft":  self.right_to_left,
             "rightToRight": self.right_to_right,
         }
 
-    #
-
     @classmethod
     def mono(cls) -> ChannelMix:
+        """Returns a ChannelMix filter that will play the track in mono."""
         return cls(left_to_left=0.5, left_to_right=0.5, right_to_left=0.5, right_to_right=0.5)
 
     @classmethod
     def only_left(cls) -> ChannelMix:
-        # noinspection PyArgumentEqualDefault
+        """Returns a ChannelMix filter that will only play the tracks left channel."""
         return cls(left_to_left=1, left_to_right=0, right_to_left=0, right_to_right=0)
 
     @classmethod
     def full_left(cls) -> ChannelMix:
-        # noinspection PyArgumentEqualDefault
+        """
+        Returns a ChannelMix filter that will play the tracks left and right channels together only on the left channel.
+        """
         return cls(left_to_left=1, left_to_right=0, right_to_left=1, right_to_right=0)
 
     @classmethod
     def only_right(cls) -> ChannelMix:
-        # noinspection PyArgumentEqualDefault
+        """Returns a ChannelMix filter that will only play the tracks right channel."""
         return cls(left_to_left=0, left_to_right=0, right_to_left=0, right_to_right=1)
 
     @classmethod
     def full_right(cls) -> ChannelMix:
-        # noinspection PyArgumentEqualDefault
+        """
+        Returns a ChannelMix filter that will play the tracks left and right channels together only on the right channel.
+        """
         return cls(left_to_left=0, left_to_right=1, right_to_left=0, right_to_right=1)
 
     @classmethod
     def switch(cls) -> ChannelMix:
+        """Returns a ChannelMix filter that will switch the tracks left and right channels."""
         return cls(left_to_left=0, left_to_right=1, right_to_left=1, right_to_right=0)
 
 
 class LowPass(BaseFilter):
+    """A low pass filter.
+
+    Suppresses higher frequencies while allowing lower frequencies to pass through.
+
+    The default value provided for ``smoothing`` will play the track normally.
+
+    Parameters
+    ----------
+    smoothing: float
+        The factor by which the filter will block higher frequencies.
+    """
 
     def __init__(
         self,
@@ -403,19 +520,50 @@ class LowPass(BaseFilter):
         return f"<wavelink.LowPass smoothing={self.smoothing}>"
 
     @property
-    def _payload(self) -> dict[str, float]:
+    def _payload(self) -> Dict[str, float]:
         return {
             "smoothing": self.smoothing,
         }
 
 
 class Filter:
+    """A filter that can be applied to a track.
+
+    This filter accepts an instance of itself as a parameter which allows
+    you to keep previous filters while also applying new ones or overwriting old ones.
+
+    Parameters
+    ----------
+    filter: wavelink.Filter
+        An instance of this filter class.
+    volume: float
+        A volume factor to apply to the track. 1.0 is the default, max is 5.0, min is 0.0.
+        A value of 1.0 means the track will play at 100% volume.
+    equalizer: wavelink.Equalizer
+        An equalizer to apply to the track.
+    karaoke: wavelink.Karaoke
+        A karaoke filter to apply to the track.
+    timescale: wavelink.Timescale
+        A timescale filter to apply to the track.
+    tremolo: wavelink.Tremolo
+        A tremolo filter to apply to the track.
+    vibrato: wavelink.Vibrato
+        A vibrato filter to apply to the track.
+    rotation: wavelink.Rotation
+        A rotation filter to apply to the track.
+    distortion: wavelink.Distortion
+        A distortion filter to apply to the track.
+    channel_mix: wavelink.ChannelMix
+        A channel mix filter to apply to the track.
+    low_pass: wavelink.LowPass
+        A low pass filter to apply to the track.
+
+    """
 
     def __init__(
         self,
         _filter: Filter | None = None,
-        /,
-        *,
+        /, *,
         volume: float | None = None,
         equalizer: Equalizer | None = None,
         karaoke: Karaoke | None = None,
@@ -428,7 +576,7 @@ class Filter:
         low_pass: LowPass | None = None
     ) -> None:
 
-        self._filter: Filter | None = _filter
+        self.filter: Filter | None = _filter
 
         self.volume: float | None = volume
         self.equalizer: Equalizer | None = equalizer
@@ -442,18 +590,18 @@ class Filter:
         self.low_pass: LowPass | None = low_pass
 
     def __repr__(self) -> str:
-        return f"<wavelink.Filter volume={self.volume} equalizer={self.equalizer} " \
-               f"karaoke={self.karaoke} timescale={self.timescale} tremolo={self.tremolo} " \
-               f"vibrato={self.vibrato} rotation={self.rotation} distortion={self.distortion} " \
-               f"channel_mix={self.channel_mix} low_pass={self.low_pass}>"
+        return f"<wavelink.Filter volume={self.volume}, equalizer={self.equalizer}, " \
+               f"karaoke={self.karaoke}, timescale={self.timescale}, tremolo={self.tremolo}, " \
+               f"vibrato={self.vibrato}, rotation={self.rotation}, distortion={self.distortion}, " \
+               f"channel_mix={self.channel_mix}, low_pass={self.low_pass}>"
 
     @property
-    def _payload(self) -> dict[str, Any]:
+    def _payload(self) -> Dict[str, Any]:
 
-        payload = self._filter._payload.copy() if self._filter else {}
+        payload = self.filter._payload.copy() if self.filter else {}
 
         if self.volume:
-            payload["volume"] = self.volume / 100
+            payload["volume"] = self.volume
         if self.equalizer:
             payload["equalizer"] = self.equalizer._payload
         if self.karaoke:
@@ -469,8 +617,8 @@ class Filter:
         if self.distortion:
             payload["distortion"] = self.distortion._payload
         if self.channel_mix:
-            payload["channel_mix"] = self.channel_mix._payload
+            payload["channelMix"] = self.channel_mix._payload
         if self.low_pass:
-            payload["low_pass"] = self.low_pass._payload
+            payload["lowPass"] = self.low_pass._payload
 
         return payload
