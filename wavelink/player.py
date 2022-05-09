@@ -118,7 +118,7 @@ class Player(discord.VoiceProtocol):
         return self._source
 
     @property
-    def filter(self) -> Filter | None:
+    def filter(self) -> Union[Filter, None]:
         return self._filter
 
     track = source
@@ -315,6 +315,8 @@ class Player(discord.VoiceProtocol):
         ----------
         volume: int
             The volume to set the player to.
+        seek: bool
+            Whether to seek the player which will set the new volume immediately. Defaults to ``False``.
         """
 
         self.volume = max(min(volume, 1000), 0)
@@ -334,7 +336,23 @@ class Player(discord.VoiceProtocol):
             op="seek", guildId=str(self.guild.id), position=position
         )
 
-    async def set_filter(self, _filter: Filter, /, *, seek: bool = False) -> None:
+    async def set_filter(
+        self,
+        _filter: Filter,
+        /, *,
+        seek: bool = False
+    ) -> None:
+        """|coro|
+
+        Set the player's filter.
+
+        Parameters
+        ----------
+        filter: :class:`wavelink.Filter`
+            The filter to set the player to.
+        seek: bool
+            Whether to seek the player which will set the new filter immediately. Defaults to ``False``.
+        """
 
         self._filter = _filter
         await self.node._websocket.send(
