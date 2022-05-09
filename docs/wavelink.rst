@@ -130,6 +130,14 @@ PartialTrack
 
 .. autoclass:: PartialTrack
 
+LocalTrack
+~~~~~~~~~~
+
+.. attributetable:: LocalTrack
+
+.. autoclass:: LocalTrack
+    :members:
+
 Player
 ------
 

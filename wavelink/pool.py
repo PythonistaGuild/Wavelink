@@ -93,6 +93,7 @@ class Node:
         spotify: Optional[spotify.SpotifyClient],
         identifier: str,
         dumps: Callable[[Any], str],
+        resume_key: Optional[str],
     ):
         self.bot: discord.Client = bot
         self._host: str = host
@@ -110,6 +111,8 @@ class Node:
         self._websocket: Websocket = MISSING
 
         self.stats: Optional[Stats] = None
+
+        self.resume_key = resume_key or str(os.urandom(8).hex())
 
     def __repr__(self) -> str:
         return f"<WaveLink Node: <{self.identifier}>, Region: <{self.region}>, Players: <{len(self._players)}>>"
@@ -359,6 +362,7 @@ class NodePool:
         spotify_client: Optional[spotify.SpotifyClient] = None,
         identifier: str = MISSING,
         dumps: Callable[[Any], str] = json.dumps,
+        resume_key: Optional[str] = None,
     ) -> Node:
 
         """|coro|
@@ -411,6 +415,7 @@ class NodePool:
             spotify=spotify_client,
             identifier=identifier,
             dumps=dumps,
+            resume_key=resume_key
         )
 
         cls._nodes[identifier] = node

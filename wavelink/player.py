@@ -21,6 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import contextlib
 import datetime
 import logging
 from typing import Any, Dict, Union, Optional
@@ -170,20 +171,25 @@ class Player(discord.VoiceProtocol):
                 op="voiceUpdate", guildId=str(self.guild.id), **voice_state
             )
 
-    async def connect(self, *, timeout: float, reconnect: bool) -> None:
-        await self.guild.change_voice_state(channel=self.channel)
+    async def connect(self, *, timeout: float, reconnect: bool, **kwargs: Any) -> None:
+        await self.guild.change_voice_state(channel=self.channel, **kwargs)
         self._connected = True
 
         logger.info(f"Connected to voice channel:: {self.channel.id}")
 
-    async def disconnect(self, *, force: bool) -> None:
+    async def disconnect(self, *, force: bool = False) -> None:
         try:
             logger.info(f"Disconnected from voice channel:: {self.channel.id}")
 
             await self.guild.change_voice_state(channel=None)
             self._connected = False
         finally:
-            self.node.players.remove(self)
+            with contextlib.suppress(ValueError):
+                self.node._players.remove(self)
+
+            payload = {"op": "destroy", "guildId": str(self.guild.id)}
+            await self.node._websocket.send(**payload)
+
             self.cleanup()
 
     async def move_to(self, channel: discord.VoiceChannel) -> None:

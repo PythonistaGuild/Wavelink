@@ -1,6 +1,8 @@
-sphinx==4.0.2
+sphinx
+docutils<0.18
 sphinxcontrib-napoleon
 sphinxcontrib-asyncio
 sphinxcontrib-websupport
 Pygments
-karma_sphinx_theme
+furo
+discord.py>=1.7.3

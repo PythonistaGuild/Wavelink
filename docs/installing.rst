@@ -3,19 +3,17 @@ Installing
 WaveLink requires Python 3.8+.
 You can download the latest version of Python `here <https://www.python.org/downloads/>`_.
 
-Since WaveLink 1.0 is still in a `Beta Pre-Release` stage, you must use the `--pre` argument shown below to install.
-
 **Windows:**
 
 .. code:: sh
 
-    py -3.9 -m pip install -U wavelink --pre
+    py -3.9 -m pip install -U wavelink
 
 **Linux:**
 
 .. code:: sh
 
-    python3.9 -m pip install -U wavelink --pre
+    python3.9 -m pip install -U wavelink
 
 
 Debugging
