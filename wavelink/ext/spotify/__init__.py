@@ -150,10 +150,11 @@ class SpotifyAsyncIterator:
             return await self.__anext__()
 
         if self._partial:
-            track = PartialTrack(query=f'{track["name"]} - {track["artists"][0]["name"]}')
+            track = PartialTrack(
+                query=f'{track["name"]} - {track["artists"][0]["name"]}')
         else:
             track = (await wavelink.YouTubeTrack.search(query=f'{track["name"]} -'
-                                                              f' {track["artists"][0]["name"]}'))[0]
+                                                              f' {track["artists"][0]["name"]}', return_first=True))
 
         self._count += 1
         return track
@@ -228,7 +229,8 @@ class SpotifyClient:
         if not regex_result:
             url = BASEURL.format(entity=type.name, identifier=query)
         else:
-            url = BASEURL.format(entity=regex_result['type'], identifier=regex_result['id'])
+            url = BASEURL.format(
+                entity=regex_result['type'], identifier=regex_result['id'])
 
         async with self.session.get(url, headers=self.bearer_headers) as resp:
             if resp.status != 200:
@@ -357,7 +359,8 @@ class SpotifyTrack(YouTubeTrack):
         """
 
         if type is not SpotifySearchType.album and type is not SpotifySearchType.playlist:
-            raise TypeError("Iterator search type must be either album or playlist.")
+            raise TypeError(
+                "Iterator search type must be either album or playlist.")
 
         if node is MISSING:
             node = NodePool.get_node()
@@ -373,6 +376,7 @@ class SpotifyTrack(YouTubeTrack):
         results = await cls.search(argument)
 
         if not results:
-            raise commands.BadArgument("Could not find any songs matching that query.")
+            raise commands.BadArgument(
+                "Could not find any songs matching that query.")
 
         return results[0]

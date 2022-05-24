@@ -194,7 +194,10 @@ class SearchableTrack(Track, Searchable):
             tracks = await node.get_tracks(cls, f"{cls._search_type}:{query}")
 
         if return_first:
-            return tracks[0]
+            if tracks:
+                return tracks[0]
+            else:
+                return []
 
         return tracks
 
@@ -210,7 +213,8 @@ class SearchableTrack(Track, Searchable):
         results = await cls.search(argument)
 
         if not results:
-            raise commands.BadArgument("Could not find any songs matching that query.")
+            raise commands.BadArgument(
+                "Could not find any songs matching that query.")
 
         if isinstance(cls, YouTubePlaylist):
             return results  # type: ignore
@@ -262,7 +266,8 @@ class YouTubePlaylist(SearchableTrack, Playlist):
         self.tracks: List[YouTubeTrack] = []
         self.name: str = data["playlistInfo"]["name"]
 
-        self.selected_track: Optional[int] = data["playlistInfo"].get("selectedTrack")
+        self.selected_track: Optional[int] = data["playlistInfo"].get(
+            "selectedTrack")
         if self.selected_track is not None:
             self.selected_track = int(self.selected_track)
 
@@ -307,7 +312,8 @@ class PartialTrack(Searchable, Playable):
         self._cls = cls
 
         if not issubclass(cls, SearchableTrack):
-            raise TypeError(f"cls parameter must be of type {SearchableTrack!r} not {cls!r}")
+            raise TypeError(
+                f"cls parameter must be of type {SearchableTrack!r} not {cls!r}")
 
     async def _search(self):
         node = self._node
