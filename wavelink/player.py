@@ -34,6 +34,7 @@ from .pool import Node, NodePool
 from .queue import WaitQueue
 from .tracks import PartialTrack
 from .utils import MISSING
+from .filters import Filter
 
 
 __all__ = ("Player",)
@@ -97,7 +98,7 @@ class Player(discord.VoiceProtocol):
         self.volume: float = 100
         self._paused: bool = False
         self._source: Optional[abc.Playable] = None
-        # self._equalizer = Equalizer.flat()
+        self._filter = None
 
         self.queue = WaitQueue()
 
@@ -115,6 +116,10 @@ class Player(discord.VoiceProtocol):
     def source(self) -> Optional[abc.Playable]:
         """The currently playing audio source."""
         return self._source
+
+    @property
+    def filter(self) -> Union[Filter, None]:
+        return self._filter
 
     track = source
 
@@ -301,7 +306,7 @@ class Player(discord.VoiceProtocol):
         """
         await self.set_pause(False)
 
-    async def set_volume(self, volume: int) -> None:
+    async def set_volume(self, volume: int, seek: bool = False) -> None:
         """|coro|
 
         Set the player's volume, between 0 and 1000.
@@ -310,12 +315,12 @@ class Player(discord.VoiceProtocol):
         ----------
         volume: int
             The volume to set the player to.
+        seek: bool
+            Whether to seek the player which will set the new volume immediately. Defaults to ``False``.
         """
+
         self.volume = max(min(volume, 1000), 0)
-        await self.node._websocket.send(
-            op="volume", guildId=str(self.guild.id), volume=self.volume
-        )
-        logger.debug(f"Set volume:: {self.volume} ({self.channel.id})")
+        await self.set_filter(Filter(self._filter, volume=self.volume), seek=seek)
 
     async def seek(self, position: int = 0) -> None:
         """|coro|
@@ -330,3 +335,31 @@ class Player(discord.VoiceProtocol):
         await self.node._websocket.send(
             op="seek", guildId=str(self.guild.id), position=position
         )
+
+    async def set_filter(
+        self,
+        _filter: Filter,
+        /, *,
+        seek: bool = False
+    ) -> None:
+        """|coro|
+
+        Set the player's filter.
+
+        Parameters
+        ----------
+        filter: :class:`wavelink.Filter`
+            The filter to set the player to.
+        seek: bool
+            Whether to seek the player which will set the new filter immediately. Defaults to ``False``.
+        """
+
+        self._filter = _filter
+        await self.node._websocket.send(
+            op="filters", guildId=str(self.guild.id), **_filter._payload
+        )
+
+        logger.debug(f"Set filter:: {self._filter} ({self.channel.id})")
+
+        if self.is_playing() and seek:
+            await self.seek(int(self.position * 1000))
