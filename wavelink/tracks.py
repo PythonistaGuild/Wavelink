@@ -270,6 +270,9 @@ class YouTubePlaylist(SearchableTrack, Playlist):
             track = YouTubeTrack(track_data["track"], track_data["info"])
             self.tracks.append(track)
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class LocalTrack(SearchableTrack):
     """Represents a Lavalinkl Local Track Object."""
