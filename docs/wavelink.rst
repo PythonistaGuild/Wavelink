@@ -32,7 +32,7 @@ An event listener in a cog...
 
     Called when a track starts playing.
 
-.. function:: on_wavelink_track_end(player: player, track: Track, reason)
+.. function:: on_wavelink_track_end(player: Player, track: Track, reason)
 
     Called when the current track has finished playing.
 
