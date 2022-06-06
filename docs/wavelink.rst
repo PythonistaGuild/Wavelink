@@ -159,6 +159,60 @@ Queues
 .. autoclass:: WaitQueue
     :members:
 
+Filters
+-------
+
+.. attributeable:: Filter
+
+.. autoclass:: Filter
+    :members:
+
+.. attributeable:: Equalizer
+
+.. autoclass:: Equalizer
+    :members:
+
+.. attributeable:: Karaoke
+
+.. autoclass:: Karaoke
+    :members:
+
+.. attributeable:: Timescale
+
+.. autoclass:: Timescale
+    :members:
+
+.. attributeable:: Tremolo
+
+.. autoclass:: Tremolo
+    :members:
+
+.. attributeable:: Vibrato
+
+.. autoclass:: Vibrato
+    :members:
+
+.. attributeable:: Rotation
+
+.. autoclass:: Rotation
+    :members:
+
+.. attributeable:: Distortion
+
+.. autoclass:: Distortion
+    :members:
+
+.. attributeable:: ChannelMix
+
+.. autoclass:: ChannelMix
+    :members:
+
+.. attributeable:: LowPass
+
+.. autoclass:: LowPass
+    :members:
+
+
 Exceptions
 ----------
 
