@@ -320,7 +320,10 @@ class Player(discord.VoiceProtocol):
         """
 
         self.volume = max(min(volume, 1000), 0)
-        await self.set_filter(Filter(self._filter, volume=self.volume), seek=seek)
+        await self.node._websocket.send(
+            op="volume", guildId=str(self.guild.id), volume=self.volume
+        )
+        logger.debug(f"Set volume:: {self.volume} ({self.channel.id})")
 
     async def seek(self, position: int = 0) -> None:
         """|coro|
