@@ -95,7 +95,7 @@ class Player(discord.VoiceProtocol):
         self.last_update: datetime.datetime = MISSING
         self.last_position: float = MISSING
 
-        self.volume: float = 100
+        self.volume: float = 1.0
         self._paused: bool = False
         self._source: Optional[abc.Playable] = None
         self._filter = None
