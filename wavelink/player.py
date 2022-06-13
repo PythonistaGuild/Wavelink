@@ -306,20 +306,20 @@ class Player(discord.VoiceProtocol):
         """
         await self.set_pause(False)
 
-    async def set_volume(self, volume: int, seek: bool = False) -> None:
+    async def set_volume(self, volume: float = 1.0, seek: bool = False) -> None:
         """|coro|
 
-        Set the player's volume, between 0 and 1000.
+        Set the player's volume, between 0.001 and 5.0.
 
         Parameters
         ----------
-        volume: int
-            The volume to set the player to.
+        volume: float
+            The volume to set the player to. Can be left blank to reset it to the default volume (1.0).
         seek: bool
             Whether to seek the player which will set the new volume immediately. Defaults to ``False``.
         """
-
-        self.volume = max(min(volume, 1000), 0)
+        
+        self.volume = max(min(volume, 5.0), 0.0)
         await self.set_filter(Filter(self._filter, volume=self.volume), seek=seek)
 
     async def seek(self, position: int = 0) -> None:
