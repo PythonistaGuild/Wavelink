@@ -256,7 +256,7 @@ async def main():
         try:
             location.mkdir(parents=True, exist_ok=False)
         except Exception as e:
-            print(f'Could make directory: "{location.absolute()}". {e}\nExiting the installer...')
+            print(f'Couldn\'t make directory: "{location.absolute()}". {e}\nExiting the installer...')
 
     await download(location=location, url=RELEASES)
     print('Lavalink successfully downloaded...')
