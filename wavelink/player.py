@@ -330,7 +330,7 @@ class Player(discord.VoiceProtocol):
         Parameters
         ----------
         position: int
-            The position as an int in milliseconds to seek to. Could be None to seek to beginning.
+            The position as an int in milliseconds to seek to.
         """
         await self.node._websocket.send(
             op="seek", guildId=str(self.guild.id), position=position
