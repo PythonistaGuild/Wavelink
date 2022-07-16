@@ -78,7 +78,7 @@ class Queue(Iterable[abc.Playable], Generic[QT]):
 
     def __str__(self) -> str:
         """String showing all Playable objects appearing as a list."""
-        return str(list(f"'{t}'" for t in self))
+        return str([f"'{t}'" for t in self])
 
     def __repr__(self) -> str:
         """Official representation with max_size and member count."""

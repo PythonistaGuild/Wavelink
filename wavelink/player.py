@@ -118,7 +118,7 @@ class Player(discord.VoiceProtocol):
         return self._source
 
     @property
-    def filter(self) -> Union[Filter, None]:
+    def filter(self) -> Optional[Filter]:
         return self._filter
 
     track = source
