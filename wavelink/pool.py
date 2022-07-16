@@ -225,7 +225,7 @@ class Node:
     async def get_playlist(self, cls: Type[PLT], identifier: str) -> Optional[PLT]:
         """|coro|
 
-        Search for an return a :class:`abc.Playlist` given an identifier.
+        Search for and return a :class:`abc.Playlist` given an identifier.
 
         Parameters
         ----------
