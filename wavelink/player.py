@@ -95,10 +95,12 @@ class Player(discord.VoiceProtocol):
         self.last_update: datetime.datetime = MISSING
         self.last_position: float = MISSING
 
-        self.volume: float = 100
+        self._connected: bool = False
         self._paused: bool = False
+
+        self._volume: float = 1.0
         self._source: Optional[abc.Playable] = None
-        self._filter = None
+        self._filter: Optional[Filter] = None
 
         self.queue = WaitQueue()
 
@@ -113,12 +115,16 @@ class Player(discord.VoiceProtocol):
         return self.client.user  # type: ignore
 
     @property
+    def volume(self) -> float:
+        return self._volume
+
+    @property
     def source(self) -> Optional[abc.Playable]:
         """The currently playing audio source."""
         return self._source
 
     @property
-    def filter(self) -> Union[Filter, None]:
+    def filter(self) -> Optional[Filter]:
         return self._filter
 
     track = source
@@ -206,7 +212,13 @@ class Player(discord.VoiceProtocol):
         logger.info(f"Moving to voice channel:: {channel.id}")
 
     async def play(
-        self, source: abc.Playable, replace: bool = True, start: int = 0, end: int = 0
+        self,
+        source: abc.Playable,
+        replace: bool = True,
+        start: int | None = None,
+        end: int | None = None,
+        volume: int | None = None,
+        pause: bool | None = None,
     ):
         """|coro|
 
@@ -215,25 +227,31 @@ class Player(discord.VoiceProtocol):
         Parameters
         ----------
         source: :class:`abc.Playable`
-            The :class:`abc.Playable` to initiate playing.
+            The :class:`abc.Playable` track to start playing.
         replace: bool
-            Whether or not the current track, if there is one, should be replaced or not. Defaults to ``True``.
-        start: int
-            The position to start the player from in milliseconds. Defaults to ``0``.
-        end: int
-            The position to end the track on in milliseconds.
-            By default this always allows the current song to finish playing.
+            Whether this track should replace the current track. Defaults to ``True``.
+        start: Optional[int]
+            The position to start the track at in milliseconds.
+            Defaults to ``None`` which will start the track at the beginning.
+        end: Optional[int]
+            The position to end the track at in milliseconds.
+            Defaults to ``None`` which means it will play until the end.
+        volume: Optional[int]
+            Sets the volume of the player. Must be between ``0`` and ``1000``.
+            Defaults to ``None`` which will not change the volume.
+        pause: bool
+            Changes the players pause state. Defaults to ``None`` which will not change the pause state.
 
         Returns
         -------
         :class:`wavelink.abc.Playable`
             The track that is now playing.
         """
-        if replace or not self.is_playing():
-            await self.update_state({"state": {}})
-            self._paused = False
-        else:
+
+        if not replace and self.is_playing():
             return
+
+        await self.update_state({"state": {}})
 
         if isinstance(source, PartialTrack):
             source = await source._search()
@@ -245,10 +263,17 @@ class Player(discord.VoiceProtocol):
             "guildId": str(self.guild.id),
             "track": source.id,
             "noReplace": not replace,
-            "startTime": str(start),
         }
-        if end > 0:
+        if start is not None and start > 0:
+            payload["startTime"] = str(start)
+        if end is not None and end > 0:
             payload["endTime"] = str(end)
+        if volume is not None:
+            self._volume = volume
+            payload["volume"] = str(volume)
+        if pause is not None:
+            self._paused = pause
+            payload["pause"] = pause
 
         await self.node._websocket.send(**payload)
 
@@ -260,11 +285,11 @@ class Player(discord.VoiceProtocol):
         return self._connected
 
     def is_playing(self) -> bool:
-        """Indicates wether a track is currently being played."""
+        """Indicates whether a track is currently being played."""
         return self.is_connected() and self._source is not None
 
     def is_paused(self) -> bool:
-        """Indicates wether the currently playing track is paused."""
+        """Indicates whether the currently playing track is paused."""
         return self._paused
 
     async def stop(self) -> None:
@@ -306,21 +331,25 @@ class Player(discord.VoiceProtocol):
         """
         await self.set_pause(False)
 
-    async def set_volume(self, volume: int, seek: bool = False) -> None:
+    async def set_volume(self, volume: float) -> None:
         """|coro|
 
-        Set the player's volume, between 0 and 1000.
+        Sets the players volume. Accepts a float between ``0.0`` and ``10.0`` where ``1.0`` means 100% volume.
 
         Parameters
         ----------
         volume: int
             The volume to set the player to.
-        seek: bool
-            Whether to seek the player which will set the new volume immediately. Defaults to ``False``.
         """
 
-        self.volume = max(min(volume, 1000), 0)
-        await self.set_filter(Filter(self._filter, volume=self.volume), seek=seek)
+        self._volume = max(min(volume * 100, 1000), 0)
+
+        await self.node._websocket.send(
+            op="volume",
+            guildId=str(self.guild.id),
+            volume=self.volume
+        )
+        logger.debug(f"Set volume:: {self.volume} ({self.channel.id})")
 
     async def seek(self, position: int = 0) -> None:
         """|coro|
@@ -349,16 +378,19 @@ class Player(discord.VoiceProtocol):
         Parameters
         ----------
         filter: :class:`wavelink.Filter`
-            The filter to set the player to.
+            The filter to apply to the player.
         seek: bool
-            Whether to seek the player which will set the new filter immediately. Defaults to ``False``.
+            Whether to seek the player to its current position
+            which will apply the filter immediately. Defaults to ``False``.
         """
 
         self._filter = _filter
-        await self.node._websocket.send(
-            op="filters", guildId=str(self.guild.id), **_filter._payload
-        )
 
+        await self.node._websocket.send(
+            op="filters",
+            guildId=str(self.guild.id),
+            **_filter._payload
+        )
         logger.debug(f"Set filter:: {self._filter} ({self.channel.id})")
 
         if self.is_playing() and seek:
