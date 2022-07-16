@@ -536,9 +536,6 @@ class Filter:
     ----------
     filter: wavelink.Filter
         An instance of this filter class.
-    volume: float
-        A volume factor to apply to the track. 1.0 is the default, max is 5.0, min is 0.0.
-        A value of 1.0 means the track will play at 100% volume.
     equalizer: wavelink.Equalizer
         An equalizer to apply to the track.
     karaoke: wavelink.Karaoke
@@ -564,7 +561,6 @@ class Filter:
         self,
         _filter: Optional[Filter] = None,
         /, *,
-        volume: Optional[float] = None,
         equalizer: Optional[Equalizer] = None,
         karaoke: Optional[Karaoke] = None,
         timescale: Optional[Timescale] = None,
@@ -578,7 +574,6 @@ class Filter:
 
         self.filter: Optional[Filter] = _filter
 
-        self.volume: Optional[float] = volume
         self.equalizer: Optional[Equalizer] = equalizer
         self.karaoke: Optional[Karaoke] = karaoke
         self.timescale: Optional[Timescale] = timescale
@@ -590,7 +585,7 @@ class Filter:
         self.low_pass: Optional[LowPass] = low_pass
 
     def __repr__(self) -> str:
-        return f"<wavelink.Filter volume={self.volume}, equalizer={self.equalizer}, " \
+        return f"<wavelink.Filter equalizer={self.equalizer}, " \
                f"karaoke={self.karaoke}, timescale={self.timescale}, tremolo={self.tremolo}, " \
                f"vibrato={self.vibrato}, rotation={self.rotation}, distortion={self.distortion}, " \
                f"channel_mix={self.channel_mix}, low_pass={self.low_pass}>"
@@ -600,8 +595,6 @@ class Filter:
 
         payload = self.filter._payload.copy() if self.filter else {}
 
-        if self.volume:
-            payload["volume"] = self.volume
         if self.equalizer:
             payload["equalizer"] = self.equalizer._payload
         if self.karaoke:
