@@ -98,7 +98,7 @@ class Player(discord.VoiceProtocol):
         self._connected: bool = False
         self._paused: bool = False
 
-        self._volume: float = 1.0
+        self._volume: int = 100
         self._source: Optional[abc.Playable] = None
         self._filter: Optional[Filter] = None
 
@@ -115,7 +115,7 @@ class Player(discord.VoiceProtocol):
         return self.client.user  # type: ignore
 
     @property
-    def volume(self) -> float:
+    def volume(self) -> int:
         return self._volume
 
     @property
@@ -215,10 +215,10 @@ class Player(discord.VoiceProtocol):
         self,
         source: abc.Playable,
         replace: bool = True,
-        start: int | None = None,
-        end: int | None = None,
-        volume: int | None = None,
-        pause: bool | None = None,
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+        volume: Optional[int] = None,
+        pause: Optional[bool] = None,
     ):
         """|coro|
 
@@ -331,10 +331,10 @@ class Player(discord.VoiceProtocol):
         """
         await self.set_pause(False)
 
-    async def set_volume(self, volume: float) -> None:
+    async def set_volume(self, volume: int) -> None:
         """|coro|
 
-        Sets the players volume. Accepts a float between ``0.0`` and ``10.0`` where ``1.0`` means 100% volume.
+        Sets the players volume. Accepts a float between ``0`` and ``1000`` where ``100`` means 100% volume.
 
         Parameters
         ----------
@@ -342,7 +342,7 @@ class Player(discord.VoiceProtocol):
             The volume to set the player to.
         """
 
-        self._volume = max(min(volume * 100, 1000), 0)
+        self._volume = max(min(volume, 1000), 0)
 
         await self.node._websocket.send(
             op="volume",
