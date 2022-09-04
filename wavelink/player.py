@@ -334,7 +334,7 @@ class Player(discord.VoiceProtocol):
     async def set_volume(self, volume: int) -> None:
         """|coro|
 
-        Sets the players volume. Accepts a float between ``0`` and ``1000`` where ``100`` means 100% volume.
+        Sets the players volume. Accepts an integer between ``0`` and ``1000`` where ``100`` means 100% volume.
 
         Parameters
         ----------
