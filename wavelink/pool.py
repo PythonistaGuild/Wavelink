@@ -460,7 +460,7 @@ class NodePool:
                 return node
 
         elif region is not MISSING:
-            nodes = [n for n in cls._nodes.values() if n._region is region]
+            nodes = [n for n in cls._nodes.values() if str(region) == str(n.region)]
             if not nodes:
                 raise ZeroConnectedNodes(
                     f"No Nodes for region <{region}> exist on this pool."
