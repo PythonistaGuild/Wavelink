@@ -188,7 +188,7 @@ class Player(discord.VoiceProtocol):
 
         await self.channel.guild.change_voice_state(channel=self.channel, **kwargs)
 
-    async def play(self, id: str) -> None:
+    async def play(self, id: str) -> dict[str, Any]:
         resp: dict[str, Any] = await self.current_node._send(method='PATCH',
                                                              path=f'sessions/{self.current_node._session_id}/players',
                                                              guild_id=self._guild.id,
@@ -197,6 +197,27 @@ class Player(discord.VoiceProtocol):
         self._player_state['track'] = resp['track']['encoded']
 
         print(f'PLAY: {resp}')
+        return resp
+
+    async def stop(self) -> dict[str, Any]:
+        """
+        This seems to currently be broken on the lavalink side
+        """
+        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
+                                                             path=f'sessions/{self.current_node._session_id}/players',
+                                                             guild_id=self._guild.id,
+                                                             data={'encodedTrack': None})
+
+        self._player_state['track'] = None
+
+        print(f'STOP: {resp}')
+        return resp
+
+    async def destroy(self) -> None:
+        await self.current_node._send(method='DELETE',
+                                     path=f'sessions/{self.current_node._session_id}/players',
+                                     guild_id=self._guild.id)
+
 
     async def _swap_state(self) -> None:
         print(f'SWAP STATE: {self._player_state}')
