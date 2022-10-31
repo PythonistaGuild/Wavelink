@@ -83,17 +83,28 @@ class Player(discord.VoiceProtocol):
         self.last_update: datetime.datetime | None = None
         self.last_position: float = 0.0
 
+        self._ping: int = 0
+
     @property
     def guild(self) -> discord.Guild | None:
+        """The discord Guild associated with the Player."""
         return self._guild
 
     @property
     def position(self) -> float:
+        """The position of the currently playing track in milliseconds."""
+        # TODO - player is playing logic
+
         delta = (datetime.datetime.now(datetime.timezone.utc) - self.last_update).total_seconds() * 1000
         position = self.last_position + delta
 
         # TODO - min(position, duration)
         return position  # type: ignore
+
+    @property
+    def ping(self) -> int:
+        """The ping to the discord endpoint in milliseconds."""
+        return self._ping
 
     async def _update_event(self, data: dict[str, Any] | None, close: bool = False) -> None:
         if close and self.swap_on_disconnect:
@@ -120,6 +131,8 @@ class Player(discord.VoiceProtocol):
         state: dict[str, Any] = data['state']
         self.last_update = datetime.datetime.fromtimestamp(state.get("time", 0) / 1000, datetime.timezone.utc)
         self.last_position = state.get('position', 0)
+
+        self._ping = state['ping']
 
     async def on_voice_server_update(self, data: dict[str, Any]) -> None:
         self._voice_state['token'] = data['token']
