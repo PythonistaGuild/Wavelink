@@ -166,7 +166,8 @@ class Websocket:
 
             elif op == 'stats':
                 payload = ...
-                self.dispatch('stats_update', payload)
+                print(f"STATS: {data}")
+                self.dispatch('stats_update', data)
 
             elif op == 'event':
                 print(f'WEBSOCKET EVENT: {data}')
@@ -182,6 +183,7 @@ class Websocket:
                     continue
 
                 await player._update_event(data)
+                self.dispatch("player_update", data)
                 print(f'WEBSOCKET PLAYER_UPDATE: {data}')
 
             else:
