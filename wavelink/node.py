@@ -22,8 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import logging
+import random
 import re
-import uuid
+import string
 from typing import Any, TYPE_CHECKING
 
 import aiohttp
@@ -50,7 +51,7 @@ class Node:
     def __init__(
             self,
             *,
-            id: str = str(uuid.uuid4()),
+            id: str | None = None,
             uri: str,
             password: str,
             secure: bool = False,
@@ -58,6 +59,9 @@ class Node:
             heartbeat: float = 15.0,
             retries: int | None = None
     ):
+        if id is None:
+            id: str = ''.join(random.sample(string.ascii_letters + string.digits, 12))
+
         self._id: str = id
         self._uri: str = uri
         host: str = re.sub(r'https://|http://|wss://|ws://', '', self._uri)

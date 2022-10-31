@@ -26,6 +26,7 @@ from typing import Any, Union, TYPE_CHECKING
 
 import discord
 
+from .enums import *
 from .node import Node, NodePool
 
 
@@ -53,20 +54,52 @@ class Player(discord.VoiceProtocol):
         client: discord.Client | None = None,
         channel: VoiceChannel | None = None,
         *,
-        node: Node = None,
+        nodes: list[Node] | None = None,
+        swap_node_on_disconnect: bool = True
     ):
         self.client: discord.Client | None = client
         self.channel: VoiceChannel | None = channel
 
-        if node is None:
-            node = NodePool.get_connected_node()
+        if swap_node_on_disconnect and not nodes:
+            self.nodes: list[Node] = list(NodePool.nodes.values())
+            self.current_node: Node = self.nodes[0]
+        elif nodes:
+            self.current_node: Node = nodes[0]
+            self.nodes: list[Node] = nodes
+        else:
+            self.current_node: Node = NodePool.get_connected_node()
+            self.nodes: list[Node] = [self.current_node]
 
-        self.node: Node = node
         if not self.client:
-            self.client = self.node.client
+            self.client = self.current_node.client
 
         self._guild: discord.Guild | None = None
         self._voice_state: dict[str, Any] = {}
+        self._player_state: dict[str, Any] = {}
+
+        self.swap_on_disconnect: bool = swap_node_on_disconnect
+
+    async def _update_event(self, data: dict[str, Any] | None, close: bool = False) -> None:
+        if close and self.swap_on_disconnect:
+
+            if len(self.nodes) < 2:
+                return
+
+            new: Node = [n for n in self.nodes if n != self.current_node and n.status is NodeStatus.CONNECTED][0]
+            del self.current_node._players[self._guild.id]
+
+            if not new:
+                return
+
+            self.current_node: Node = new
+            new._players[self._guild.id] = self
+
+            await self._dispatch_voice_update()
+            await self._swap_state()
+            return
+
+        data.pop('op')
+        self._player_state.update(**data)
 
     async def on_voice_server_update(self, data: dict[str, Any]) -> None:
         self._voice_state['token'] = data['token']
@@ -79,7 +112,7 @@ class Player(discord.VoiceProtocol):
 
         if not channel_id:
             self._voice_state = {}
-            del self.node._players[self._guild.id]
+            del self.current_node._players[self._guild.id]
 
             self.channel = None
             self._guild = None
@@ -91,12 +124,13 @@ class Player(discord.VoiceProtocol):
 
         if not self._guild:
             self._guild = self.channel.guild
-            self.node._players[self._guild.id] = self
+            self.current_node._players[self._guild.id] = self
 
         await self._dispatch_voice_update()
 
-    async def _dispatch_voice_update(self) -> None:
-        data = self._voice_state
+    async def _dispatch_voice_update(self, data: dict[str, Any] | None = None) -> None:
+        data = data or self._voice_state
+
         try:
             session_id: str = data['session_id']
             token: str = data['token']
@@ -105,27 +139,57 @@ class Player(discord.VoiceProtocol):
             return
 
         voice: dict[str, dict[str, str]] = {'voice': {'sessionId': session_id, 'token': token, 'endpoint': endpoint}}
-        resp: dict[str, Any] = await self.node._send(method='PATCH',
-                                                     path=f'sessions/{self.node._session_id}/players',
-                                                     guild_id=self._guild.id,
-                                                     data=voice)
+        self._player_state.update(**voice)
+
+        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
+                                                             path=f'sessions/{self.current_node._session_id}/players',
+                                                             guild_id=self._guild.id,
+                                                             data=voice)
 
         print(f'DISPATCH VOICE_UPDATE: {resp}')
 
     async def connect(self, *, timeout: float, reconnect: bool, **kwargs: Any) -> None:
         if not self._guild:
             self._guild = self.channel.guild
-            self.node._players[self._guild.id] = self
+            self.current_node._players[self._guild.id] = self
 
         await self.channel.guild.change_voice_state(channel=self.channel, **kwargs)
 
     async def play(self, id: str) -> None:
-        resp: dict[str, Any] = await self.node._send(method='PATCH',
-                                                     path=f'sessions/{self.node._session_id}/players',
-                                                     guild_id=self._guild.id,
-                                                     data={'identifier': id})
+        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
+                                                             path=f'sessions/{self.current_node._session_id}/players',
+                                                             guild_id=self._guild.id,
+                                                             data={'identifier': id})
+
+        self._player_state['track'] = resp['track']['encoded']
 
         print(f'PLAY: {resp}')
+
+    async def _swap_state(self) -> None:
+        print(f'SWAP STATE: {self._player_state}')
+
+        try:
+            self._player_state['track']
+        except KeyError:
+            return
+
+        data: dict[str, Any] = {
+            'encodedTrack': self._player_state['track'],
+            'position': self._player_state['state']['position']
+        }
+
+        try:
+
+            resp: dict[str, Any] = await self.current_node._send(method='PATCH',
+                                                             path=f'sessions/{self.current_node._session_id}/players',
+                                                             guild_id=self._guild.id,
+                                                             data=data)
+        except Exception as e:
+            print(e)
+
+        print(f'SWAP STATE RESP: {resp}')
+
+
 
 
 
