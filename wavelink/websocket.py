@@ -132,6 +132,10 @@ class Websocket:
             message = await self.socket.receive()
 
             if message.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.CLOSING):
+
+                for player in self.node.players.values():
+                    await player._update_event(data=None, close=True)
+
                 asyncio.create_task(self._reconnect())
                 return
 
@@ -177,6 +181,7 @@ class Websocket:
                     logger.debug('Received payload from Lavalink without an attached player. Disregarding.')
                     continue
 
+                await player._update_event(data)
                 print(f'WEBSOCKET PLAYER_UPDATE: {data}')
 
             else:
