@@ -21,8 +21,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import datetime
 import logging
-from typing import Any, Union, TYPE_CHECKING
+from typing import Any, Union
 
 import discord
 
@@ -79,6 +80,21 @@ class Player(discord.VoiceProtocol):
 
         self.swap_on_disconnect: bool = swap_node_on_disconnect
 
+        self.last_update: datetime.datetime | None = None
+        self.last_position: float = 0.0
+
+    @property
+    def guild(self) -> discord.Guild | None:
+        return self._guild
+
+    @property
+    def position(self) -> float:
+        delta = (datetime.datetime.now(datetime.timezone.utc) - self.last_update).total_seconds() * 1000
+        position = self.last_position + delta
+
+        # TODO - min(position, duration)
+        return position  # type: ignore
+
     async def _update_event(self, data: dict[str, Any] | None, close: bool = False) -> None:
         if close and self.swap_on_disconnect:
 
@@ -100,6 +116,10 @@ class Player(discord.VoiceProtocol):
 
         data.pop('op')
         self._player_state.update(**data)
+
+        state: dict[str, Any] = data['state']
+        self.last_update = datetime.datetime.fromtimestamp(state.get("time", 0) / 1000, datetime.timezone.utc)
+        self.last_position = state.get('position', 0)
 
     async def on_voice_server_update(self, data: dict[str, Any]) -> None:
         self._voice_state['token'] = data['token']
@@ -173,25 +193,10 @@ class Player(discord.VoiceProtocol):
         except KeyError:
             return
 
-        data: dict[str, Any] = {
-            'encodedTrack': self._player_state['track'],
-            'position': self._player_state['state']['position']
-        }
-
-        try:
-
-            resp: dict[str, Any] = await self.current_node._send(method='PATCH',
+        data: dict[str, Any] = {'encodedTrack': self._player_state['track'], 'position': self.position}
+        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
                                                              path=f'sessions/{self.current_node._session_id}/players',
                                                              guild_id=self._guild.id,
                                                              data=data)
-        except Exception as e:
-            print(e)
 
         print(f'SWAP STATE RESP: {resp}')
-
-
-
-
-
-
-
