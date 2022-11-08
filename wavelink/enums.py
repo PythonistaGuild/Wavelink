@@ -24,7 +24,7 @@ SOFTWARE.
 from discord.enums import Enum
 
 
-__all__ = ('NodeStatus', )
+__all__ = ('NodeStatus', 'TrackSource', 'LoadType')
 
 
 class NodeStatus(Enum):
@@ -33,3 +33,19 @@ class NodeStatus(Enum):
     CONNECTING = 1
     CONNECTED = 2
 
+
+class TrackSource(Enum):
+
+    YouTube = 0
+    YouTubeMusic = 1
+    SoundCloud = 2
+    Local = 3
+    Unknown = 4
+
+
+class LoadType(Enum):
+    track_loaded = "TRACK_LOADED"
+    playlist_loaded = "PLAYLIST_LOADED"
+    search_result = "SEARCH_RESULT"
+    no_matches = "NO_MATCHES"
+    load_failed = "LOAD_FAILED"
