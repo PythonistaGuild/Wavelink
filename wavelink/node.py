@@ -242,13 +242,13 @@ class NodePool:
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
     @classmethod
-    async def search_tracks(cls_,
-                            query: str,
-                            /,
-                            *,
-                            cls: Playable,
-                            node: Node | None = None
-                            ) -> Playable | list[Playable]:
+    async def get_tracks(cls_,
+                         query: str,
+                         /,
+                         *,
+                         cls: Playable,
+                         node: Node | None = None
+                         ) -> Playable | list[Playable]:
         if not node:
             node = cls_.get_connected_node()
 
