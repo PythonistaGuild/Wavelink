@@ -29,7 +29,8 @@ __all__ = (
     'AuthorizationFailed',
     'InvalidNode',
     'InvalidLavalinkVersion',
-    'InvalidLavalinkResponse'
+    'InvalidLavalinkResponse',
+    'NoTracksError'
 )
 
 
@@ -56,3 +57,7 @@ class InvalidLavalinkResponse(WavelinkException):
     def __init__(self, *args, **kwargs):
         super().__init__(*args)
         self.status: int = kwargs.get('status')  # type: ignore
+
+
+class NoTracksError(WavelinkException):
+    pass
