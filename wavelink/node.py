@@ -25,24 +25,29 @@ import logging
 import random
 import re
 import string
-from typing import Any, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING, Union
 
 import aiohttp
 import discord
+from discord.enums import try_enum
 from discord.utils import classproperty
 
-from .enums import NodeStatus
+from .enums import NodeStatus, LoadType
 from .exceptions import *
 from .websocket import Websocket
 
 if TYPE_CHECKING:
     from .player import Player
+    from .tracks import YouTubeTrack
 
 
 __all__ = ('Node', 'NodePool')
 
 
 logger: logging.Logger = logging.getLogger(__name__)
+
+
+Playable = Union['YouTubeTrack']
 
 
 # noinspection PyShadowingBuiltins
@@ -157,6 +162,29 @@ class Node:
 
             return await resp.json()
 
+    async def get_tracks(self, cls: Playable, query: str) -> list[Playable]:
+        data = await self._send(method='GET', path='loadtracks', query=f'identifier={query}')
+        load_type = try_enum(LoadType, data.get("loadType"))
+
+        if load_type is LoadType.load_failed:
+            # TODO - Proper Exception...
+
+            raise ValueError('Track Failed to load.')
+
+        if load_type is LoadType.no_matches:
+            return []
+
+        if load_type is LoadType.track_loaded:
+            track_data = data["tracks"][0]
+            return [cls(track_data)]
+
+        if load_type is not LoadType.search_result:
+            # TODO - Proper Exception...
+
+            raise ValueError('Track Failed to load.')
+
+        return [cls(track_data) for track_data in data["tracks"]]
+
 
 # noinspection PyShadowingBuiltins
 class NodePool:
@@ -212,3 +240,16 @@ class NodePool:
             raise InvalidNode('There are Nodes on the Wavelink NodePool that are currently in the connected state.')
 
         return sorted(nodes, key=lambda n: len(n.players))[0]
+
+    @classmethod
+    async def search_tracks(cls_,
+                            query: str,
+                            /,
+                            *,
+                            cls: Playable,
+                            node: Node | None = None
+                            ) -> Playable | list[Playable]:
+        if not node:
+            node = cls_.get_connected_node()
+
+        return await node.get_tracks(cls=cls, query=query)

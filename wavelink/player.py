@@ -29,6 +29,7 @@ import discord
 
 from .enums import *
 from .node import Node, NodePool
+from .tracks import YouTubeTrack
 
 
 __all__ = ("Player",)
@@ -40,6 +41,9 @@ logger: logging.Logger = logging.getLogger(__name__)
 VoiceChannel = Union[
     discord.VoiceChannel, discord.StageChannel
 ]  # todo: VocalGuildChannel?
+
+
+Playable = Union[YouTubeTrack]
 
 
 class Player(discord.VoiceProtocol):
@@ -188,11 +192,12 @@ class Player(discord.VoiceProtocol):
 
         await self.channel.guild.change_voice_state(channel=self.channel, **kwargs)
 
-    async def play(self, id: str) -> dict[str, Any]:
+    async def play(self, track: Playable) -> dict[str, Any]:
+
         resp: dict[str, Any] = await self.current_node._send(method='PATCH',
                                                              path=f'sessions/{self.current_node._session_id}/players',
                                                              guild_id=self._guild.id,
-                                                             data={'identifier': id})
+                                                             data={'encodedTrack': track.encoded})
 
         self._player_state['track'] = resp['track']['encoded']
 
@@ -217,7 +222,6 @@ class Player(discord.VoiceProtocol):
         await self.current_node._send(method='DELETE',
                                      path=f'sessions/{self.current_node._session_id}/players',
                                      guild_id=self._guild.id)
-
 
     async def _swap_state(self) -> None:
         print(f'SWAP STATE: {self._player_state}')
