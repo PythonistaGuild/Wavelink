@@ -102,10 +102,12 @@ class YouTubeTrack(Playable):
         query_: str = f'{cls.PREFIX}{query}'
         tracks: list[cls] = await NodePool.get_tracks(query_, cls=cls, node=node)
 
+        try:
+            track: cls = tracks[0]
+        except IndexError:
+            raise NoTracksError(f'Your search query "{query}" returned no tracks.')
+
         if return_first:
-            try:
-                return tracks[0]
-            except IndexError:
-                raise NoTracksError(f'Your search query "{query}" returned no tracks.')
+            return track
 
         return tracks
