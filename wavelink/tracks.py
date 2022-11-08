@@ -100,7 +100,7 @@ class YouTubeTrack(Playable):
                      ) -> P | list[P] | None:
 
         query_: str = f'{cls.PREFIX}{query}'
-        tracks: list[cls] = await NodePool.get_tracks(query_, cls=cls)
+        tracks: list[cls] = await NodePool.get_tracks(query_, cls=cls, node=node)
 
         if return_first:
             try:
