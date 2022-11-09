@@ -29,7 +29,7 @@ from .exceptions import NoTracksError
 from .node import Node, NodePool
 
 
-__all__ = ('Playable', 'YouTubeTrack')
+__all__ = ('Playable', 'YouTubeTrack', 'GenericTrack')
 
 
 _source_mapping: dict[str, TrackSource] = {
@@ -83,12 +83,56 @@ class Playable(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
+class GenericTrack(Playable):
+
+    def __init__(self, data: dict[str, Any]):
+        super().__init__(data=data)
+
+    @classmethod
+    async def search(cls,
+                     query: str,
+                     /,
+                     *,
+                     return_first: bool = False,
+                     node: Node | None = None
+                     ) -> P | list[P] | None:
+
+        tracks: list[cls] = await NodePool.get_tracks(query, cls=cls, node=node)
+
+        try:
+            track: cls = tracks[0]
+        except IndexError:
+            raise NoTracksError(f'Your search query "{query}" returned no tracks.')
+
+        if return_first:
+            return track
+
+        return tracks
+
+
 class YouTubeTrack(Playable):
 
     PREFIX: str = 'ytsearch:'
 
     def __init__(self, data: dict[str, Any]):
         super().__init__(data=data)
+
+    @property
+    def thumbnail(self) -> str:
+        """The URL to the thumbnail of this video.
+
+        .. note::
+
+            Due to YouTube limitations this may not always return a valid thumbnail
+
+        Returns
+        -------
+        str
+            The URL to the video thumbnail.
+        """
+        return f"https://img.youtube.com/vi/{self.identifier}/maxresdefault.jpg"
+
+    thumb = thumbnail
 
     @classmethod
     async def search(cls,
