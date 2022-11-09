@@ -17,8 +17,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+from __future__ import annotations
+
 import random
-from typing import Optional
+from collections.abc import Callable
 
 
 class Backoff:
@@ -33,16 +35,16 @@ class Backoff:
         The amount of times to backoff before resetting. Defaults to 5. If set to None, backoff will run indefinitely.
     """
 
-    def __init__(self, *, base: int = 1, maximum_time: float = 30.0, maximum_tries: Optional[int] = 5):
-        self._base = base
-        self._maximum_time = maximum_time
-        self._maximum_tries = maximum_tries
+    def __init__(self, *, base: int = 1, maximum_time: float = 30.0, maximum_tries: int | None = 5) -> None:
+        self._base: int = base
+        self._maximum_time: float = maximum_time
+        self._maximum_tries: int | None = maximum_tries
         self._retries: int = 1
 
         rand = random.Random()
         rand.seed()
 
-        self._rand = rand.uniform
+        self._rand: Callable[[float, float], float] = rand.uniform
 
         self._last_wait: float = 0
 
