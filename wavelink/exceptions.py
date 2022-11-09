@@ -30,7 +30,8 @@ __all__ = (
     'InvalidNode',
     'InvalidLavalinkVersion',
     'InvalidLavalinkResponse',
-    'NoTracksError'
+    'NoTracksError',
+    'QueueEmpty'
 )
 
 
@@ -60,4 +61,8 @@ class InvalidLavalinkResponse(WavelinkException):
 
 
 class NoTracksError(WavelinkException):
+    pass
+
+
+class QueueEmpty(WavelinkException):
     pass

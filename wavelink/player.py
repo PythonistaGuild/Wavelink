@@ -29,7 +29,8 @@ import discord
 
 from .enums import *
 from .node import Node, NodePool
-from .tracks import YouTubeTrack
+from .queue import Queue
+from .tracks import *
 
 
 __all__ = ("Player",)
@@ -43,7 +44,7 @@ VoiceChannel = Union[
 ]  # todo: VocalGuildChannel?
 
 
-Playable = Union[YouTubeTrack]
+Playable = Union[Playable, YouTubeTrack, GenericTrack]
 
 
 class Player(discord.VoiceProtocol):
@@ -89,6 +90,9 @@ class Player(discord.VoiceProtocol):
 
         self._ping: int = 0
 
+        self.queue: Queue = Queue()
+        self._current: Playable | None = None
+
     @property
     def guild(self) -> discord.Guild | None:
         """The discord Guild associated with the Player."""
@@ -109,6 +113,10 @@ class Player(discord.VoiceProtocol):
     def ping(self) -> int:
         """The ping to the discord endpoint in milliseconds."""
         return self._ping
+
+    @property
+    def current(self) -> Playable | None:
+        return self._current
 
     async def _update_event(self, data: dict[str, Any] | None, close: bool = False) -> None:
         if close and self.swap_on_disconnect:
@@ -200,6 +208,7 @@ class Player(discord.VoiceProtocol):
                                                              data={'encodedTrack': track.encoded})
 
         self._player_state['track'] = resp['track']['encoded']
+        self._current = track
 
         print(f'PLAY: {resp}')
         return resp
