@@ -24,7 +24,7 @@ SOFTWARE.
 from discord.enums import Enum
 
 
-__all__ = ('NodeStatus', 'TrackSource', 'LoadType')
+__all__ = ('NodeStatus', 'TrackSource', 'LoadType', 'TrackEventType')
 
 
 class NodeStatus(Enum):
@@ -49,3 +49,9 @@ class LoadType(Enum):
     search_result = "SEARCH_RESULT"
     no_matches = "NO_MATCHES"
     load_failed = "LOAD_FAILED"
+
+
+class TrackEventType(Enum):
+
+    START = 'TrackStartEvent'
+    END = 'TrackEndEvent'
