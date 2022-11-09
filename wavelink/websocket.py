@@ -28,13 +28,17 @@ from typing import Any, Optional, TYPE_CHECKING
 import aiohttp
 
 from .backoff import Backoff
-from .enums import NodeStatus
+from .enums import NodeStatus, TrackEventType
 from .exceptions import *
+from .payloads import TrackEventPayload
 from . import __version__
+
+import wavelink
 
 if TYPE_CHECKING:
     from .node import Node
     from .player import Player
+    from .tracks import GenericTrack
 
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -172,9 +176,25 @@ class Websocket:
             elif op == 'event':
                 print(f'WEBSOCKET EVENT: {data}')
                 player = self.get_player(data)
+
                 if player is None:
                     logger.debug('Received payload from Lavalink without an attached player. Disregarding.')
                     continue
+
+                if data['type'] == 'WebSocketClosedEvent':
+                    return
+
+                track = await self.node.build_track(cls=wavelink.GenericTrack, encoded=data['encodedTrack'])
+                payload: TrackEventPayload = TrackEventPayload(data=data, track=track, player=player)
+
+                self.dispatch('track_event', payload)
+
+                if payload.event is TrackEventType.END:
+                    player._current = None
+                    self.dispatch('track_end_event', payload)
+
+                elif payload.event is TrackEventType.START:
+                    self.dispatch('track_start_event', payload)
 
             elif op == 'playerUpdate':
                 player = self.get_player(data)
