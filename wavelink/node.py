@@ -38,7 +38,7 @@ from .websocket import Websocket
 
 if TYPE_CHECKING:
     from .player import Player
-    from .tracks import YouTubeTrack
+    from .tracks import *
 
 
 __all__ = ('Node', 'NodePool')
@@ -47,7 +47,7 @@ __all__ = ('Node', 'NodePool')
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-Playable = Union['YouTubeTrack']
+Playable = Union['Playable', 'YouTubeTrack', 'GenericTrack']
 
 
 # noinspection PyShadowingBuiltins
@@ -184,6 +184,11 @@ class Node:
             raise ValueError('Track Failed to load.')
 
         return [cls(track_data) for track_data in data["tracks"]]
+
+    async def build_track(self, *, cls: Playable, encoded: str) -> Playable:
+        data = await self._send(method='GET', path='decodetrack', query=f'encodedTrack={encoded}')
+
+        return cls(data=data)
 
 
 # noinspection PyShadowingBuiltins
