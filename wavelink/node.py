@@ -21,33 +21,35 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from __future__ import annotations
+
 import logging
 import random
 import re
 import string
-from typing import Any, Optional, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import aiohttp
 import discord
 from discord.enums import try_enum
-from discord.utils import classproperty
+from discord.utils import MISSING, classproperty
 
-from .enums import NodeStatus, LoadType
+from .enums import LoadType, NodeStatus
 from .exceptions import *
 from .websocket import Websocket
 
 if TYPE_CHECKING:
     from .player import Player
     from .tracks import *
+    from .types.request import Request
 
+    PlayableT = TypeVar('PlayableT', bound=Playable)
+    
 
 __all__ = ('Node', 'NodePool')
 
 
 logger: logging.Logger = logging.getLogger(__name__)
-
-
-Playable = Union['Playable', 'YouTubeTrack', 'GenericTrack']
 
 
 # noinspection PyShadowingBuiltins
@@ -60,26 +62,25 @@ class Node:
             uri: str,
             password: str,
             secure: bool = False,
-            session: aiohttp.ClientSession | None = None,
+            session: aiohttp.ClientSession = MISSING,
             heartbeat: float = 15.0,
             retries: int | None = None
-    ):
+    ) -> None:
         if id is None:
-            id: str = ''.join(random.sample(string.ascii_letters + string.digits, 12))
+            id = ''.join(random.sample(string.ascii_letters + string.digits, 12))
 
         self._id: str = id
         self._uri: str = uri
-        host: str = re.sub(r'https://|http://|wss://|ws://', '', self._uri)
+        host: str = re.sub(r'(?:http|ws)s?://', '', self._uri)
         self._host: str = f'{"https://" if secure else "http://"}{host}'
         self._password: str = password
 
-        self._session: aiohttp.ClientSession | None = session
+        self._session: aiohttp.ClientSession = session
         self.heartbeat: float = heartbeat
         self._retries: int | None = retries
 
         self.client: discord.Client | None = None
-        self.client_id: int | None = None
-        self._websocket: Websocket | None = None
+        self._websocket: Websocket  = MISSING
         self._session_id: str | None = None
 
         self._players: dict[int, 'Player'] = {}
@@ -87,11 +88,13 @@ class Node:
         self._status: NodeStatus = NodeStatus.DISCONNECTED
         self._major_version: int | None = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'Node: id="{self._id}", uri="{self.uri}", status={self.status}'
 
-    def __eq__(self, other):
-        return self.id == other.id
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Node):
+            return self.id == other.id
+        return NotImplemented
 
     @property
     def id(self) -> str:
@@ -106,21 +109,23 @@ class Node:
         return self._password
 
     @property
-    def players(self) -> dict[int, 'Player']:
+    def players(self) -> dict[int, Player]:
         return self._players
 
     @property
     def status(self) -> NodeStatus:
         return self._status
 
-    async def _connect(self, client_id: int, client: discord.Client) -> None:
+    async def _connect(self, client: discord.Client) -> None:
+        if client.user is None:
+            raise RuntimeError('')
+
         if not self._session:
-            self._session: aiohttp.ClientSession = aiohttp.ClientSession(headers={'Authorization': self._password})
+            self._session = aiohttp.ClientSession(headers={'Authorization': self._password})
 
-        self.client: discord.Client = client
-        self.client_id: int = client_id
+        self.client = client
 
-        self._websocket: Websocket = Websocket(node=self)
+        self._websocket = Websocket(node=self)
 
         await self._websocket.connect()
 
@@ -128,7 +133,7 @@ class Node:
             version: str = await resp.text()
 
             if version.endswith('-SNAPSHOT'):
-                self._major_version: int = 3
+                self._major_version = 3
                 return
 
             version_tuple = tuple(int(v) for v in version.split('.'))
@@ -138,7 +143,7 @@ class Node:
             if version_tuple[0] == 3 and version_tuple[1] < 7:
                 raise InvalidLavalinkVersion(f'Wavelink 2 is not compatible with Lavalink versions under "3.7".')
 
-            self._major_version: int = version_tuple[0]
+            self._major_version = version_tuple[0]
 
     async def _send(self,
                     *,
@@ -146,7 +151,7 @@ class Node:
                     path: str,
                     guild_id: int | str | None = None,
                     query: str | None = None,
-                    data: dict[str, Any] = {}
+                    data: Request | None = None,
                     ) -> dict[str, Any]:
 
         uri: str = f'{self._host}/' \
@@ -155,14 +160,14 @@ class Node:
                    f'{f"/{guild_id}" if guild_id else ""}' \
                    f'{f"?{query}" if query else ""}'
 
-        async with self._session.request(method=method, url=uri, json=data) as resp:
+        async with self._session.request(method=method, url=uri, json=data or {}) as resp:
             if resp.status >= 300:
                 raise InvalidLavalinkResponse(f'An error occurred when attempting to reach: "{uri}".',
                                               status=resp.status)
 
             return await resp.json()
 
-    async def get_tracks(self, cls: Playable, query: str) -> list[Playable]:
+    async def get_tracks(self, cls: type[PlayableT], query: str) -> list[PlayableT]:
         data = await self._send(method='GET', path='loadtracks', query=f'identifier={query}')
         load_type = try_enum(LoadType, data.get("loadType"))
 
@@ -185,7 +190,7 @@ class Node:
 
         return [cls(track_data) for track_data in data["tracks"]]
 
-    async def build_track(self, *, cls: Playable, encoded: str) -> Playable:
+    async def build_track(self, *, cls: type[PlayableT], encoded: str) -> PlayableT:
         data = await self._send(method='GET', path='decodetrack', query=f'encodedTrack={encoded}')
 
         return cls(data=data)
@@ -195,13 +200,11 @@ class Node:
 class NodePool:
 
     __nodes: dict[str, Node] = {}
-    _client_id: int | None = None
 
     @classmethod
     async def connect(cls, *, client: discord.Client, nodes: list[Node]) -> dict[str, Node]:
-
-        if not cls._client_id:
-            cls._client_id = client.application_id or (await client.application_info()).id
+        if client.user is None:
+            raise RuntimeError('')
 
         for node in nodes:
 
@@ -210,7 +213,7 @@ class NodePool:
                 continue
 
             try:
-                await node._connect(cls._client_id, client)
+                await node._connect(client)
             except AuthorizationFailed:
                 logger.error(f'The Node <{node!r}> failed to authenticate properly. '
                              f'Please check your password and try again.')
@@ -247,13 +250,13 @@ class NodePool:
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
     @classmethod
-    async def get_tracks(cls_,
+    async def get_tracks(cls_,  # type: ignore
                          query: str,
                          /,
                          *,
-                         cls: Playable,
+                         cls: type[PlayableT],
                          node: Node | None = None
-                         ) -> Playable | list[Playable]:
+                         ) -> list[PlayableT]:
         if not node:
             node = cls_.get_connected_node()
 

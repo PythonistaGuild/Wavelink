@@ -21,24 +21,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 import aiohttp
 
+import wavelink
+
+from . import __version__
 from .backoff import Backoff
 from .enums import NodeStatus, TrackEventType
 from .exceptions import *
 from .payloads import TrackEventPayload
-from . import __version__
-
-import wavelink
 
 if TYPE_CHECKING:
     from .node import Node
     from .player import Player
-    from .tracks import GenericTrack
 
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -56,8 +57,8 @@ class Websocket:
         '_listener_task'
     )
 
-    def __init__(self, *, node: 'Node'):
-        self.node: 'Node' = node
+    def __init__(self, *, node: Node) -> None:
+        self.node: Node = node
         self.socket: aiohttp.ClientWebSocketResponse | None = None
 
         self.retries: int | None = node._retries
@@ -70,9 +71,12 @@ class Websocket:
 
     @property
     def headers(self) -> dict[str, str]:
+        assert self.node.client is not None
+        assert self.node.client.user is not None
+
         return {
             'Authorization': self.node.password,
-            'User-Id': str(self.node.client_id),
+            'User-Id': str(self.node.client.user.id),
             'Client-Name': f'Wavelink/{__version__}'
         }
 
@@ -138,7 +142,7 @@ class Websocket:
             if message.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.CLOSING):
 
                 for player in self.node.players.copy().values():
-                    await player._update_event(data=None, close=True)
+                    await player._update_event(data=None)
 
                 asyncio.create_task(self._reconnect())
                 return

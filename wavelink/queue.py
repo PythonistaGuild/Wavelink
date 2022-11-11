@@ -21,10 +21,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from __future__ import annotations
+
 import asyncio
 from collections import deque
+from collections.abc import AsyncIterator, Iterable, Iterator
 from copy import copy
-from typing import AsyncIterator, Iterator, Iterable
 
 from .exceptions import QueueEmpty
 from .tracks import Playable
@@ -32,8 +34,8 @@ from .tracks import Playable
 
 class BaseQueue:
 
-    def __init__(self):
-        self._queue: deque = deque()
+    def __init__(self) -> None:
+        self._queue: deque[Playable] = deque()
 
     def __str__(self) -> str:
         """String showing all Playable objects appearing as a list."""
@@ -343,7 +345,7 @@ class Queue(BaseQueue):
         return self._loop
 
     @loop.setter
-    def loop(self, value: bool):
+    def loop(self, value: bool) -> None:
         if not isinstance(value, bool):
             raise ValueError('The "loop" property can only be set with a bool.')
 
@@ -367,7 +369,7 @@ class Queue(BaseQueue):
         return self._loop_all
 
     @loop_all.setter
-    def loop_all(self, value: bool):
+    def loop_all(self, value: bool) -> None:
         if not isinstance(value, bool):
             raise ValueError('The "loop_all" property can only be set with a bool.')
 
