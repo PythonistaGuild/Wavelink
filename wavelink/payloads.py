@@ -21,7 +21,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import Any, TYPE_CHECKING
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from discord.enums import try_enum
 
@@ -30,14 +32,14 @@ from .enums import TrackEventType
 if TYPE_CHECKING:
     from .player import Player
     from .tracks import Playable
-
+    from .types.events import EventOp
 
 __all__ = ('TrackEventPayload', )
 
 
 class TrackEventPayload:
 
-    def __init__(self, *, data: dict[str, Any], track: 'Playable', player: 'Player'):
+    def __init__(self, *, data: EventOp, track: Playable, player: Player) -> None:
         self.event: TrackEventType = try_enum(TrackEventType, data['type'])
         self.track: Playable = track
         self.player: Player = player

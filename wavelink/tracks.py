@@ -21,13 +21,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from __future__ import annotations
+
 import abc
-from typing import Any, Optional, TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, ClassVar, Literal, overload
 
 from .enums import TrackSource
 from .exceptions import NoTracksError
 from .node import Node, NodePool
 
+if TYPE_CHECKING:
+    from typing_extensions import Self
+
+    from .types.track import Track as TrackPayload
 
 __all__ = ('Playable', 'YouTubeTrack', 'GenericTrack')
 
@@ -37,30 +43,29 @@ _source_mapping: dict[str, TrackSource] = {
 }
 
 
-P = TypeVar('P', bound='Playable')
-
-
 class Playable(metaclass=abc.ABCMeta):
 
-    def __init__(self, data: dict[str, Any]):
-        self.data: dict[str, Any] = data
+    PREFIX: ClassVar[str] = ''
+    
+    def __init__(self, data: TrackPayload) -> None:
+        self.data: TrackPayload = data
         self.encoded: str = data['encoded']
 
-        data: dict[str, Any] = data['info']
-        self.is_seekable: bool = data.get('isSeekable', False)
-        self.is_stream: bool = data.get('isStream', False)
-        self.length: int = data.get('length', 0)
+        info = data['info']
+        self.is_seekable: bool = info.get('isSeekable', False)
+        self.is_stream: bool = info.get('isStream', False)
+        self.length: int = info.get('length', 0)
         self.duration: int = self.length
-        self.position: int = data.get('position', 0)
+        self.position: int = info.get('position', 0)
 
-        self.title: str = data.get('title', 'Unknown Title')
+        self.title: str = info.get('title', 'Unknown Title')
 
-        source: str | None = data.get('sourceName')
+        source: str | None = info.get('sourceName')
         self.source: TrackSource = _source_mapping.get(source, TrackSource.Unknown)
 
-        self.uri: str | None = data.get('uri')
-        self.author: str | None = data.get('author')
-        self.identifier: str | None = data.get('identifier')
+        self.uri: str | None = info.get('uri')
+        self.author: str | None = info.get('author')
+        self.identifier: str | None = info.get('identifier')
 
     def __str__(self) -> str:
         return self.title
@@ -68,39 +73,57 @@ class Playable(metaclass=abc.ABCMeta):
     def __repr__(self) -> str:
         return f'Playable: source={self.source}, title={self.title}'
 
-    def __eq__(self, other: P) -> bool:
-        return other.encoded == self.encoded
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Playable):
+            return self.encoded == other.encoded
+        return NotImplemented
+    
+    @overload
+    @classmethod
+    async def search(cls,
+                     query: str,
+                     /,
+                     *,
+                     return_first: Literal[False] = ...,
+                     node: Node | None = ...
+                     ) -> list[Self]:
+        ...
+
+    @overload
+    @classmethod
+    async def search(cls,
+                     query: str,
+                     /,
+                     *,
+                     return_first: Literal[True] = ...,
+                     node: Node | None = ...
+                     ) -> Self:
+        ...
+
+    @overload
+    @classmethod
+    async def search(cls,
+                     query: str,
+                     /,
+                     *,
+                     return_first: bool = ...,
+                     node: Node | None = ...
+                     ) -> Self | list[Self]:
+        ...
 
     @classmethod
-    @abc.abstractmethod
     async def search(cls,
                      query: str,
                      /,
                      *,
                      return_first: bool = False,
                      node: Node | None = None
-                     ) -> P | list[P] | None:
-        raise NotImplementedError
+                     ) -> Self | list[Self]:
 
-
-class GenericTrack(Playable):
-
-    def __init__(self, data: dict[str, Any]):
-        super().__init__(data=data)
-
-    @classmethod
-    async def search(cls,
-                     query: str,
-                     /,
-                     *,
-                     return_first: bool = False,
-                     node: Node | None = None
-                     ) -> P | list[P] | None:
-
-        tracks: list[cls] = await NodePool.get_tracks(query, cls=cls, node=node)
-
+        tracks = await NodePool.get_tracks(f'{cls.PREFIX}{query}', cls=cls, node=node)
+        
         try:
-            track: cls = tracks[0]
+            track = tracks[0]
         except IndexError:
             raise NoTracksError(f'Your search query "{query}" returned no tracks.')
 
@@ -110,12 +133,13 @@ class GenericTrack(Playable):
         return tracks
 
 
+class GenericTrack(Playable):
+    ...
+
+
 class YouTubeTrack(Playable):
 
     PREFIX: str = 'ytsearch:'
-
-    def __init__(self, data: dict[str, Any]):
-        super().__init__(data=data)
 
     @property
     def thumbnail(self) -> str:
@@ -133,25 +157,3 @@ class YouTubeTrack(Playable):
         return f"https://img.youtube.com/vi/{self.identifier}/maxresdefault.jpg"
 
     thumb = thumbnail
-
-    @classmethod
-    async def search(cls,
-                     query: str,
-                     /,
-                     *,
-                     return_first: bool = False,
-                     node: Node | None = None
-                     ) -> P | list[P] | None:
-
-        query_: str = f'{cls.PREFIX}{query}'
-        tracks: list[cls] = await NodePool.get_tracks(query_, cls=cls, node=node)
-
-        try:
-            track: cls = tracks[0]
-        except IndexError:
-            raise NoTracksError(f'Your search query "{query}" returned no tracks.')
-
-        if return_first:
-            return track
-
-        return tracks

@@ -23,7 +23,6 @@ SOFTWARE.
 """
 from discord.enums import Enum
 
-
 __all__ = ('NodeStatus', 'TrackSource', 'LoadType', 'TrackEventType')
 
 
@@ -44,6 +43,7 @@ class TrackSource(Enum):
 
 
 class LoadType(Enum):
+
     track_loaded = "TRACK_LOADED"
     playlist_loaded = "PLAYLIST_LOADED"
     search_result = "SEARCH_RESULT"
