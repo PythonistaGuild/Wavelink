@@ -90,10 +90,12 @@ A quick and easy bot example:
             """Connect to our Lavalink nodes."""
             await self.bot.wait_until_ready()
 
-            await wavelink.NodePool.create_node(bot=bot,
-                                                host='0.0.0.0',
-                                                port=2333,
-                                                password='YOUR_LAVALINK_PASSWORD')
+            await wavelink.NodePool.create_node(
+                bot=bot,
+                host='0.0.0.0',
+                port=2333,
+                password='YOUR_LAVALINK_PASSWORD'
+            )
 
         @commands.Cog.listener()
         async def on_wavelink_node_ready(self, node: wavelink.Node):
@@ -102,7 +104,8 @@ A quick and easy bot example:
 
         @commands.command()
         async def play(self, ctx: commands.Context, *, search: wavelink.YouTubeTrack):
-            """Play a song with the given search query.
+            """
+            Play a song with the given search query.
 
             If not connected, connect to our voice channel.
             """
