@@ -219,7 +219,7 @@ class Player(discord.VoiceProtocol):
         end: Optional[int] = None,
         volume: Optional[int] = None,
         pause: Optional[bool] = None,
-        payload_args: Optional[dict] = {},
+        payload_args: Optional[Dict] = None,
     ):
         """|coro|
 
@@ -278,8 +278,8 @@ class Player(discord.VoiceProtocol):
         if pause is not None:
             self._paused = pause
             payload["pause"] = pause
-
-        payload.update(payload_args)
+        if payload_args is not None:
+            payload.update(payload_args)
 
         await self.node._websocket.send(**payload)
 
