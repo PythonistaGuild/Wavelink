@@ -219,6 +219,7 @@ class Player(discord.VoiceProtocol):
         end: Optional[int] = None,
         volume: Optional[int] = None,
         pause: Optional[bool] = None,
+        payload_args: Optional[dict] = {},
     ):
         """|coro|
 
@@ -241,6 +242,9 @@ class Player(discord.VoiceProtocol):
             Defaults to ``None`` which will not change the volume.
         pause: bool
             Changes the players pause state. Defaults to ``None`` which will not change the pause state.
+        payload_args: Optional[dict]
+            Additional custom arguments to pass to the payload. Defaults to ``{}``.
+
 
         Returns
         -------
@@ -274,6 +278,8 @@ class Player(discord.VoiceProtocol):
         if pause is not None:
             self._paused = pause
             payload["pause"] = pause
+
+        payload.update(payload_args)
 
         await self.node._websocket.send(**payload)
 
