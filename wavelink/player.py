@@ -242,8 +242,8 @@ class Player(discord.VoiceProtocol):
             Defaults to ``None`` which will not change the volume.
         pause: bool
             Changes the players pause state. Defaults to ``None`` which will not change the pause state.
-        payload_args: Optional[dict]
-            Additional custom arguments to pass to the payload. Defaults to ``{}``.
+        payload_args: Optional[Dict]
+            Additional custom arguments to pass to the payload. 
 
 
         Returns
