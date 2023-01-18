@@ -18,7 +18,7 @@
     :alt: PyPI - Downloads
     
     
-.. image:: https://img.shields.io/maintenance/yes/2022?color=pink&style=for-the-badge
+.. image:: https://img.shields.io/maintenance/yes/2023?color=pink&style=for-the-badge
     :target: https://github.com/PythonistaGuild/Wavelink/commits/main
     :alt: Maintenance
 
