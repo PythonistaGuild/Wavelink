@@ -43,3 +43,5 @@ class TrackEventPayload:
         self.event: TrackEventType = try_enum(TrackEventType, data['type'])
         self.track: Playable = track
         self.player: Player = player
+
+        self.reason: str = data.get('reason')
