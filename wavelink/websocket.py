@@ -174,11 +174,11 @@ class Websocket:
 
             elif op == 'stats':
                 payload = ...
-                print(f"STATS: {data}")
+                logger.debug(f'Stats Update: {data}')
                 self.dispatch('stats_update', data)
 
             elif op == 'event':
-                print(f'WEBSOCKET EVENT: {data}')
+                logger.debug(f'Websocket Event: {data}')
                 player = self.get_player(data)
 
                 if player is None:
@@ -191,10 +191,12 @@ class Websocket:
                 track = await self.node.build_track(cls=wavelink.GenericTrack, encoded=data['encodedTrack'])
                 payload: TrackEventPayload = TrackEventPayload(data=data, track=track, player=player)
 
+                if payload.event is TrackEventType.END and payload.reason != 'REPLACED':
+                    player._source = None
+
                 self.dispatch('track_event', payload)
 
                 if payload.event is TrackEventType.END:
-                    player._current = None
                     self.dispatch('track_end_event', payload)
 
                 elif payload.event is TrackEventType.START:
@@ -208,7 +210,7 @@ class Websocket:
 
                 await player._update_event(data)
                 self.dispatch("player_update", data)
-                print(f'WEBSOCKET PLAYER_UPDATE: {data}')
+                logger.debug(f'Websocket Player Update: {data}')
 
             else:
                 logger.info(f'Received unknown payload from Lavalink: <{data}>. '
