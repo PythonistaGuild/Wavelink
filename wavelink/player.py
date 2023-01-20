@@ -92,7 +92,7 @@ class Player(discord.VoiceProtocol):
             self.client = self.current_node.client
 
         self._guild: discord.Guild | None = None
-        self._voice_state: DiscordVoiceState = MISSING
+        self._voice_state: DiscordVoiceState = {}
         self._player_state: dict[str, Any] = {}
 
         self.swap_on_disconnect: bool = swap_node_on_disconnect
