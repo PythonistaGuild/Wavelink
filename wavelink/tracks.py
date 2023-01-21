@@ -36,6 +36,7 @@ from typing import (
 
 import yarl
 from discord.ext import commands
+from urllib import request
 
 from .abc import *
 from .pool import Node, NodePool
@@ -226,7 +227,12 @@ class YouTubeTrack(SearchableTrack):
     @property
     def thumbnail(self) -> str:
         """The URL to the thumbnail of this video."""
-        return f"https://img.youtube.com/vi/{self.identifier}/maxresdefault.jpg"
+        url = f'http://img.youtube.com/vi/{self.identifier}/maxresdefault.jpg'
+        try:
+            request.urlopen(url)
+        except:
+            url = f'http://img.youtube.com/vi/{self.identifier}/hqdefault.jpg'
+        return url
 
     thumb = thumbnail
 
