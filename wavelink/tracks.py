@@ -245,6 +245,7 @@ class GenericTrack(Playable):
 class YouTubeTrack(Playable):
 
     PREFIX: str = 'ytsearch:'
+    _thumb = None
 
     @property
     def thumbnail(self) -> str:
@@ -252,7 +253,7 @@ class YouTubeTrack(Playable):
 
         .. note::
 
-            Due to YouTube limitations this may not always return a valid thumbnail.
+            Due to YouTube limitations this always returns a valid thumbnail but not max resolution.
             Use :func:`.fetch_thumbnail` to fallback.
 
         Returns
@@ -260,7 +261,9 @@ class YouTubeTrack(Playable):
         str
             The URL to the video thumbnail.
         """
-        return f"https://img.youtube.com/vi/{self.identifier}/maxresdefault.jpg"
+        if self._thumb:
+            return self._thumb
+        return f"https://img.youtube.com/vi/{self.identifier}/hqdefault.jpg"
 
     thumb = thumbnail
 
@@ -285,6 +288,8 @@ class YouTubeTrack(Playable):
         async with session.get(url=url) as resp:
             if resp.status == 404:
                 url = f'https://img.youtube.com/vi/{self.identifier}/hqdefault.jpg'
+        
+        self._thumb = url
 
         return url
 
