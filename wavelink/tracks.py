@@ -261,7 +261,7 @@ class YouTubeTrack(Playable):
         str
             The URL to the video thumbnail.
         """
-        if self._thumb:
+        if not self._thumb is None:
             return self._thumb
         return f"https://img.youtube.com/vi/{self.identifier}/hqdefault.jpg"
 
