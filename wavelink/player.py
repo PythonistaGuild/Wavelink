@@ -55,6 +55,37 @@ VoiceChannel = Union[
 
 
 class Player(discord.VoiceProtocol):
+    """Wavelink Player class.
+
+    This class is used as a :class:`discord.VoiceProtocol` and inherits all its members.
+
+
+    .. note::
+
+        The Player class come with an in-built queue. See :class:`queue.Queue`.
+
+    Parameters
+    ----------
+    nodes: Optional[list[:class:`node.Node`]]
+        An optional list of :class:`node.Node` to use with this Player. If no Nodes are provided
+        the best connected Node will be used.
+    swap_node_on_disconnect: bool
+        If a list of :class:`node.Node` is provided the Player will swap Nodes on Node disconnect.
+        Defaults to True.
+
+    Attributes
+    ----------
+    client: :class:discord.Client`
+        The discord Client or Bot associated with this Player.
+    channel: :class:`discord.VoiceChannel`
+        The channel this player is currently connected to.
+    nodes: list[:class:`node.Node`]
+        The list of Nodes this player is currently using.
+    current_node: :class:`node.Node`
+        The Node this player is currently using.
+    queue: :class:`queue.Queue`
+        The wavelink built in Queue. See :class:`queue.Queue`.
+    """
 
     def __call__(self, client: discord.Client, channel: VoiceChannel) -> Self:
         self.client = client
@@ -105,21 +136,41 @@ class Player(discord.VoiceProtocol):
         self.queue: Queue = Queue()
         self._current: Playable | None = None
 
+        self._volume: int = 50
+        self._paused: bool = False
+
+    def is_playing(self) -> bool:
+        """Whether the Player is currently playing a track."""
+        return self.current is not None
+
+    def is_paused(self) -> bool:
+        """Whether the Player is currently paused."""
+        return self._paused
+
+    @property
+    def volume(self) -> int:
+        """The current volume of the Player."""
+        return self._volume
+
     @property
     def guild(self) -> discord.Guild | None:
         """The discord Guild associated with the Player."""
         return self._guild
 
     @property
-    def position(self) -> int:
+    def position(self) -> float:
         """The position of the currently playing track in milliseconds."""
-        # TODO - player is playing logic
+
+        if not self.is_playing():
+            return 0
+
+        if self.is_paused():
+            return min(self.last_position, self.source.duration)  # type: ignore
 
         delta = (datetime.datetime.now(datetime.timezone.utc) - self.last_update).total_seconds() * 1000
         position = self.last_position + delta
 
-        # TODO - min(position, duration)
-        return position
+        return min(position, self.current.duration)
 
     @property
     def ping(self) -> int:
@@ -128,6 +179,10 @@ class Player(discord.VoiceProtocol):
 
     @property
     def current(self) -> Playable | None:
+        """The currently playing Track if there is one.
+
+        Could be None if no Track is playing.
+        """
         return self._current
 
     async def _update_event(self, data: PlayerUpdateOp | None) -> None:
@@ -211,7 +266,7 @@ class Player(discord.VoiceProtocol):
                                                              guild_id=self._guild.id,
                                                              data=voice)
 
-        print(f'DISPATCH VOICE_UPDATE: {resp}')
+        logger.debug(f'Dispatching VOICE_UPDATE: {resp}')
 
     async def connect(self, *, timeout: float, reconnect: bool, **kwargs: Any) -> None:
         if self.channel is None:
@@ -223,23 +278,148 @@ class Player(discord.VoiceProtocol):
 
         await self.channel.guild.change_voice_state(channel=self.channel, **kwargs)
 
-    async def play(self, track: Playable) -> dict[str, Any]:
+    async def move_to(self, channel: discord.VoiceChannel) -> None:
+        """|coro|
+
+        Moves the player to a different voice channel.
+
+        Parameters
+        -----------
+        channel: :class:`discord.VoiceChannel`
+            The channel to move to. Must be a voice channel.
+        """
+        await self.guild.change_voice_state(channel=channel)
+        logger.info(f"Moving to voice channel:: {channel.id}")
+
+    async def play(self,
+                   track: Playable,
+                   replace: bool = True,
+                   start: int | None = None,
+                   end: int | None = None,
+                   volume: int | None = None,
+                   ) -> Playable:
+        """|coro|
+
+        Play a WaveLink Track.
+
+        Parameters
+        ----------
+        track: :class:`tracks.Playable`
+            The :class:`tracks.Playable` track to start playing.
+        replace: bool
+            Whether this track should replace the current track. Defaults to ``True``.
+        start: Optional[int]
+            The position to start the track at in milliseconds.
+            Defaults to ``None`` which will start the track at the beginning.
+        end: Optional[int]
+            The position to end the track at in milliseconds.
+            Defaults to ``None`` which means it will play until the end.
+        volume: Optional[int]
+            Sets the volume of the player. Must be between ``0`` and ``1000``.
+            Defaults to ``None`` which will not change the volume.
+
+        Returns
+        -------
+        :class:`tracks.Playable`
+            The track that is now playing.
+        """
+        assert self._guild is not None
+
+        data = {
+            'encodedTrack': track.encoded,
+            'position': start or 0,
+            'volume': volume or self._volume
+        }
+
+        if end:
+            data['endTime'] = end
+
+        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
+                                                             path=f'sessions/{self.current_node._session_id}/players',
+                                                             guild_id=self._guild.id,
+                                                             data=data,
+                                                             query=f'noReplace={not replace}')
+
+        self._player_state['track'] = resp['track']['encoded']
+        self._current = track
+
+        return track
+
+    async def set_voume(self, value: int) -> None:
+        """|coro|
+
+        Set the Player volume.
+
+        Parameters
+        ----------
+        value: int
+            A volume value between 0 and 1000.
+        """
+        assert self._guild is not None
+
+        self._volume = max(min(value, 1000), 0)
+
+        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
+                                                             path=f'sessions/{self.current_node._session_id}/players',
+                                                             guild_id=self._guild.id,
+                                                             data={'volume': self._volume})
+
+        logger.debug(f'Player {self.guild.id} volume was set to {self._volume}.')
+
+    async def seek(self, position: int) -> None:
+        """|coro|
+
+        Seek to the provided position, in milliseconds.
+
+        Parameters
+        ----------
+        position: int
+            The position to seek to in milliseconds.
+        """
+        if not self._current:
+            return
+
+        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
+                                                             path=f'sessions/{self.current_node._session_id}/players',
+                                                             guild_id=self._guild.id,
+                                                             data={'position': position})
+
+        logger.debug(f'Player {self.guild.id} seeked current track to position {position}.')
+
+    async def pause(self) -> None:
+        """|coro|
+
+        Pauses the Player.
+        """
         assert self._guild is not None
 
         resp: dict[str, Any] = await self.current_node._send(method='PATCH',
                                                              path=f'sessions/{self.current_node._session_id}/players',
                                                              guild_id=self._guild.id,
-                                                             data={'encodedTrack': track.encoded})
+                                                             data={'paused': True})
 
-        self._player_state['track'] = resp['track']['encoded']
-        self._current = track
+        self._paused = True
+        logger.debug(f'Player {self.guild.id} was paused.')
 
-        print(f'PLAY: {resp}')
-        return resp
+    async def resume(self) -> None:
+        """|coro|
 
-    async def stop(self) -> dict[str, Any]:
+        Resumes the Player.
         """
-        This seems to currently be broken on the lavalink side
+        assert self._guild is not None
+
+        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
+                                                             path=f'sessions/{self.current_node._session_id}/players',
+                                                             guild_id=self._guild.id,
+                                                             data={'paused': False})
+
+        self._paused = False
+        logger.debug(f'Player {self.guild.id} was resumed.')
+
+    async def stop(self) -> None:
+        """|coro|
+
+        Stops the currently playing Track.
         """
         assert self._guild is not None
 
@@ -249,9 +429,7 @@ class Player(discord.VoiceProtocol):
                                                              data={'encodedTrack': None})
 
         self._player_state['track'] = None
-
-        print(f'STOP: {resp}')
-        return resp
+        logger.debug(f'Player {self.guild.id} was stopped.')
 
     async def destroy(self) -> None:
         assert self._guild is not None
@@ -260,10 +438,11 @@ class Player(discord.VoiceProtocol):
                                      path=f'sessions/{self.current_node._session_id}/players',
                                      guild_id=self._guild.id)
 
+        del self.current_node._players[self.guild.id]
+        logger.debug(f'Player {self.guild.id} was destroyed.')
+
     async def _swap_state(self) -> None:
         assert self._guild is not None
-
-        print(f'SWAP STATE: {self._player_state}')
 
         try:
             self._player_state['track']
@@ -276,4 +455,4 @@ class Player(discord.VoiceProtocol):
                                                              guild_id=self._guild.id,
                                                              data=data)
 
-        print(f'SWAP STATE RESP: {resp}')
+        logger.debug(f'Swapping State: {resp}')
