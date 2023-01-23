@@ -31,7 +31,10 @@ classifiers = [
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 
-[tool.poetry.group.dev.dependencies]
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
 sphinx="5.3.0"
 docutils="0.17.1"
 sphinxcontrib-napoleon="0.7"
