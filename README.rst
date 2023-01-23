@@ -33,7 +33,7 @@ Please use this version of wavelink for testing and contributing purposes only.
 
 Documentation
 ---------------------------
-`Official Documentation <https://wavelink.readthedocs.io/en/latest/wavelink.html>`_
+`Official Documentation <https://wavelink.readthedocs.io/en/2.0/>`_
 
 Support
 ---------------------------
