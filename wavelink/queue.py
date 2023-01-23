@@ -32,6 +32,12 @@ from .exceptions import QueueEmpty
 from .tracks import Playable
 
 
+__all__ = (
+    'BaseQueue',
+    'Queue'
+)
+
+
 class BaseQueue:
 
     def __init__(self) -> None:
@@ -333,7 +339,7 @@ class Queue(BaseQueue):
 
     @property
     def loop(self) -> bool:
-        """Whether to queue will loop the currently playing song.
+        """Whether the queue will loop the currently playing song.
 
         Can be set to True or False.
         Defaults to False.
@@ -353,7 +359,7 @@ class Queue(BaseQueue):
 
     @property
     def loop_all(self) -> bool:
-        """Whether to queue will loop all songs in the history queue.
+        """Whether tje queue will loop all songs in the history queue.
 
         Can be set to True or False.
         Defaults to False.
