@@ -64,7 +64,7 @@ class Node:
         The Node class should only be created once per Lavalink connection.
         To retrieve a Node use the appropriate :class:`NodePool` methods instead.
 
-    .. warn::
+    .. warning::
 
         The Node will not be connected until passed to :meth:`NodePool.connect`.
 
@@ -337,7 +337,7 @@ class Node:
 class NodePool:
     """The Wavelink NodePool is responsible for keeping track of all :class:`Node`.
 
-    .. warn::
+    .. warning::
 
         This class should never be initialised. All methods are class methods.
     """
@@ -482,6 +482,12 @@ class NodePool:
 
         Helper method to retrieve a playlist from the NodePool without fetching a :class:`Node`.
 
+
+        .. warning::
+
+            The only playlist currently supported is :class:`tracks.YouTubePlaylist`.
+
+
         Parameters
         ----------
         query: str
@@ -496,10 +502,6 @@ class NodePool:
         -------
         Playlist
             A Playlist with its tracks.
-
-        .. warn::
-
-            The only playlist currently supported is :class:`tracks.YouTubePlaylist`.
         """
         if not node:
             node = cls_.get_connected_node()
