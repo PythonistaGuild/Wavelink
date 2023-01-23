@@ -1,0 +1,8 @@
+formats: []
+
+build:
+  image: latest
+
+python:
+  version: 3.10
+  pip_install: true
