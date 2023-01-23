@@ -38,6 +38,24 @@ __all__ = ('TrackEventPayload', )
 
 
 class TrackEventPayload:
+    """The Wavelink Track Event Payload.
+
+    .. warning::
+
+        This class should not be created manually, instead you will receive it from the
+        various wavelink track events.
+
+    Attributes
+    ----------
+    event: :class:`TrackEventType`
+        An enum of the type of event.
+    track: :class:`Playable`
+        The track associated with this event.
+    player: :class:`player.Player`
+        The player associated with this event.
+    reason: Optional[str]
+        The reason this event was fired.
+    """
 
     def __init__(self, *, data: EventOp, track: Playable, player: Player) -> None:
         self.event: TrackEventType = try_enum(TrackEventType, data['type'])
