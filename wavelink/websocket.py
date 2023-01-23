@@ -95,7 +95,7 @@ class Websocket:
         except Exception as e:
             logger.debug(f'An error was raised while cancelling the websocket listener. {e}')
 
-        uri: str = self.node.uri
+        uri: str = self.node._host
         heartbeat: float = self.node.heartbeat
 
         try:
