@@ -201,6 +201,8 @@ class SpotifyTrack:
         The International Standard Recording Code associated with this track.
     length: int
         The track length in milliseconds.
+    duration: int
+        Alias to length.
     """
 
     def __init__(self, data: dict[str, Any]) -> None:
@@ -219,6 +221,7 @@ class SpotifyTrack:
         self.uri: str = data['uri']
         self.id: str = data['id']
         self.length: int = data['duration_ms']
+        self.duration: int = self.length
 
         self.isrc: str = data['external_ids']['isrc']
 
