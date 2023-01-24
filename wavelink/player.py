@@ -87,7 +87,8 @@ class Player(discord.VoiceProtocol):
     current_node: :class:`node.Node`
         The Node this player is currently using.
     queue: :class:`queue.Queue`
-        The wavelink built in Queue. See :class:`queue.Queue`.
+        The wavelink built in Queue. See :class:`queue.Queue`. This queue always takes precedence over the auto_queue.
+        Meaning any songs in this queue will be played before auto_queue songs.
     auto_queue: :class:`queue.Queue`
         The built-in AutoPlay Queue. This queue keeps track of recommended songs only.
         When a song is retrieved from this queue in the AutoPlay event, it is added to the main Queue.history.
