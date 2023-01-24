@@ -88,6 +88,9 @@ class Player(discord.VoiceProtocol):
         The Node this player is currently using.
     queue: :class:`queue.Queue`
         The wavelink built in Queue. See :class:`queue.Queue`.
+    auto_queue: :class:`queue.Queue`
+        The built-in AutoPlay Queue. This queue keeps track of recommended songs only.
+        When a song is retrieved from this queue in the AutoPlay event, it is added to the main Queue.history.
     """
 
     def __call__(self, client: discord.Client, channel: VoiceChannel) -> Self:
@@ -143,7 +146,7 @@ class Player(discord.VoiceProtocol):
         self._paused: bool = False
 
         self._autoplay: bool = False
-        self._auto_queue: Queue = Queue()
+        self.auto_queue: Queue = Queue()
         self._auto_threshold: int = 20
 
     async def _auto_play_event(self, payload: TrackEventPayload) -> None:
@@ -151,16 +154,16 @@ class Player(discord.VoiceProtocol):
             return
 
         if self.queue:
-            populate = len(self._auto_queue) < self._auto_threshold
+            populate = len(self.auto_queue) < self._auto_threshold
             await self.play(self.queue.get(), populate=populate)
 
             return
 
-        if not self._auto_queue:
+        if not self.auto_queue:
             return
 
-        await self.queue.put_wait(await self._auto_queue.get_wait())
-        populate = self._auto_queue.is_empty
+        await self.queue.put_wait(await self.auto_queue.get_wait())
+        populate = self.auto_queue.is_empty
 
         await self.play(await self.queue.get_wait(), populate=populate)
 
