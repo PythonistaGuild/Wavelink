@@ -169,7 +169,7 @@ class SpotifyRequestError(Exception):
         The reason the request failed. Could be None.
     """
 
-    def __init__(self, status: int, reason: str = None):
+    def __init__(self, status: int, reason: Optional[str] = None):
         self.status = status
         self.reason = reason
 
@@ -199,8 +199,10 @@ class SpotifyTrack:
         The spotify ID for this track.
     isrc: str
         The International Standard Recording Code associated with this track.
+    length: int
+        The track length in milliseconds.
     duration: int
-        The track duration in milliseconds.
+        Alias to length.
     """
 
     def __init__(self, data: dict[str, Any]) -> None:
@@ -218,7 +220,8 @@ class SpotifyTrack:
         self.title: str = self.name
         self.uri: str = data['uri']
         self.id: str = data['id']
-        self.duration: int = data['duration_ms']
+        self.length: int = data['duration_ms']
+        self.duration: int = self.length
 
         self.isrc: str = data['external_ids']['isrc']
 
