@@ -169,7 +169,7 @@ class SpotifyRequestError(Exception):
         The reason the request failed. Could be None.
     """
 
-    def __init__(self, status: int, reason: str = None):
+    def __init__(self, status: int, reason: Optional[str] = None):
         self.status = status
         self.reason = reason
 
