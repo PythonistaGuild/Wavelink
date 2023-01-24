@@ -360,7 +360,7 @@ class Queue(BaseQueue):
 
     @property
     def loop_all(self) -> bool:
-        """Whether tje queue will loop all songs in the history queue.
+        """Whether the queue will loop all songs in the history queue.
 
         Can be set to True or False.
         Defaults to False.
