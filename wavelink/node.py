@@ -42,6 +42,7 @@ if TYPE_CHECKING:
     from .player import Player
     from .tracks import *
     from .types.request import Request
+    from .ext import spotify as spotify_
 
     PlayableT = TypeVar('PlayableT', bound=Playable)
     
@@ -103,7 +104,7 @@ class Node:
             secure: bool = False,
             session: aiohttp.ClientSession = MISSING,
             heartbeat: float = 15.0,
-            retries: int | None = None
+            retries: int | None = None,
     ) -> None:
         if id is None:
             id = ''.join(random.sample(string.ascii_letters + string.digits, 12))
@@ -126,6 +127,8 @@ class Node:
 
         self._status: NodeStatus = NodeStatus.DISCONNECTED
         self._major_version: int | None = None
+
+        self._spotify: spotify_.SpotifyClient | None = None
 
     def __repr__(self) -> str:
         return f'Node: id="{self._id}", uri="{self.uri}", status={self.status}'
@@ -345,7 +348,13 @@ class NodePool:
     __nodes: dict[str, Node] = {}
 
     @classmethod
-    async def connect(cls, *, client: discord.Client, nodes: list[Node]) -> dict[str, Node]:
+    async def connect(
+            cls,
+            *,
+            client: discord.Client,
+            nodes: list[Node],
+            spotify: spotify_.SpotifyClient | None = None
+    ) -> dict[str, Node]:
         """|coro|
 
         Connect a list of Nodes.
@@ -356,6 +365,8 @@ class NodePool:
             The discord Client or Bot used to connect the Nodes.
         nodes: list[:class:`Node`]
             A list of Nodes to connect.
+        spotify: Optional[:class:`ext.spotify.SpotifyClient`]
+            The spotify Client to use when searching for Spotify Tracks.
 
         Returns
         -------
@@ -366,6 +377,9 @@ class NodePool:
             raise RuntimeError('')
 
         for node in nodes:
+
+            if spotify:
+                node._spotify = spotify
 
             if node.id in cls.__nodes:
                 logger.error(f'A Node with the ID "{node.id}" already exists on the NodePool. Disregarding.')

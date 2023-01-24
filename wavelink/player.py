@@ -32,8 +32,11 @@ from discord.utils import MISSING
 
 from .enums import *
 from .node import Node, NodePool
+from .payloads import TrackEventPayload
 from .queue import Queue
 from .tracks import *
+from .ext import spotify
+
 
 if TYPE_CHECKING:
     from discord.types.voice import GuildVoiceState, VoiceServerUpdate
@@ -138,6 +141,41 @@ class Player(discord.VoiceProtocol):
 
         self._volume: int = 50
         self._paused: bool = False
+
+        self._autoplay: bool = False
+        self._auto_queue: Queue = Queue()
+        self._auto_threshold: int = 20
+
+    async def _auto_play_event(self, payload: TrackEventPayload) -> None:
+        if not self.autoplay:
+            return
+
+        if self.queue:
+            populate = len(self._auto_queue) < self._auto_threshold
+            await self.play(self.queue.get(), populate=populate)
+
+            return
+
+        if not self._auto_queue:
+            return
+
+        await self.queue.put_wait(await self._auto_queue.get_wait())
+        populate = self._auto_queue.is_empty
+
+        await self.play(await self.queue.get_wait(), populate=populate)
+
+    @property
+    def autoplay(self) -> bool:
+        """Bool whether the Player is in AutoPlay mode or not.
+
+        Can be set to True or False.
+        """
+        return self._autoplay
+
+    @autoplay.setter
+    def autoplay(self, value: bool) -> None:
+        """Set AutoPlay to True or False."""
+        self._autoplay = value
 
     def is_playing(self) -> bool:
         """Whether the Player is currently playing a track."""
@@ -297,6 +335,8 @@ class Player(discord.VoiceProtocol):
                    start: int | None = None,
                    end: int | None = None,
                    volume: int | None = None,
+                   *,
+                   populate: bool = False
                    ) -> Playable:
         """|coro|
 
@@ -317,6 +357,9 @@ class Player(discord.VoiceProtocol):
         volume: Optional[int]
             Sets the volume of the player. Must be between ``0`` and ``1000``.
             Defaults to ``None`` which will not change the volume.
+        populate: bool
+            Whether to populate the AutoPlay queue. This is done automatically when AutoPlay is on.
+            Defaults to False.
 
         Returns
         -------
@@ -324,6 +367,9 @@ class Player(discord.VoiceProtocol):
             The track that is now playing.
         """
         assert self._guild is not None
+
+        if isinstance(track, spotify.SpotifyTrack):
+            track = await track.fulfill(player=self, cls=YouTubeTrack, populate=populate)
 
         data = {
             'encodedTrack': track.encoded,
