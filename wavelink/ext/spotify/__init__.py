@@ -197,8 +197,8 @@ class SpotifyTrack:
         The URI for this spotify track.
     id: str
         The spotify ID for this track.
-    isrc: str
-        The International Standard Recording Code associated with this track.
+    # isrc: str | None
+    #     The International Standard Recording Code associated with this track if given.
     length: int
         The track length in milliseconds.
     duration: int
@@ -223,7 +223,10 @@ class SpotifyTrack:
         self.length: int = data['duration_ms']
         self.duration: int = self.length
 
-        # self.isrc: str = data['external_ids']['isrc']
+        try:
+            self.isrc: str = data['external_ids']['isrc']
+        except KeyError:
+            self.isrc = None
 
     def __eq__(self, other) -> bool:
         return self.id == other.id
