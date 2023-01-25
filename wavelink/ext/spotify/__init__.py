@@ -223,7 +223,7 @@ class SpotifyTrack:
         self.length: int = data['duration_ms']
         self.duration: int = self.length
 
-        self.isrc: str = data['external_ids']['isrc']
+        # self.isrc: str = data['external_ids']['isrc']
 
     def __eq__(self, other) -> bool:
         return self.id == other.id
@@ -430,15 +430,33 @@ class SpotifyClient:
 
             data = await resp.json()
 
-            if data['type'] == 'track':
-                return SpotifyTrack(data)
+        if data['type'] == 'track':
+            return SpotifyTrack(data)
 
-            elif data['type'] == 'album' or data['type'] == 'playlist' and iterator is False:
-                tracks = data['tracks']['items']
-                return [SpotifyTrack(t) for t in tracks]
-
-        if iterator is True:
-            if data['type'] == 'playlist':
+        elif data['type'] == 'album':
+            album_data: dict[str, Any]= {
+                                        'album_type': data['album_type'],
+                                        'artists': data['artists'],
+                                        'available_markets': data['available_markets'],
+                                        'external_urls': data['external_urls'],
+                                        'href': data['href'],
+                                        'id': data['id'],
+                                        'images': data['images'],
+                                        'name': data['name'],
+                                        'release_date': data['release_date'],
+                                        'release_date_precision': data['release_date_precision'],
+                                        'total_tracks': data['total_tracks'],
+                                        'type': data['type'],
+                                        'uri': data['uri'],
+                                        }
+            tracks = []
+            for track in data['tracks']['items']:
+                track['album'] = album_data
+                tracks.append(track)
+            return tracks
+        
+        elif data['type'] == 'playlist':
+            if iterator is True:
                 if data['tracks']['next']:
                     url = data['tracks']['next']
 
@@ -455,4 +473,6 @@ class SpotifyClient:
                 else:
                     return [t['track'] for t in data['tracks']['items']]
 
-            return data['tracks']['items']
+            else:
+                tracks = data['tracks']['items']
+                return [SpotifyTrack(t) for t in tracks]
