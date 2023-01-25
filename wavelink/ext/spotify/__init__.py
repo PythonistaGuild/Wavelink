@@ -455,9 +455,13 @@ class SpotifyClient:
             tracks = []
             for track in data['tracks']['items']:
                 track['album'] = album_data
-                tracks.append(track)
+                if iterator is True:
+                    tracks.append(track)
+                else:
+                    tracks.append(SpotifyTrack(track))
+            
             return tracks
-        
+
         elif data['type'] == 'playlist':
             if iterator is True:
                 if data['tracks']['next']:
