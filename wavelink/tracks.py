@@ -303,7 +303,7 @@ class PartialTrack(Searchable, Playable):
                  *,
                  query: str,
                  node: Optional[Node] = MISSING,
-                 cls: Optional[SearchableTrack] = YouTubeTrack):
+                 cls: Type[SearchableTrack] = YouTubeTrack):
         self.query = query
         self.title = query
         self._node = node
