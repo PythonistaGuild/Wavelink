@@ -197,8 +197,8 @@ class SpotifyTrack:
         The URI for this spotify track.
     id: str
         The spotify ID for this track.
-    isrc: str
-        The International Standard Recording Code associated with this track.
+    isrc: str | None
+        The International Standard Recording Code associated with this track if given.
     length: int
         The track length in milliseconds.
     duration: int
@@ -223,7 +223,10 @@ class SpotifyTrack:
         self.length: int = data['duration_ms']
         self.duration: int = self.length
 
-        self.isrc: str = data['external_ids']['isrc']
+        try:
+            self.isrc: str = data['external_ids']['isrc']
+        except KeyError:
+            self.isrc = None
 
     def __eq__(self, other) -> bool:
         return self.id == other.id
@@ -430,15 +433,37 @@ class SpotifyClient:
 
             data = await resp.json()
 
-            if data['type'] == 'track':
-                return SpotifyTrack(data)
+        if data['type'] == 'track':
+            return SpotifyTrack(data)
 
-            elif data['type'] == 'album' or data['type'] == 'playlist' and iterator is False:
-                tracks = data['tracks']['items']
-                return [SpotifyTrack(t) for t in tracks]
+        elif data['type'] == 'album':
+            album_data: dict[str, Any]= {
+                                        'album_type': data['album_type'],
+                                        'artists': data['artists'],
+                                        'available_markets': data['available_markets'],
+                                        'external_urls': data['external_urls'],
+                                        'href': data['href'],
+                                        'id': data['id'],
+                                        'images': data['images'],
+                                        'name': data['name'],
+                                        'release_date': data['release_date'],
+                                        'release_date_precision': data['release_date_precision'],
+                                        'total_tracks': data['total_tracks'],
+                                        'type': data['type'],
+                                        'uri': data['uri'],
+                                        }
+            tracks = []
+            for track in data['tracks']['items']:
+                track['album'] = album_data
+                if iterator is True:
+                    tracks.append(track)
+                else:
+                    tracks.append(SpotifyTrack(track))
+            
+            return tracks
 
-        if iterator is True:
-            if data['type'] == 'playlist':
+        elif data['type'] == 'playlist':
+            if iterator is True:
                 if data['tracks']['next']:
                     url = data['tracks']['next']
 
@@ -455,4 +480,6 @@ class SpotifyClient:
                 else:
                     return [t['track'] for t in data['tracks']['items']]
 
-            return data['tracks']['items']
+            else:
+                tracks = data['tracks']['items']
+                return [SpotifyTrack(t) for t in tracks]
