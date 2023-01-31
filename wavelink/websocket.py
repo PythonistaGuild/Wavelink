@@ -197,11 +197,11 @@ class Websocket:
                 self.dispatch('track_event', payload)
 
                 if payload.event is TrackEventType.END:
-                    self.dispatch('track_end_event', payload)
+                    self.dispatch('track_end', payload)
                     asyncio.create_task(player._auto_play_event(payload))
 
                 elif payload.event is TrackEventType.START:
-                    self.dispatch('track_start_event', payload)
+                    self.dispatch('track_start', payload)
 
             elif op == 'playerUpdate':
                 player = self.get_player(data)
