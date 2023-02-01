@@ -448,7 +448,7 @@ class NodePool:
 
         nodes: list[Node] = [n for n in cls.__nodes.values() if n.status is NodeStatus.CONNECTED]
         if not nodes:
-            raise InvalidNode('There are Nodes on the Wavelink NodePool that are currently in the connected state.')
+            raise InvalidNode('There are no Nodes on the Wavelink NodePool that are currently in the connected state.')
 
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
