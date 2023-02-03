@@ -395,7 +395,7 @@ class Player(discord.VoiceProtocol):
 
         return track
 
-    async def set_voume(self, value: int) -> None:
+    async def set_volume(self, value: int) -> None:
         """|coro|
 
         Set the Player volume.
