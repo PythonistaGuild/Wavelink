@@ -102,7 +102,7 @@ class Websocket:
             self.socket = await self.node._session.ws_connect(url=uri, heartbeat=heartbeat, headers=self.headers)
         except Exception as e:
             if isinstance(e, aiohttp.WSServerHandshakeError) and e.status == 401:
-                raise AuthorizationFailed
+                raise AuthorizationFailed from e
             else:
                 logger.error(f'An error occurred connecting to node: "{self.node}". {e}')
 
@@ -233,7 +233,7 @@ class Websocket:
 
         try:
             self._listener_task.cancel()
-        except:
+        except Exception:
             pass
 
         self.node._status = NodeStatus.DISCONNECTED

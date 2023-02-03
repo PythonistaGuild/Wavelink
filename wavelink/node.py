@@ -134,9 +134,7 @@ class Node:
         return f'Node: id="{self._id}", uri="{self.uri}", status={self.status}'
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, Node):
-            return self.id == other.id
-        return NotImplemented
+        return self.id == other.id if isinstance(other, Node) else NotImplemented
 
     @property
     def id(self) -> str:
@@ -209,7 +207,7 @@ class Node:
                 raise InvalidLavalinkVersion(f'Wavelink 2 is not compatible with Lavalink "{version}".')
 
             if version_tuple[0] == 3 and version_tuple[1] < 7:
-                raise InvalidLavalinkVersion(f'Wavelink 2 is not compatible with Lavalink versions under "3.7".')
+                raise InvalidLavalinkVersion('Wavelink 2 is not compatible with Lavalink versions under "3.7".')
 
             self._major_version = version_tuple[0]
 
