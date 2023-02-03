@@ -31,11 +31,12 @@ import discord
 from discord.utils import MISSING
 
 from .enums import *
+from .ext import spotify
+from .filters import Filter
 from .node import Node, NodePool
 from .payloads import TrackEventPayload
 from .queue import Queue
 from .tracks import *
-from .ext import spotify
 
 
 if TYPE_CHECKING:
@@ -149,6 +150,7 @@ class Player(discord.VoiceProtocol):
         self._autoplay: bool = False
         self.auto_queue: Queue = Queue()
         self._auto_threshold: int = 20
+        self._filter: Filter | None = None
 
     async def _auto_play_event(self, payload: TrackEventPayload) -> None:
         if not self.autoplay:
@@ -480,6 +482,39 @@ class Player(discord.VoiceProtocol):
 
         self._player_state['track'] = None
         logger.debug(f'Player {self.guild.id} was stopped.')
+
+    async def set_filter(
+        self,
+        _filter: Filter,
+        /, *,
+        seek: bool = False
+    ) -> None:
+        """|coro|
+
+        Set the player's filter.
+
+        Parameters
+        ----------
+        filter: :class:`wavelink.Filter`
+            The filter to apply to the player.
+        seek: bool
+            Whether to seek the player to its current position
+            which will apply the filter immediately. Defaults to ``False``.
+        """
+
+        assert self._guild is not None
+
+        self._filter = _filter
+        data: Request = {"filters": _filter._payload}
+
+        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
+                                                             path=f'sessions/{self.current_node._session_id}/players',
+                                                             guild_id=self._guild.id,
+                                                             data=data)        
+
+        if self.is_playing() and seek:
+            await self.seek(int(self.position * 1000))
+        logger.debug(f"Set filter:: {self._filter} ({self.channel.id})")
 
     async def destroy(self) -> None:
         assert self._guild is not None
