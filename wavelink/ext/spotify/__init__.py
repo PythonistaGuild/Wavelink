@@ -146,8 +146,8 @@ class SpotifyAsyncIterator:
 
         try:
             track = self._queue.get_nowait()
-        except asyncio.QueueEmpty:
-            raise StopAsyncIteration
+        except asyncio.QueueEmpty as e:
+            raise StopAsyncIteration from e
 
         if track is None:
             return await self.__anext__()
@@ -265,11 +265,7 @@ class SpotifyTrack:
         if type == SpotifySearchType.track:
             tracks = await node._spotify._search(query=query, type=type)
 
-            if return_first:
-                return tracks[0]
-
-            return tracks
-
+            return tracks[0] if return_first else tracks
         return await node._spotify._search(query=query, type=type)
 
     @classmethod
@@ -422,11 +418,13 @@ class SpotifyClient:
 
         regex_result = URLREGEX.match(query)
 
-        if not regex_result:
-            url = BASEURL.format(entity=type.name, identifier=query)
-        else:
-            url = BASEURL.format(entity=regex_result['type'], identifier=regex_result['id'])
-
+        url = (
+            BASEURL.format(
+                entity=regex_result['type'], identifier=regex_result['id']
+            )
+            if regex_result
+            else BASEURL.format(entity=type.name, identifier=query)
+        )
         async with self.session.get(url, headers=self.bearer_headers) as resp:
             if resp.status != 200:
                 raise SpotifyRequestError(resp.status, resp.reason)
@@ -455,31 +453,30 @@ class SpotifyClient:
             tracks = []
             for track in data['tracks']['items']:
                 track['album'] = album_data
-                if iterator is True:
+                if iterator:
                     tracks.append(track)
                 else:
                     tracks.append(SpotifyTrack(track))
-            
+
             return tracks
 
         elif data['type'] == 'playlist':
-            if iterator is True:
-                if data['tracks']['next']:
-                    url = data['tracks']['next']
-
-                    items = [t['track'] for t in data['tracks']['items']]
-                    while True:
-                        async with self.session.get(url, headers=self.bearer_headers) as resp:
-                            data = await resp.json()
-
-                            items.extend([t['track'] for t in data['items']])
-                            if not data['next']:
-                                return items
-
-                            url = data['next']
-                else:
+            if iterator:
+                if not data['tracks']['next']:
                     return [t['track'] for t in data['tracks']['items']]
 
+                url = data['tracks']['next']
+
+                items = [t['track'] for t in data['tracks']['items']]
+                while True:
+                    async with self.session.get(url, headers=self.bearer_headers) as resp:
+                        data = await resp.json()
+
+                        items.extend([t['track'] for t in data['items']])
+                        if not data['next']:
+                            return items
+
+                        url = data['next']
             else:
                 tracks = data['tracks']['items']
                 return [SpotifyTrack(t) for t in tracks]
