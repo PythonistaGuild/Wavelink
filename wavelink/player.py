@@ -93,6 +93,8 @@ class Player(discord.VoiceProtocol):
     auto_queue: :class:`queue.Queue`
         The built-in AutoPlay Queue. This queue keeps track of recommended songs only.
         When a song is retrieved from this queue in the AutoPlay event, it is added to the main Queue.history.
+    filter: dict[:class:`str`, :class:`Any`]
+        The current filters applied.
     """
 
     def __call__(self, client: discord.Client, channel: VoiceChannel) -> Self:
@@ -228,6 +230,10 @@ class Player(discord.VoiceProtocol):
         Could be None if no Track is playing.
         """
         return self._current
+
+    @property
+    def filter(self) -> dict[str, Any]:
+        return self._filter._payload
 
     async def _update_event(self, data: PlayerUpdateOp | None) -> None:
         assert self._guild is not None
