@@ -167,7 +167,6 @@ class Player(discord.VoiceProtocol):
             return
 
         self.channel = self.guild.get_channel(int(channel_id))  # type: ignore
-        await self._dispatch_voice_update({**self._voice_state, "event": data})
 
     async def _dispatch_voice_update(self, voice_state: Dict[str, Any]) -> None:
         logger.debug(f"Dispatching voice update:: {self.channel.id}")
