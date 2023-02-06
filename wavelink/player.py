@@ -278,12 +278,7 @@ class Player(discord.VoiceProtocol):
         channel_id = data["channel_id"]
 
         if not channel_id:
-            self._voice_state = MISSING
-            del self.current_node._players[self._guild.id]
-
-            self.channel = None
-            self._guild = None
-
+            await self.destroy()
             return
 
         self._voice_state['session_id'] = data['session_id']
@@ -523,9 +518,14 @@ class Player(discord.VoiceProtocol):
     async def destroy(self) -> None:
         assert self._guild is not None
 
+        self.autoplay = False
+        self._voice_state = {}
+        self._player_state = {}
+        self.cleanup()
+
         await self.current_node._send(method='DELETE',
-                                     path=f'sessions/{self.current_node._session_id}/players',
-                                     guild_id=self._guild.id)
+                                      path=f'sessions/{self.current_node._session_id}/players',
+                                      guild_id=self._guild.id)
 
         del self.current_node._players[self.guild.id]
         logger.debug(f'Player {self.guild.id} was destroyed.')

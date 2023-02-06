@@ -218,7 +218,7 @@ class Node:
                     guild_id: int | str | None = None,
                     query: str | None = None,
                     data: Request | None = None,
-                    ) -> dict[str, Any]:
+                    ) -> dict[str, Any] | None:
 
         uri: str = f'{self._host}/' \
                    f'v{self._major_version}/' \
@@ -230,6 +230,9 @@ class Node:
             if resp.status >= 300:
                 raise InvalidLavalinkResponse(f'An error occurred when attempting to reach: "{uri}".',
                                               status=resp.status)
+
+            if resp.status == 204:
+                return
 
             return await resp.json()
 
