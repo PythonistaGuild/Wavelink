@@ -294,8 +294,6 @@ class Player(discord.VoiceProtocol):
             assert self._guild is not None
             self.current_node._players[self._guild.id] = self
 
-        await self._dispatch_voice_update()
-
     async def _dispatch_voice_update(self, data: DiscordVoiceState | None = None) -> None:
         assert self._guild is not None
 
