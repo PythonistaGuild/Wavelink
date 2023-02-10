@@ -149,7 +149,6 @@ class Player(discord.VoiceProtocol):
         self._volume: int = 50
         self._paused: bool = False
 
-        self._track_seeds: list[str] = []
         self._autoplay: bool = False
         self.auto_queue: Queue = Queue()
         self._auto_threshold: int = 20

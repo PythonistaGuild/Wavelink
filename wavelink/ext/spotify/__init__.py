@@ -344,12 +344,12 @@ class SpotifyTrack:
         if not sc:
             raise RuntimeError(f"There is no spotify client associated with <{node:!r}>")
 
-        if len(player._track_seeds) == 5:
-            player._track_seeds.pop(0)
+        if len(sc._seeds_mapping[player]) == 5:
+            sc._seeds_mapping[player].pop(0)
 
-        player._track_seeds.append(self.id)
+        sc._seeds_mapping[player].append(self.id)
 
-        url: str = RECURL.format(tracks=','.join(player._track_seeds))
+        url: str = RECURL.format(tracks=','.join(sc._seeds_mapping[player]))
         async with node._session.get(url=url, headers=sc.bearer_headers) as resp:
             if resp.status != 200:
                 raise SpotifyRequestError(resp.status, resp.reason)
@@ -385,6 +385,8 @@ class SpotifyClient:
 
         self._bearer_token: str = None  # type: ignore
         self._expiry: int = 0
+
+        self._seeds_mapping: dict[Player, list[str]] = {}
 
     @property
     def grant_headers(self) -> dict:
