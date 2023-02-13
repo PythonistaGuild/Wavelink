@@ -25,7 +25,7 @@ __title__ = "WaveLink"
 __author__ = "PythonistaGuild, EvieePy"
 __license__ = "MIT"
 __copyright__ = "Copyright 2019-Present (c) PythonistaGuild, EvieePy"
-__version__ = "2.0.0b8"
+__version__ = "2.0.0b9"
 
 from .enums import *
 from .exceptions import *
@@ -34,3 +34,4 @@ from .payloads import *
 from .player import Player as Player
 from .tracks import *
 from .queue import *
+from .filters import *
