@@ -90,7 +90,7 @@ A quick and easy bot example:
             """Connect to our Lavalink nodes."""
             await self.bot.wait_until_ready()
 
-            await wavelink.NodePool.create_node(bot=bot,
+            await wavelink.NodePool.create_node(bot=self.bot,
                                                 host='0.0.0.0',
                                                 port=2333,
                                                 password='YOUR_LAVALINK_PASSWORD')
