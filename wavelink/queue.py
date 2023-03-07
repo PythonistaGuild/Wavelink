@@ -273,7 +273,7 @@ class Queue(BaseQueue):
         self._wakeup_next()
 
     def _insert(self, index: int, item: Playable | spotify.SpotifyTrack) -> None:
-        super()._queue.insert(index, item)
+        super()._insert(index, item)
         self._wakeup_next()
 
     def _wakeup_next(self) -> None:
