@@ -37,7 +37,7 @@ import wavelink
 from wavelink import Node, NodePool
 
 if TYPE_CHECKING:
-    from wavelink import Player
+    from wavelink import Player, Playable
 
 
 __all__ = ('SpotifySearchType',
@@ -55,7 +55,7 @@ BASEURL = 'https://api.spotify.com/v1/{entity}s/{identifier}'
 RECURL = 'https://api.spotify.com/v1/recommendations?seed_tracks={tracks}'
 
 
-ST = TypeVar("ST", bound="SearchableTrack")
+ST = TypeVar("ST", bound="Playable")
 
 
 def decode_url(url: str) -> Optional[dict]:
