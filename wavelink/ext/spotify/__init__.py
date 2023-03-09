@@ -224,10 +224,7 @@ class SpotifyTrack:
         self.length: int = data['duration_ms']
         self.duration: int = self.length
 
-        try:
-            self.isrc: str = data['external_ids']['isrc']
-        except KeyError:
-            self.isrc = None
+        self.isrc: str | None = data["external_ids"].get("isrc")
 
     def __eq__(self, other) -> bool:
         return self.id == other.id
