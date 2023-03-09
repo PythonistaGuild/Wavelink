@@ -1,7 +1,7 @@
 .. image:: https://raw.githubusercontent.com/PythonistaGuild/Wavelink/master/logo.png
 
 
-.. image:: https://img.shields.io/badge/Python-3.8%20%7C%203.9%20%7C%203.10-blue.svg
+.. image:: https://img.shields.io/badge/Python-3.10%20%7C%203.11-blue.svg
     :target: https://www.python.org
 
 
@@ -24,16 +24,22 @@
 
 
 
-Wavelink is a robust and powerful Lavalink wrapper for `Discord.py <https://github.com/Rapptz/discord.py>`_ and certain supported forks.
+Wavelink is a robust and powerful Lavalink wrapper for `Discord.py <https://github.com/Rapptz/discord.py>`_.
 Wavelink features a fully asynchronous API that's intuitive and easy to use with built in Spotify Support and Node Pool Balancing.
 
-**This is the 2.0 Beta Release of Wavelink that suppports Lavalinks 3.7+ REST API.**
-Please use this version of wavelink for testing and contributing purposes only.
+
+**Features:**
+
+- Fully Asynchronous
+- Auto-Play and Looping (With the inbuilt Queue system)
+- Spotify Support
+- Node Balancing and Fail-over
+- Supports Lavalink 3.7+
 
 
 Documentation
 ---------------------------
-`Official Documentation <https://wavelink.readthedocs.io/en/2.0/>`_
+`Official Documentation <https://wavelink.readthedocs.io/en/latest/index.html>`_
 
 Support
 ---------------------------
@@ -54,24 +60,74 @@ The following commands are currently the valid ways of installing WaveLink.
 
 .. code:: sh
 
-    py -3.10 -m pip install -U Wavelink --pre
+    py -3.10 -m pip install -U Wavelink
 
 **Linux**
 
 .. code:: sh
 
-    python3.10 -m pip install -U Wavelink --pre
+    python3.10 -m pip install -U Wavelink
 
 Getting Started
 ----------------------------
 
-Coming soon...
+**See also:** `Examples <https://github.com/PythonistaGuild/Wavelink/tree/main/examples>`_
+
+.. code:: py
+
+    import discord
+    import wavelink
+    from discord.ext import commands
+
+
+    class Bot(commands.Bot):
+
+        def __init__(self) -> None:
+            intents = discord.Intents.default()
+            intents.message_content = True
+
+            super().__init__(intents=intents, command_prefix='?')
+
+        async def on_ready(self) -> None:
+            print(f'Logged in {self.user} | {self.user.id}')
+
+        async def setup_hook(self) -> None:
+            # Wavelink 2.0 has made connecting Nodes easier... Simply create each Node
+            # and pass it to NodePool.connect with the client/bot.
+            node: wavelink.Node = wavelink.Node(uri='http://localhost:2333', password='youshallnotpass')
+            await wavelink.NodePool.connect(client=self, nodes=[node])
+
+
+    bot = Bot()
+
+
+    @bot.command()
+    async def play(ctx: commands.Context, *, search: str) -> None:
+        """Simple play command."""
+
+        if not ctx.voice_client:
+            vc: wavelink.Player = await ctx.author.voice.channel.connect(cls=wavelink.Player)
+        else:
+            vc: wavelink.Player = ctx.voice_client
+
+        track = await wavelink.YouTubeTrack.search(search, return_first=True)
+        await vc.play(track)
+
+
+    @bot.command()
+    async def disconnect(ctx: commands.Context) -> None:
+        """Simple disconnect command.
+
+        This command assumes there is a currently connected Player.
+        """
+        vc: wavelink.Player = ctx.voice_client
+        await vc.disconnect()
 
 
 Lavalink Installation
 ---------------------
 
-Head to the official `Lavalink repo <https://github.com/freyacodes/Lavalink#server-configuration>`_ and give it a star!
+Head to the official `Lavalink repo <https://github.com/freyacodes/Lavalink>`_ and give it a star!
 
 - Create a folder for storing Lavalink.jar and related files/folders.
 - Copy and paste the example `application.yml <https://github.com/freyacodes/Lavalink#server-configuration>`_ to ``application.yml`` in the folder we created earlier. You can open the yml in Notepad or any simple text editor.
