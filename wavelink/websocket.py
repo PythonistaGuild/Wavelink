@@ -193,7 +193,7 @@ class Websocket:
                 payload: TrackEventPayload = TrackEventPayload(data=data, track=track, player=player)
 
                 if payload.event is TrackEventType.END and payload.reason != 'REPLACED':
-                    player._source = None
+                    player._current = None
 
                 self.dispatch('track_event', payload)
 
