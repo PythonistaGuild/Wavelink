@@ -528,7 +528,7 @@ class Player(discord.VoiceProtocol):
         del self.current_node._players[self.guild.id]
         logger.debug(f'Player {self.guild.id} was destroyed.')
 
-    async def disconnect(self, *, force: bool) -> None:
+    async def disconnect(self, **kwargs) -> None:
         """|coro|
 
         Disconnect the Player from voice and cleanup the Player state.
