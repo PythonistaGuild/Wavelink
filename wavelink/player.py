@@ -278,7 +278,7 @@ class Player(discord.VoiceProtocol):
         channel_id = data["channel_id"]
 
         if not channel_id:
-            await self.destroy()
+            await self._destroy()
             return
 
         self._voice_state['session_id'] = data['session_id']
@@ -515,9 +515,7 @@ class Player(discord.VoiceProtocol):
             await self.seek(int(self.position * 1000))
         logger.debug(f"Set filter:: {self._filter} ({self.channel.id})")
 
-    async def destroy(self) -> None:
-        assert self._guild is not None
-
+    async def _destroy(self) -> None:
         self.autoplay = False
         self._voice_state = {}
         self._player_state = {}
@@ -529,6 +527,13 @@ class Player(discord.VoiceProtocol):
 
         del self.current_node._players[self.guild.id]
         logger.debug(f'Player {self.guild.id} was destroyed.')
+
+    async def disconnect(self, *, force: bool) -> None:
+        """|coro|
+
+        Disconnect the Player from voice and cleanup the Player state.
+        """
+        await self.guild.change_voice_state(channel=None)
 
     async def _swap_state(self) -> None:
         assert self._guild is not None
