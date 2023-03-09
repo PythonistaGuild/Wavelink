@@ -9,7 +9,7 @@ Listening to Events
 WaveLink 2 makes use of the built in event dispatcher of Discord.py.
 This means you can listen to WaveLink events the same way you listen to discord.py events.
 
-*All WaveLink events are prefixed with `on_wavelink_`*
+*All WaveLink events are prefixed with ``on_wavelink_``*
 
 
 **Outside of a Cog:**
