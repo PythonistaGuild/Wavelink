@@ -1,8 +1,0 @@
-formats: []
-
-build:
-  image: latest
-
-python:
-  version: 3.8
-  pip_install: true
