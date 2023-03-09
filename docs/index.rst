@@ -69,6 +69,15 @@
 .. rst-class:: index-display-none
 .. toctree::
    :maxdepth: 1
+   :caption: Getting Started:
+
+   installing
+   recipes
+
+
+.. rst-class:: index-display-none
+.. toctree::
+   :maxdepth: 1
    :caption: API Reference
 
    wavelink
