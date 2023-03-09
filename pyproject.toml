@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "Wavelink"
-version = "2.0.0b9"
+version = "2.0.0"
 authors = [
   { name="EvieePy", email="evieepy@gmail.com" },
 ]
@@ -26,7 +26,7 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/PythonistaGuild/Wavelink/tree/2.0"
+"Homepage" = "https://github.com/PythonistaGuild/Wavelink"
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
