@@ -26,7 +26,7 @@ This means you can listen to WaveLink events the same way you listen to discord.
 .. code:: python3
 
     @commands.Cog.listener()
-    async def on_wavelink_node_ready(node: Node) -> None:
+    async def on_wavelink_node_ready(self, node: Node) -> None:
         print(f"Node {node.id} is ready!")
 
 
@@ -46,7 +46,7 @@ wavelink can be imported.
     # The node will be automatically stored to the global NodePool...
     # You can create as many nodes as you like, most people only need 1...
     node: wavelink.Node = wavelink.Node(uri='http://localhost:2333', password='youshallnotpass')
-    await wavelink.NodePool.connect(client=self, nodes=[node])
+    await wavelink.NodePool.connect(client=bot, nodes=[node])
 
 
 **Accessing the best Node from the NodePool:**
