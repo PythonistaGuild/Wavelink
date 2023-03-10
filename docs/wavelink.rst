@@ -77,6 +77,8 @@ Node
 Tracks
 ------
 
+Tracks inherit from :class:`Playable`. Not all fields will be available for each track type.
+
 GenericTrack
 ~~~~~~~~~~~~
 
