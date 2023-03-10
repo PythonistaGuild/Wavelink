@@ -328,9 +328,9 @@ class SpotifyTrack:
         cls
             The class to convert this Spotify Track to.
         """
-        tracks: list[cls] = await cls.search(f'"{self.isrc}"')
-
-        if not tracks:
+        try:
+            tracks: list[cls] = await cls.search(f'"{self.isrc}"')
+        except wavelink.NoTracksError:
             tracks: list[cls] = await cls.search(f'{self.name} - {self.artists[0]}')
 
         if not player.autoplay or not populate:
