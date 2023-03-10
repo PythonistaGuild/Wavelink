@@ -84,6 +84,7 @@ GenericTrack
 
 .. autoclass:: GenericTrack
     :members:
+    :inherited-members:
 
 YouTubeTrack
 ~~~~~~~~~~~~
@@ -92,6 +93,7 @@ YouTubeTrack
 
 .. autoclass:: YouTubeTrack
     :members:
+    :inherited-members:
 
 YouTubeMusicTrack
 ~~~~~~~~~~~~~~~~~
@@ -100,6 +102,7 @@ YouTubeMusicTrack
 
 .. autoclass:: YouTubeMusicTrack
     :members:
+    :inherited-members:
 
 SoundCloudTrack
 ~~~~~~~~~~~~~~~
@@ -108,6 +111,7 @@ SoundCloudTrack
 
 .. autoclass:: SoundCloudTrack
     :members:
+    :inherited-members:
 
 YouTubePlaylist
 ~~~~~~~~~~~~~~~
@@ -116,6 +120,7 @@ YouTubePlaylist
 
 .. autoclass:: YouTubePlaylist
     :members:
+    :inherited-members:
 
 
 Player
