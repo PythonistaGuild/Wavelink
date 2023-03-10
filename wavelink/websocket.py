@@ -95,7 +95,8 @@ class Websocket:
         except Exception as e:
             logger.debug(f'An error was raised while cancelling the websocket listener. {e}')
 
-        uri: str = self.node._host
+        uri: str = self.node._host.removeprefix('https://').removeprefix('http://')
+        uri: str = f'{"wss://" if self.node._secure else "ws://"}{uri}'
         heartbeat: float = self.node.heartbeat
 
         try:

@@ -111,6 +111,7 @@ class Node:
 
         self._id: str = id
         self._uri: str = uri
+        self._secure: bool = secure
         host: str = re.sub(r'(?:http|ws)s?://', '', self._uri)
         self._host: str = f'{"https://" if secure else "http://"}{host}'
         self._password: str = password
