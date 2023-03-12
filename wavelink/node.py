@@ -33,6 +33,7 @@ import aiohttp
 import discord
 from discord.enums import try_enum
 from discord.utils import MISSING, classproperty
+import urllib.parse
 
 from .enums import LoadType, NodeStatus
 from .exceptions import *
@@ -333,6 +334,7 @@ class Node:
         encoded: str
             The Tracks unique encoded string.
         """
+        encoded = urllib.parse.quote(encoded)
         data = await self._send(method='GET', path='decodetrack', query=f'encodedTrack={encoded}')
 
         return cls(data=data)
