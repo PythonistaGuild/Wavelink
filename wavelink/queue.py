@@ -258,7 +258,7 @@ class Queue(BaseQueue):
         if self.loop and self._loaded:
             return self._loaded
 
-        item = super()._get()
+        item = super().get()
         if self.loop_all and self.is_empty:
             self._queue.extend(self.history._queue)
             self.history.clear()
