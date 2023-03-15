@@ -126,6 +126,9 @@ class BaseQueue:
         raise TypeError(f"Adding '{type(other)}' type to the queue is not supported.")
 
     def _get(self) -> Playable | spotify.SpotifyTrack:
+        if self.is_empty:
+            raise QueueEmpty("No items currently in the queue.")
+
         return self._queue.popleft()
 
     def _drop(self) -> Playable | spotify.SpotifyTrack:
