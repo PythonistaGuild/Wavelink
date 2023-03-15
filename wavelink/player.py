@@ -160,6 +160,9 @@ class Player(discord.VoiceProtocol):
         if not self.autoplay:
             return
 
+        if payload.reason == 'REPLACED':
+            return
+
         if self.queue.loop:
             try:
                 track = self.queue.get()
