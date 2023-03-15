@@ -80,6 +80,8 @@ class Node:
         The password used to connect to your Lavalink server.
     secure: Optional[bool]
         Whether the connection should use https/wss.
+    use_http: Optional[bool]
+        Whether to use http:// over ws:// when connecting to the Lavalink websocket. Defaults to False.
     session: Optional[aiohttp.ClientSession]
         The session to use for this Node. If no session is passed a default will be used.
     heartbeat: float
@@ -103,6 +105,7 @@ class Node:
             uri: str,
             password: str,
             secure: bool = False,
+            use_http: bool = False,
             session: aiohttp.ClientSession = MISSING,
             heartbeat: float = 15.0,
             retries: int | None = None,
@@ -113,6 +116,7 @@ class Node:
         self._id: str = id
         self._uri: str = uri
         self._secure: bool = secure
+        self._use_http: bool = use_http
         host: str = re.sub(r'(?:http|ws)s?://', '', self._uri)
         self._host: str = f'{"https://" if secure else "http://"}{host}'
         self._password: str = password
