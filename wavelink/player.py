@@ -31,6 +31,7 @@ import discord
 from discord.utils import MISSING
 
 from .enums import *
+from .exceptions import QueueEmpty
 from .ext import spotify
 from .filters import Filter
 from .node import Node, NodePool
@@ -157,6 +158,15 @@ class Player(discord.VoiceProtocol):
 
     async def _auto_play_event(self, payload: TrackEventPayload) -> None:
         if not self.autoplay:
+            return
+
+        if self.queue.loop:
+            try:
+                track = self.queue.get()
+            except QueueEmpty:
+                return
+
+            await self.play(track)
             return
 
         if self.queue:
@@ -394,6 +404,7 @@ class Player(discord.VoiceProtocol):
 
         self._player_state['track'] = resp['track']['encoded']
         self._current = track
+        self.queue._loaded = track
 
         return track
 
@@ -479,6 +490,8 @@ class Player(discord.VoiceProtocol):
                                                              path=f'sessions/{self.current_node._session_id}/players',
                                                              guild_id=self._guild.id,
                                                              data={'encodedTrack': None})
+
+        self.queue._loaded = None
 
         self._player_state['track'] = None
         logger.debug(f'Player {self.guild.id} was stopped.')
