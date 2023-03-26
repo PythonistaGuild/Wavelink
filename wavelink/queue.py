@@ -27,6 +27,7 @@ import asyncio
 from collections import deque
 from collections.abc import AsyncIterator, Iterable, Iterator
 from copy import copy
+from random import shuffle as shuf
 
 from .exceptions import QueueEmpty
 from .tracks import Playable
@@ -231,6 +232,12 @@ class BaseQueue:
         """Remove all items from the queue."""
         self._queue.clear()
 
+    
+    def shuffle(self) -> None:
+        """Shuffle the current queue."""
+        shuf(self._queue)
+
+        
 
 class Queue(BaseQueue):
 
@@ -340,6 +347,7 @@ class Queue(BaseQueue):
         self._loaded = None
         self._loop = False
         self._loop_all = False
+
 
     @property
     def loop(self) -> bool:
