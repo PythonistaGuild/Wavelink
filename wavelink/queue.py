@@ -348,7 +348,6 @@ class Queue(BaseQueue):
         self._loop = False
         self._loop_all = False
 
-
     @property
     def loop(self) -> bool:
         """Whether the queue will loop the currently playing song.
