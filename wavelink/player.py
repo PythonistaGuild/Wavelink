@@ -388,7 +388,15 @@ class Player(discord.VoiceProtocol):
         assert self._guild is not None
 
         if isinstance(track, spotify.SpotifyTrack):
+            original = track
             track = await track.fulfill(player=self, cls=YouTubeTrack, populate=populate)
+
+            for attr, value in original.__dict__.items():
+                if hasattr(track, attr):
+                    logger.warning(f'Unable to set attribute "{attr}" as it conflicts with new track type.')
+                    continue
+
+                setattr(track, attr, value)
 
         data = {
             'encodedTrack': track.encoded,

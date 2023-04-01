@@ -206,6 +206,21 @@ class SpotifyTrack:
         Alias to length.
     """
 
+    __slots__ = (
+        'raw',
+        'album',
+        'images',
+        'artists',
+        'name',
+        'title',
+        'uri',
+        'id',
+        'length',
+        'duration',
+        'isrc',
+        '__dict__'
+    )
+
     def __init__(self, data: dict[str, Any]) -> None:
         self.raw: dict[str, Any] = data
 
