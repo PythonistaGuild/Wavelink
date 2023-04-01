@@ -350,7 +350,7 @@ class NodePool:
 
     Attributes
     ----------
-    nodes: list[:class:`Node`]
+    nodes: dict[str, :class:`Node`]
         A mapping of :class:`Node` identifier to :class:`Node`.
 
     .. warning::
