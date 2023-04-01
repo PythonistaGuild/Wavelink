@@ -348,6 +348,11 @@ class Node:
 class NodePool:
     """The Wavelink NodePool is responsible for keeping track of all :class:`Node`.
 
+    Attributes
+    ----------
+    nodes: list[:class:`Node`]
+        A mapping of :class:`Node` identifier to :class:`Node`.
+
     .. warning::
 
         This class should never be initialised. All methods are class methods.
