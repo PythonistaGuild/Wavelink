@@ -226,7 +226,7 @@ class Player(discord.VoiceProtocol):
             return 0
 
         if self.is_paused():
-            return min(self.last_position, self.source.duration)  # type: ignore
+            return min(self.last_position, self.current.duration)  # type: ignore
 
         delta = (datetime.datetime.now(datetime.timezone.utc) - self.last_update).total_seconds() * 1000
         position = self.last_position + delta
