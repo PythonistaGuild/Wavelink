@@ -353,6 +353,7 @@ class NodePool:
     nodes: dict[str, :class:`Node`]
         A mapping of :class:`Node` identifier to :class:`Node`.
 
+
     .. warning::
 
         This class should never be initialised. All methods are class methods.
