@@ -196,7 +196,12 @@ class Websocket:
                         continue
 
                 track = await self.node.build_track(cls=wavelink.GenericTrack, encoded=data['encodedTrack'])
-                payload: TrackEventPayload = TrackEventPayload(data=data, track=track, player=player)
+                payload: TrackEventPayload = TrackEventPayload(
+                    data=data,
+                    track=track,
+                    player=player,
+                    original=player._original
+                )
 
                 if payload.event is TrackEventType.END and payload.reason != 'REPLACED':
                     player._current = None

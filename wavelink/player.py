@@ -31,7 +31,7 @@ import discord
 from discord.utils import MISSING
 
 from .enums import *
-from .exceptions import QueueEmpty
+from .exceptions import InvalidLavalinkResponse, QueueEmpty
 from .ext import spotify
 from .filters import Filter
 from .node import Node, NodePool
@@ -146,6 +146,7 @@ class Player(discord.VoiceProtocol):
 
         self.queue: Queue = Queue()
         self._current: Playable | None = None
+        self._original: Playable | None = None
 
         self._volume: int = 50
         self._paused: bool = False
@@ -407,14 +408,25 @@ class Player(discord.VoiceProtocol):
         if end:
             data['endTime'] = end
 
-        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
-                                                             path=f'sessions/{self.current_node._session_id}/players',
-                                                             guild_id=self._guild.id,
-                                                             data=data,
-                                                             query=f'noReplace={not replace}')
+        self._current = track
+        self._original = track
+
+        try:
+
+            resp: dict[str, Any] = await self.current_node._send(
+                method='PATCH',
+                path=f'sessions/{self.current_node._session_id}/players',
+                guild_id=self._guild.id,
+                data=data,
+                query=f'noReplace={not replace}'
+            )
+
+        except InvalidLavalinkResponse as e:
+            self._current = None
+            self._original = None
+            raise e
 
         self._player_state['track'] = resp['track']['encoded']
-        self._current = track
         self.queue._loaded = track
 
         return track

@@ -51,15 +51,18 @@ class TrackEventPayload:
         An enum of the type of event.
     track: :class:`Playable`
         The track associated with this event.
+    original: Optional[:class:`Playable`]
+        The original requested track before conversion. Could be None.
     player: :class:`player.Player`
         The player associated with this event.
     reason: Optional[str]
         The reason this event was fired.
     """
 
-    def __init__(self, *, data: EventOp, track: Playable, player: Player) -> None:
+    def __init__(self, *, data: EventOp, track: Playable, original: Playable | None, player: Player) -> None:
         self.event: TrackEventType = try_enum(TrackEventType, data['type'])
         self.track: Playable = track
+        self.original: Playable | None = original
         self.player: Player = player
 
         self.reason: str = data.get('reason')
