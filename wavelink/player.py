@@ -549,7 +549,7 @@ class Player(discord.VoiceProtocol):
                                                              data=data)        
 
         if self.is_playing() and seek:
-            await self.seek(int(self.position * 1000))
+            await self.seek(int(self.position))
         logger.debug(f"Set filter:: {self._filter} ({self.channel.id})")
 
     async def _destroy(self) -> None:
