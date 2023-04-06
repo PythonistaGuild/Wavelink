@@ -239,7 +239,7 @@ class SpotifyTrack:
         self.length: int = data['duration_ms']
         self.duration: int = self.length
 
-        self.isrc: str | None = data["external_ids"].get("isrc")
+        self.isrc: str | None = data.get("external_ids", {}).get("isrc")
 
     def __eq__(self, other) -> bool:
         return self.id == other.id
