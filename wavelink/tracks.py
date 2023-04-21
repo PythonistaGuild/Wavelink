@@ -328,5 +328,7 @@ class YouTubePlaylist(Playable, Playlist):
             track = YouTubeTrack(track_data)
             self.tracks.append(track)
 
+        self.source = TrackSource.YouTube
+
     def __str__(self) -> str:
         return self.name
