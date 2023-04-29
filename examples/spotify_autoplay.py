@@ -21,16 +21,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import discord
+import disnake
 import wavelink
-from discord.ext import commands
+from disnake.ext import commands
 from wavelink.ext import spotify
 
 
 class Bot(commands.Bot):
 
     def __init__(self) -> None:
-        intents = discord.Intents.default()
+        intents = disnake.Intents.default()
         super().__init__(intents=intents, command_prefix='?')
 
     async def on_ready(self) -> None:

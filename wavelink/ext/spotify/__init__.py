@@ -31,7 +31,7 @@ import time
 from typing import Any, List, Optional, Type, TypeVar, Union, TYPE_CHECKING
 
 import aiohttp
-from discord.ext import commands
+from disnake.ext import commands
 
 import wavelink
 from wavelink import Node, NodePool
@@ -325,7 +325,7 @@ class SpotifyTrack:
     async def convert(cls: Type[ST], ctx: commands.Context, argument: str) -> ST:
         """Converter which searches for and returns the first track.
 
-        Used as a type hint in a discord.py command.
+        Used as a type hint in a disnake.py command.
         """
         results = await cls.search(argument)
 

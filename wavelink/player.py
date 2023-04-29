@@ -27,8 +27,8 @@ import datetime
 import logging
 from typing import TYPE_CHECKING, Any, Union
 
-import discord
-from discord.utils import MISSING
+import disnake
+from disnake.utils import MISSING
 
 from .enums import *
 from .exceptions import InvalidLavalinkResponse, QueueEmpty
@@ -41,12 +41,12 @@ from .tracks import *
 
 
 if TYPE_CHECKING:
-    from discord.types.voice import GuildVoiceState, VoiceServerUpdate
+    from disnake.types.voice import GuildVoiceState, VoiceServerUpdate
     from typing_extensions import Self
 
     from .types.events import PlayerState, PlayerUpdateOp
     from .types.request import EncodedTrackRequest, Request
-    from .types.state import DiscordVoiceState
+    from .types.state import disnakeVoiceState
 
 __all__ = ("Player",)
 
@@ -55,14 +55,14 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 
 VoiceChannel = Union[
-    discord.VoiceChannel, discord.StageChannel
+    disnake.VoiceChannel, disnake.StageChannel
 ]  # todo: VocalGuildChannel?
 
 
-class Player(discord.VoiceProtocol):
+class Player(disnake.VoiceProtocol):
     """Wavelink Player class.
 
-    This class is used as a :class:`discord.VoiceProtocol` and inherits all its members.
+    This class is used as a :class:`disnake.VoiceProtocol` and inherits all its members.
 
 
     .. note::
@@ -80,9 +80,9 @@ class Player(discord.VoiceProtocol):
 
     Attributes
     ----------
-    client: :class:discord.Client`
-        The discord Client or Bot associated with this Player.
-    channel: :class:`discord.VoiceChannel`
+    client: :class:disnake.Client`
+        The disnake Client or Bot associated with this Player.
+    channel: :class:`disnake.VoiceChannel`
         The channel this player is currently connected to.
     nodes: list[:class:`node.Node`]
         The list of Nodes this player is currently using.
@@ -98,7 +98,7 @@ class Player(discord.VoiceProtocol):
         The current filters applied.
     """
 
-    def __call__(self, client: discord.Client, channel: VoiceChannel) -> Self:
+    def __call__(self, client: disnake.Client, channel: VoiceChannel) -> Self:
         self.client = client
         self.channel = channel
 
@@ -106,13 +106,13 @@ class Player(discord.VoiceProtocol):
 
     def __init__(
         self,
-        client: discord.Client = MISSING,
+        client: disnake.Client = MISSING,
         channel: VoiceChannel = MISSING,
         *,
         nodes: list[Node] | None = None,
         swap_node_on_disconnect: bool = True
     ) -> None:
-        self.client: discord.Client = client
+        self.client: disnake.Client = client
         self.channel: VoiceChannel | None = channel
 
         self.nodes: list[Node]
@@ -133,8 +133,8 @@ class Player(discord.VoiceProtocol):
                 raise RuntimeError('')
             self.client = self.current_node.client
 
-        self._guild: discord.Guild | None = None
-        self._voice_state: DiscordVoiceState = {}
+        self._guild: disnake.Guild | None = None
+        self._voice_state: disnakeVoiceState = {}
         self._player_state: dict[str, Any] = {}
 
         self.swap_on_disconnect: bool = swap_node_on_disconnect
@@ -214,8 +214,8 @@ class Player(discord.VoiceProtocol):
         return self._volume
 
     @property
-    def guild(self) -> discord.Guild | None:
-        """The discord Guild associated with the Player."""
+    def guild(self) -> disnake.Guild | None:
+        """The disnake Guild associated with the Player."""
         return self._guild
 
     @property
@@ -235,7 +235,7 @@ class Player(discord.VoiceProtocol):
 
     @property
     def ping(self) -> int:
-        """The ping to the discord endpoint in milliseconds."""
+        """The ping to the disnake endpoint in milliseconds."""
         return self._ping
 
     @property
@@ -304,7 +304,7 @@ class Player(discord.VoiceProtocol):
             assert self._guild is not None
             self.current_node._players[self._guild.id] = self
 
-    async def _dispatch_voice_update(self, data: DiscordVoiceState | None = None) -> None:
+    async def _dispatch_voice_update(self, data: disnakeVoiceState | None = None) -> None:
         assert self._guild is not None
 
         data = data or self._voice_state
@@ -336,14 +336,14 @@ class Player(discord.VoiceProtocol):
 
         await self.channel.guild.change_voice_state(channel=self.channel, **kwargs)
 
-    async def move_to(self, channel: discord.VoiceChannel) -> None:
+    async def move_to(self, channel: disnake.VoiceChannel) -> None:
         """|coro|
 
         Moves the player to a different voice channel.
 
         Parameters
         -----------
-        channel: :class:`discord.VoiceChannel`
+        channel: :class:`disnake.VoiceChannel`
             The channel to move to. Must be a voice channel.
         """
         await self.guild.change_voice_state(channel=channel)

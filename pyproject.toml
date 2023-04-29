@@ -9,7 +9,7 @@ authors = [
   { name="EvieePy", email="evieepy@gmail.com" },
 ]
 dynamic = ["dependencies"]
-description = "A robust and powerful Lavalink wrapper for discord.py"
+description = "A robust and powerful Lavalink wrapper for disnake.py"
 readme = "README.rst"
 requires-python = ">=3.10"
 classifiers = [

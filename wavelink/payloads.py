@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from discord.enums import try_enum
+from disnake.enums import try_enum
 
 from .enums import TrackEventType
 
