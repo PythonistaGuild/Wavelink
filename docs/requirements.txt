@@ -5,4 +5,4 @@ sphinxcontrib-asyncio
 sphinxcontrib-websupport
 Pygments
 furo
-disnake.py>=1.7.3
+disnake>=1.7.3
