@@ -239,10 +239,10 @@ class SpotifyTrack:
         self.length: int = data['duration_ms']
         self.duration: int = self.length
 
-        self.isrc: str | None = data["external_ids"].get("isrc")
+        self.isrc: str | None = data.get('external_ids', {}).get('isrc', None)
 
     def __eq__(self, other) -> bool:
-        return self.id == other.id
+        return True#self.id == other.id
 
     @classmethod
     async def search(
@@ -277,8 +277,11 @@ class SpotifyTrack:
 
         if type == SpotifySearchType.track:
             tracks = await node._spotify._search(query=query, type=type)
-
-            return tracks[0] if return_first else tracks
+            if isinstance(tracks, list):
+                if return_first:
+                    return tracks[0]
+                return tracks
+            return tracks
         return await node._spotify._search(query=query, type=type)
 
     @classmethod
@@ -344,6 +347,8 @@ class SpotifyTrack:
             The class to convert this Spotify Track to.
         """
         try:
+            if self.isrc is None:
+                raise wavelink.NoTracksError
             tracks: list[cls] = await cls.search(f'"{self.isrc}"')
         except wavelink.NoTracksError:
             tracks: list[cls] = await cls.search(f'{self.name} - {self.artists[0]}')

@@ -204,7 +204,7 @@ class Node:
         async with self._session.get(f'{self._host}/version') as resp:
             version: str = await resp.text()
 
-            if version.endswith('-SNAPSHOT'):
+            if '-SNAPSHOT' in version:
                 self._major_version = 3
                 return
 

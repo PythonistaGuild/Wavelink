@@ -91,7 +91,8 @@ class Websocket:
         self.node._status = NodeStatus.CONNECTING
 
         try:
-            self._listener_task.cancel()
+            if self._listener_task is not None:
+                self._listener_task.cancel()
         except Exception as e:
             logger.debug(f'An error was raised while cancelling the websocket listener. {e}')
 
@@ -101,9 +102,7 @@ class Websocket:
             uri: str = f'{"https://" if self.node._secure else "http://"}{uri}'
         else:
             uri: str = f'{"wss://" if self.node._secure else "ws://"}{uri}'
-
         heartbeat: float = self.node.heartbeat
-
         try:
             self.socket = await self.node._session.ws_connect(url=uri, heartbeat=heartbeat, headers=self.headers)
         except Exception as e:
@@ -111,14 +110,12 @@ class Websocket:
                 raise AuthorizationFailed from e
             else:
                 logger.error(f'An error occurred connecting to node: "{self.node}". {e}')
-
         if self.is_connected():
             self.retries = self._original_attempts
             # TODO - Configure Resuming...
         else:
             await self._reconnect()
             return
-
         self._listener_task = asyncio.create_task(self._listen())
 
     async def _reconnect(self) -> None:
@@ -144,7 +141,10 @@ class Websocket:
     async def _listen(self) -> None:
         while True:
             message = await self.socket.receive()
-
+            
+            logger.debug(f"{message=}")
+            
+            
             if message.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.CLOSING):
 
                 for player in self.node.players.copy().values():
@@ -173,9 +173,10 @@ class Websocket:
                 continue
 
             if op == 'ready':
+                logger.debug(f"NODE READY WOOO")
                 self.node._status = NodeStatus.CONNECTED
                 self.node._session_id = data['sessionId']
-
+                logger.debug(f"A NODE IS READY YAY!")
                 self.dispatch('node_ready', self.node)
 
             elif op == 'stats':
