@@ -203,7 +203,6 @@ class Node:
 
         async with self._session.get(f'{self._host}/version') as resp:
             version: str = await resp.text()
-            print(f"DBEUG: {version=}")
 
             if '-SNAPSHOT' in version:
                 self._major_version = 3
