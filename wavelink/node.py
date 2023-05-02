@@ -109,6 +109,7 @@ class Node:
             session: aiohttp.ClientSession = MISSING,
             heartbeat: float = 15.0,
             retries: int | None = None,
+            resume_key: str | None = None,
     ) -> None:
         if id is None:
             id = ''.join(random.sample(string.ascii_letters + string.digits, 12))
@@ -135,6 +136,8 @@ class Node:
         self._major_version: int | None = None
 
         self._spotify: spotify_.SpotifyClient | None = None
+
+        self._resume_key: str = resume_key if resume_key else self._id
 
     def __repr__(self) -> str:
         return f'Node: id="{self._id}", uri="{self.uri}", status={self.status}'
@@ -216,6 +219,13 @@ class Node:
                 raise InvalidLavalinkVersion('Wavelink 2 is not compatible with Lavalink versions under "3.7".')
 
             self._major_version = version_tuple[0]
+
+            resp: dict[str, Any] = await self._send(method='PATCH',
+                                                    path=f'sessions/{self._session_id}',
+                                                    data={'resumingKey': self._resume_key, 'timeout': 60})
+
+            if resp['resumed']:
+                logger.info(f'Resumed session: {self}')
 
     async def _send(self,
                     *,

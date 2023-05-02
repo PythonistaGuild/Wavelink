@@ -77,7 +77,8 @@ class Websocket:
         return {
             'Authorization': self.node.password,
             'User-Id': str(self.node.client.user.id),
-            'Client-Name': f'Wavelink/{__version__}'
+            'Client-Name': f'Wavelink/{__version__}',
+            'Resume-Key': self.node._resume_key,
         }
 
     def is_connected(self) -> bool:
