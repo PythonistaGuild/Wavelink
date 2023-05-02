@@ -192,8 +192,7 @@ class Websocket:
                     continue
 
                 if data['type'] == 'WebSocketClosedEvent':
-                    if data['code'] == 4014:
-                        continue
+                    continue
 
                 track = await self.node.build_track(cls=wavelink.GenericTrack, encoded=data['encodedTrack'])
                 payload: TrackEventPayload = TrackEventPayload(
