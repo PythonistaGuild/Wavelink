@@ -275,10 +275,10 @@ class SpotifyTrack:
         if node is None:
             node: Node = NodePool.get_connected_node()
 
-        if type == SpotifySearchType.track:
-            tracks = await node._spotify._search(query=query, type=type)
-
-            return tracks[0] if return_first else tracks
+        # if type == SpotifySearchType.track:
+        #     tracks = await node._spotify._search(query=query, type=type)
+        #
+        #     return tracks[0] if return_first else tracks
         return await node._spotify._search(query=query, type=type)
 
     @classmethod
@@ -443,7 +443,7 @@ class SpotifyClient:
             data = await resp.json()
 
         if data['type'] == 'track':
-            return [SpotifyTrack(data)]
+            return SpotifyTrack(data)
 
         elif data['type'] == 'album':
             album_data: dict[str, Any]= {
