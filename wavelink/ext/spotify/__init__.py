@@ -239,7 +239,7 @@ class SpotifyTrack:
         self.length: int = data['duration_ms']
         self.duration: int = self.length
 
-        self.isrc: str | None = data["external_ids"].get("isrc")
+        self.isrc: str | None = data.get("external_ids", {}).get("isrc")
 
     def __eq__(self, other) -> bool:
         return self.id == other.id
@@ -443,7 +443,7 @@ class SpotifyClient:
             data = await resp.json()
 
         if data['type'] == 'track':
-            return SpotifyTrack(data)
+            return [SpotifyTrack(data)]
 
         elif data['type'] == 'album':
             album_data: dict[str, Any]= {
@@ -490,4 +490,4 @@ class SpotifyClient:
                         url = data['next']
             else:
                 tracks = data['tracks']['items']
-                return [SpotifyTrack(t) for t in tracks]
+                return [SpotifyTrack(t['track']) for t in tracks]
