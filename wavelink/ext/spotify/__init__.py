@@ -239,7 +239,7 @@ class SpotifyTrack:
         self.length: int = data['duration_ms']
         self.duration: int = self.length
 
-        self.isrc: str | None = data["external_ids"].get("isrc")
+        self.isrc: str = data["external_ids"]["isrc"]
 
     def __eq__(self, other) -> bool:
         return self.id == other.id
@@ -277,8 +277,8 @@ class SpotifyTrack:
 
         if type == SpotifySearchType.track:
             tracks = await node._spotify._search(query=query, type=type)
-
-            return tracks[0] if return_first else tracks
+            return tracks[0] if return_first and not isinstance(tracks, SpotifyTrack) else tracks
+        
         return await node._spotify._search(query=query, type=type)
 
     @classmethod
@@ -445,31 +445,16 @@ class SpotifyClient:
         if data['type'] == 'track':
             return SpotifyTrack(data)
 
+
         elif data['type'] == 'album':
-            album_data: dict[str, Any]= {
-                                        'album_type': data['album_type'],
-                                        'artists': data['artists'],
-                                        'available_markets': data['available_markets'],
-                                        'external_urls': data['external_urls'],
-                                        'href': data['href'],
-                                        'id': data['id'],
-                                        'images': data['images'],
-                                        'name': data['name'],
-                                        'release_date': data['release_date'],
-                                        'release_date_precision': data['release_date_precision'],
-                                        'total_tracks': data['total_tracks'],
-                                        'type': data['type'],
-                                        'uri': data['uri'],
-                                        }
             tracks = []
             for track in data['tracks']['items']:
-                track['album'] = album_data
-                if iterator:
-                    tracks.append(track)
-                else:
-                    tracks.append(SpotifyTrack(track))
-
-            return tracks
+                async with self.session.get(track['href'], headers=self.bearer_headers) as resp:
+                    if resp.status != 200:
+                        raise SpotifyRequestError(resp.status, resp.reason)
+                    tracks.append(track := await resp.json())
+            
+            return tracks if iterator else [SpotifyTrack(t) for t in tracks]
 
         elif data['type'] == 'playlist':
             if iterator:
@@ -489,5 +474,4 @@ class SpotifyClient:
 
                         url = data['next']
             else:
-                tracks = data['tracks']['items']
-                return [SpotifyTrack(t) for t in tracks]
+                return [SpotifyTrack(t['track']) for t in data['tracks']['items']]
