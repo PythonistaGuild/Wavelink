@@ -242,7 +242,10 @@ class SpotifyTrack:
         self.isrc: str | None = data.get("external_ids", {}).get("isrc")
 
     def __eq__(self, other) -> bool:
-        return self.id == other.id
+        if isinstance(other, SpotifyTrack):
+            return self.id == other.id
+
+        return False
 
     @classmethod
     async def search(
