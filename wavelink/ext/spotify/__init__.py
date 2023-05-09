@@ -198,8 +198,8 @@ class SpotifyTrack:
         The URI for this spotify track.
     id: str
         The spotify ID for this track.
-    isrc: str | None
-        The International Standard Recording Code associated with this track if given.
+    isrc: str
+        The International Standard Recording Code associated with this track.
     length: int
         The track length in milliseconds.
     duration: int
