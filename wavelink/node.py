@@ -141,6 +141,14 @@ class Node:
 
     def __eq__(self, other: object) -> bool:
         return self.id == other.id if isinstance(other, Node) else NotImplemented
+    
+    @property
+    def websocket(self) -> Websocket:
+        return self._websocket
+
+    @property
+    def session_id(self) -> str | None:
+        return self._session_id
 
     @property
     def id(self) -> str:
