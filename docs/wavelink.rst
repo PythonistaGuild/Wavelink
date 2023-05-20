@@ -37,12 +37,21 @@ An event listener in a cog...
 
     Called when the current track has finished playing.
 
+.. function:: on_wavelink_websocket_closed(payload: WebsocketClosedPayload)
+
+    Called when the websocket to the voice server is closed.
+
 
 Payloads
 ---------
 .. attributetable:: TrackEventPayload
 
 .. autoclass:: TrackEventPayload
+    :members:
+
+.. attributetable:: WebsocketClosedPayload
+
+.. autoclass:: WebsocketClosedPayload
     :members:
 
 
