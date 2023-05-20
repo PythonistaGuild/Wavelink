@@ -35,7 +35,7 @@ from . import __version__
 from .backoff import Backoff
 from .enums import NodeStatus, TrackEventType
 from .exceptions import *
-from .payloads import TrackEventPayload
+from .payloads import TrackEventPayload, WebsocketClosedPayload
 
 if TYPE_CHECKING:
     from .node import Node
@@ -54,7 +54,8 @@ class Websocket:
         'retry',
         '_original_attempts',
         'backoff',
-        '_listener_task'
+        '_listener_task',
+        '_reconnect_task'
     )
 
     def __init__(self, *, node: Node) -> None:
@@ -68,6 +69,7 @@ class Websocket:
         self.backoff: Backoff = Backoff()
 
         self._listener_task: asyncio.Task | None = None
+        self._reconnect_task: asyncio.Task | None = None
 
     @property
     def headers(self) -> dict[str, str]:
@@ -114,6 +116,7 @@ class Websocket:
 
         if self.is_connected():
             self.retries = self._original_attempts
+            self._reconnect_task = None
             # TODO - Configure Resuming...
         else:
             await self._reconnect()
@@ -150,7 +153,7 @@ class Websocket:
                 for player in self.node.players.copy().values():
                     await player._update_event(data=None)
 
-                asyncio.create_task(self._reconnect())
+                self._reconnect_task = asyncio.create_task(self._reconnect())
                 return
 
             if message.data == 1011:
@@ -192,8 +195,13 @@ class Websocket:
                     continue
 
                 if data['type'] == 'WebSocketClosedEvent':
-                    if data['code'] == 4014:
-                        continue
+                    logger.debug(f'WebSocketClosed Event: '
+                                 f'<code: {data["code"]}, reason: {data["reason"]}, by_discord: {data["byRemote"]}>')
+
+                    payload: WebsocketClosedPayload = WebsocketClosedPayload(data=data, player=player)
+
+                    self.dispatch('websocket_closed', payload)
+                    continue
 
                 track = await self.node.build_track(cls=wavelink.GenericTrack, encoded=data['encodedTrack'])
                 payload: TrackEventPayload = TrackEventPayload(
