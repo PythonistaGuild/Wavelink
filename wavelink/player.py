@@ -200,6 +200,10 @@ class Player(discord.VoiceProtocol):
         """Set AutoPlay to True or False."""
         self._autoplay = value
 
+    def is_connected(self) -> bool:
+        """Whether the player is connected to a voice channel."""
+        return self.channel is not None and self.channel is not MISSING
+
     def is_playing(self) -> bool:
         """Whether the Player is currently playing a track."""
         return self.current is not None
@@ -556,14 +560,16 @@ class Player(discord.VoiceProtocol):
         self.autoplay = False
         self._voice_state = {}
         self._player_state = {}
+
         self.cleanup()
+        self.channel = None
 
         await self.current_node._send(method='DELETE',
                                       path=f'sessions/{self.current_node._session_id}/players',
                                       guild_id=self._guild.id)
 
-        del self.current_node._players[self.guild.id]
-        logger.debug(f'Player {self.guild.id} was destroyed.')
+        del self.current_node._players[self._guild.id]
+        logger.debug(f'Player {self._guild.id} was destroyed.')
 
     async def disconnect(self, **kwargs) -> None:
         """|coro|
