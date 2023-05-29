@@ -310,7 +310,8 @@ class Node:
         WavelinkException
             An unspecified error occurred when loading the playlist.
         """
-        data = await self._send(method='GET', path='loadtracks', query=f'identifier={query}')
+        encoded_query = urllib.parse.quote(query)
+        data = await self._send(method='GET', path='loadtracks', query=f'identifier={encoded_query}')
 
         load_type = try_enum(LoadType, data.get("loadType"))
 
@@ -338,8 +339,8 @@ class Node:
         encoded: str
             The Tracks unique encoded string.
         """
-        encoded = urllib.parse.quote(encoded)
-        data = await self._send(method='GET', path='decodetrack', query=f'encodedTrack={encoded}')
+        encoded_query = urllib.parse.quote(encoded)
+        data = await self._send(method='GET', path='decodetrack', query=f'encodedTrack={encoded_query}')
 
         return cls(data=data)
 
