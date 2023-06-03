@@ -119,9 +119,11 @@ class Player(discord.VoiceProtocol):
         self.current_node: Node
 
         if swap_node_on_disconnect and not nodes:
-            self.nodes = list(NodePool.nodes.values())
+            nodes = list(NodePool.nodes.values())
+            self.nodes = sorted(nodes, key=lambda n: len(n.players))
             self.current_node = self.nodes[0]
         elif nodes:
+            nodes = sorted(nodes, key=lambda n: len(n.players))
             self.current_node = nodes[0]
             self.nodes = nodes
         else:
