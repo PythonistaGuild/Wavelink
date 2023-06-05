@@ -347,7 +347,10 @@ class Player(discord.VoiceProtocol):
         limit: int = self.channel.user_limit
         total: int = len(self.channel.members)
 
-        if total >= limit:
+        if limit == 0:
+            pass
+
+        elif total >= limit:
             self._invalidate()
 
             msg: str = f'There are currently too many users in this channel. <{total}/{limit}>'
