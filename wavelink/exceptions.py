@@ -32,17 +32,21 @@ __all__ = (
     'InvalidLavalinkVersion',
     'InvalidLavalinkResponse',
     'NoTracksError',
-    'QueueEmpty'
+    'QueueEmpty',
+    'InvalidChannelStateError',
+    'InvalidChannelPermissions',
 )
 
 
 class WavelinkException(Exception):
+    """Base wavelink exception."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args)
 
 
 class AuthorizationFailed(WavelinkException):
+    """Exception raised when password authorization failed for this Lavalink node."""
     pass
 
 
@@ -51,10 +55,18 @@ class InvalidNode(WavelinkException):
 
 
 class InvalidLavalinkVersion(WavelinkException):
+    """Exception raised when you try to use wavelink 2 with a Lavalink version under 3.7."""
     pass
 
 
 class InvalidLavalinkResponse(WavelinkException):
+    """Exception raised when wavelink receives an invalid response from Lavalink.
+
+    Attributes
+    ----------
+    status: int | None
+        The status code. Could be None.
+    """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args)
@@ -62,8 +74,21 @@ class InvalidLavalinkResponse(WavelinkException):
 
 
 class NoTracksError(WavelinkException):
+    """Exception raised when no tracks could be found."""
     pass
 
 
 class QueueEmpty(WavelinkException):
+    """Exception raised when you try to retrieve from an empty queue."""
     pass
+
+
+class InvalidChannelStateError(WavelinkException):
+    """Base exception raised when an error occurs trying to connect to a :class:`discord.VoiceChannel`."""
+
+
+class InvalidChannelPermissions(InvalidChannelStateError):
+    """Exception raised when the client does not have correct permissions to join the channel.
+
+    Could also be raised when there are too many users already in a user limited channel.
+    """
