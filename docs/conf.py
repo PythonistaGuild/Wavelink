@@ -46,6 +46,16 @@ extensions = [
     "sphinxcontrib.asyncio",
     "sphinx.ext.intersphinx",
     "attributetable",
+    "sphinxext.opengraph"
+]
+
+# OpenGraph Meta Tags
+ogp_image = "https://raw.githubusercontent.com/PythonistaGuild/Wavelink/master/logo.png"
+ogp_description = "Documentation for Wavelink, the Powerful Lavalink wrapper for discord.py."
+ogp_site_url = "https://wavelink.dev/"
+ogp_custom_meta_tags = [
+    '<meta property="og:description" content="A robust and powerful Lavalink wrapper for Discord.py. Wavelink features a fully asynchronous API that\'s intuitive and easy to use with built in Spotify Support and Node Pool Balancing." />',
+    '<meta property="og:title" content="Wavelink Documentation" />'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -101,7 +111,15 @@ rst_prolog = """
 # source_suffix = ['.rst', '.md']
 source_suffix = ".rst"
 
-intersphinx_mapping = {"py": ("https://docs.python.org/3", None)}
+intersphinx_mapping = {
+    "py": ("https://docs.python.org/3", None),
+    "dpy": ("https://discordpy.readthedocs.io/en/stable/", None)
+}
+
+extlinks = {
+    'wlissue': ('https://github.com/PythonistaGuild/Wavelink/issues/%s', 'GH-%s'),
+    'ddocs': ('https://discord.com/developers/docs/%s', None),
+}
 
 pygments_style = "sphinx"
 pygments_dark_style = "monokai"

@@ -44,16 +44,14 @@
       <div class="index-apis-section">
          <b>Wavelink Reference:</b>
          <ul class="index-featuring-list">
-            <li><a href="wavelink.html" class="reference internal">API Reference</a>
+            <li><a href="wavelink.html" class="reference internal">API Reference</a></li>
          </ul>
       </div>
 
       <div class="index-apis-section">
          <b>Wavelink Extension API's:</b>
          <ul class="index-featuring-list">
-            <li>Spotify Support coming soon...
-            <li>YouTube AutoPlay coming soon...
-
+            <li><a href="ext/spotify.html" class="reference internal">Spotify Extension</a></li>
          </ul>
       </div>
    </div>
@@ -73,6 +71,14 @@
 
    installing
    recipes
+
+
+.. rst-class:: index-display-none
+.. toctree::
+   :maxdepth: 1
+   :caption: Spotify Extension
+
+   ext/spotify
 
 
 .. rst-class:: index-display-none
