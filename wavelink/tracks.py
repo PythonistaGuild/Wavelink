@@ -89,7 +89,7 @@ class Playable(metaclass=abc.ABCMeta):
         The position the track will start in milliseconds. Defaults to 0.
     title: str
         The Track title.
-    source: :class:`TrackSource`
+    source: :class:`wavelink.TrackSource`
         The source this Track was fetched from.
     uri: Optional[str]
         The URI of this track. Could be None.
@@ -192,9 +192,9 @@ class Playable(metaclass=abc.ABCMeta):
             The query to search for.
         return_first: Optional[bool]
             Whether to return the first track from the search results. Defaults to False.
-        node: Optional[:class:`Node`]
-            The node to use when searching for tracks. If no :class:`Node` is passed,
-            one will be fetched via the :class:`NodePool`.
+        node: Optional[:class:`wavelink.Node`]
+            The node to use when searching for tracks. If no :class:`wavelink.Node` is passed,
+            one will be fetched via the :class:`wavelink.NodePool`.
         """
 
         check = yarl.URL(query)
@@ -221,7 +221,8 @@ class Playable(metaclass=abc.ABCMeta):
     async def convert(cls, ctx: commands.Context, argument: str) -> Self:
         """Converter which searches for and returns the first track.
 
-        Used as a type hint in a discord.py command.
+        Used as a type hint in a
+        `discord.py command <https://discordpy.readthedocs.io/en/stable/ext/commands/commands.html>`_.
         """
         results = await cls.search(argument)
 
@@ -253,7 +254,7 @@ class YouTubeTrack(Playable):
         .. note::
 
             Due to YouTube limitations this may not always return a valid thumbnail.
-            Use :func:`.fetch_thumbnail` to fallback.
+            Use :meth:`.fetch_thumbnail` to fallback.
 
         Returns
         -------
