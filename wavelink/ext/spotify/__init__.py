@@ -103,12 +103,16 @@ def decode_url(url: str) -> Optional[dict]:
 class SpotifySearchType(enum.Enum):
     """An enum specifying which type to search for with a given Spotify ID.
 
+    Attributes
+    ----------
     track
         Default search type. Unless specified otherwise this will always be the search type.
     album
-        Search for an album.
+        Album search type.
     playlist
-        Search for a playlist.
+        Playlist search type.
+    unusable
+        Unusable type. This type is returned when Wavelink can not be used to play this track.
     """
     track = 0
     album = 1
@@ -261,7 +265,7 @@ class SpotifyTrack:
         ----------
         query: str
             The song to search for.
-        type: Optional[:class:`spotify.SpotifySearchType`]
+        type: Optional[:class:`~SpotifySearchType`]
             An optional enum value to use when searching with Spotify. Defaults to track.
         node: Optional[:class:`wavelink.Node`]
             An optional Node to use to make the search with.
@@ -270,7 +274,29 @@ class SpotifyTrack:
 
         Returns
         -------
-        Union[Optional[Track], List[Track]]
+        Union[Optional[:class:`SpotifyTrack`], List[:class:`SpotifyTrack`]]
+
+        Examples
+        --------
+        Searching for a singular tack to play...
+
+        .. code:: python3
+
+            track: spotify.SpotifyTrack = await spotify.SpotifyTrack.search(query=SPOTIFY_URL)
+
+
+        Searching for all tracks in an album...
+
+        .. code:: python3
+
+            tracks: list[spotify.SpotifyTrack] =
+            await spotify.SpotifyTrack.search(query=SPOTIFY_URL, type=spotify.SpotifySearchType.album)
+
+
+        .. note::
+
+            See :func:`~.decode_url` for gathering information about the supplied URL, including search type.
+            Before using this method.
         """
         if node is None:
             node: Node = NodePool.get_connected_node()
@@ -299,10 +325,10 @@ class SpotifyTrack:
             The Spotify URL or ID to search for. Must be of type Playlist or Album.
         limit: Optional[int]
             Limit the amount of tracks returned.
-        type: :class:`SpotifySearchType`
+        type: :class:`~SpotifySearchType`
             The type of search. Must be either playlist or album. Defaults to playlist.
-        node: Optional[:class:`Node`]
-            An optional node to use when querying for tracks. Defaults to best available.
+        node: Optional[:class:`wavelink.Node`]
+            An optional node to use when querying for tracks. Defaults to the best available.
 
         Examples
         --------
@@ -311,6 +337,12 @@ class SpotifyTrack:
 
                 async for track in spotify.SpotifyTrack.iterator(query=..., type=spotify.SpotifySearchType.playlist):
                     ...
+
+
+        .. note::
+
+            See :func:`~.decode_url` for gathering information about the supplied URL, including search type.
+            Before using this method.
         """
 
         if type is not SpotifySearchType.album and type is not SpotifySearchType.playlist:
@@ -325,7 +357,8 @@ class SpotifyTrack:
     async def convert(cls: Type[ST], ctx: commands.Context, argument: str) -> ST:
         """Converter which searches for and returns the first track.
 
-        Used as a type hint in a discord.py command.
+        Used as a type hint in a
+        `discord.py command <https://discordpy.readthedocs.io/en/stable/ext/commands/commands.html>`_.
         """
         results = await cls.search(argument)
 
@@ -335,11 +368,18 @@ class SpotifyTrack:
         return results[0]
 
     async def fulfill(self, *, player: Player, cls: Playable, populate: bool) -> Playable:
-        """
+        """Used to fulfill the :class:`wavelink.Player` Auto Play Queue.
+
+        .. warning::
+
+            Usually you would not call this directly. Instead you would set :attr:`wavelink.Player.autoplay` to true,
+            and allow the player to fulfill this request automatically.
+
+
         Parameters
         ----------
         player: :class:`wavelink.player.Player`
-            If Player.autoplay is enabled, this search will fill the AutoPlay Queue.
+            If :attr:`wavelink.Player.autoplay` is enabled, this search will fill the AutoPlay Queue with more tracks.
         cls
             The class to convert this Spotify Track to.
         """
@@ -380,7 +420,7 @@ class SpotifyTrack:
 
 
 class SpotifyClient:
-    """Spotify client passed to Nodes for searching via Spotify.
+    """Spotify client passed to :class:`wavelink.Node` for searching via Spotify.
 
     Parameters
     ----------
