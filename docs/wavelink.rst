@@ -1,6 +1,11 @@
 .. currentmodule:: wavelink
 
 
+API Reference
+-------------
+The wavelink API Reference. This section outlines the API and all it's components within wavelink.
+
+
 Event Reference
 ---------------
 
