@@ -31,7 +31,7 @@ import discord
 from discord.utils import MISSING
 
 from .enums import *
-from .exceptions import InvalidLavalinkResponse, QueueEmpty
+from .exceptions import *
 from .ext import spotify
 from .filters import Filter
 from .node import Node, NodePool
@@ -62,7 +62,7 @@ VoiceChannel = Union[
 class Player(discord.VoiceProtocol):
     """Wavelink Player class.
 
-    This class is used as a :class:`discord.VoiceProtocol` and inherits all its members.
+    This class is used as a :class:`~discord.VoiceProtocol` and inherits all its members.
 
 
     .. note::
@@ -80,7 +80,7 @@ class Player(discord.VoiceProtocol):
 
     Attributes
     ----------
-    client: :class:discord.Client`
+    client: :class:`discord.Client`
         The discord Client or Bot associated with this Player.
     channel: :class:`discord.VoiceChannel`
         The channel this player is currently connected to.
@@ -334,7 +334,24 @@ class Player(discord.VoiceProtocol):
 
     async def connect(self, *, timeout: float, reconnect: bool, **kwargs: Any) -> None:
         if self.channel is None:
-            raise RuntimeError('')
+            self._invalidate()
+
+            msg: str = 'Please use the method "discord.VoiceChannel.connect" and pass this player to cls='
+            raise InvalidChannelStateError(msg)
+
+        if not self.channel.permissions_for(self.channel.guild.me).connect:
+            self._invalidate()
+
+            raise InvalidChannelPermissions('You do not have connect permissions to join this channel.')
+
+        limit: int = self.channel.user_limit
+        total: int = len(self.channel.members)
+
+        if total >= limit:
+            self._invalidate()
+
+            msg: str = f'There are currently too many users in this channel. <{total}/{limit}>'
+            raise InvalidChannelPermissions(msg)
 
         if not self._guild:
             self._guild = self.channel.guild
@@ -557,6 +574,11 @@ class Player(discord.VoiceProtocol):
         if self.is_playing() and seek:
             await self.seek(int(self.position))
         logger.debug(f"Set filter:: {self._filter} ({self.channel.id})")
+
+    def _invalidate(self) -> None:
+        self._voice_state = {}
+        self._player_state = {}
+        self.channel = None
 
     async def _destroy(self) -> None:
         self.autoplay = False
