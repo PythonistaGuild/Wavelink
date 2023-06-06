@@ -198,7 +198,7 @@ class SpotifyTrack:
         The URI for this spotify track.
     id: str
         The spotify ID for this track.
-    isrc: str
+    isrc: str | None
         The International Standard Recording Code associated with this track.
     length: int
         The track length in milliseconds.
@@ -238,8 +238,7 @@ class SpotifyTrack:
         self.id: str = data['id']
         self.length: int = data['duration_ms']
         self.duration: int = self.length
-
-        self.isrc: str = data["external_ids"]["isrc"]
+        self.isrc: Optional[str] = data.get("external_ids", {}).get('irsc')
 
     def __eq__(self, other) -> bool:
         return self.id == other.id
@@ -343,10 +342,13 @@ class SpotifyTrack:
         cls
             The class to convert this Spotify Track to.
         """
-        try:
-            tracks: list[cls] = await cls.search(f'"{self.isrc}"')
-        except wavelink.NoTracksError:
+        if self.isrc is None:
             tracks: list[cls] = await cls.search(f'{self.name} - {self.artists[0]}')
+        else:
+            try:
+                tracks: list[cls] = await cls.search(f'"{self.isrc}"')
+            except wavelink.NoTracksError:
+                tracks: list[cls] = await cls.search(f'{self.name} - {self.artists[0]}')
 
         if not player.autoplay or not populate:
             return tracks[0]
@@ -444,7 +446,6 @@ class SpotifyClient:
 
         if data['type'] == 'track':
             return SpotifyTrack(data)
-
 
         elif data['type'] == 'album':
             tracks = []
