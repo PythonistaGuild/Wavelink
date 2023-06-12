@@ -36,9 +36,22 @@ combine_as_imports = true
 combine_star = true
 
 [tool.pyright]
-useLibraryCodeForTypes = true
-typeCheckingMode = "strict"
 pythonVersion = "3.11"
+useLibraryCodeForTypes = true
+typeCheckingMode = "basic"
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+strictParameterNoneValue = true
+reportPropertyTypeMismatch = "error"
+reportFunctionMemberAccess = "error"
+reportMissingImports = "error"
+reportUnusedImport = "warning"
+reportUnusedClass = "warning"
+reportUnusedFunction = "warning"
+reportUnusedVariable = "warning"
+reportDuplicateImport = "warning"
+
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
