@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, TypedDict
 
 from .state import VoiceState
 
+
 if TYPE_CHECKING:
     from typing_extensions import TypeAlias
 

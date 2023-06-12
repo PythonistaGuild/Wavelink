@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Literal, TypedDict
 
+
 if TYPE_CHECKING:
     from typing_extensions import NotRequired, TypeAlias
 
@@ -14,12 +15,15 @@ class _BaseEventOp(TypedDict):
     op: Literal["event"]
     guildId: str
 
+
 class TrackStartEvent(_BaseEventOp):
     type: _TrackStartEventType
     encodedTrack: str
 
+
 class _OtherEventOp(_BaseEventOp):
     type: _OtherEventOpType
+
 
 EventOp: TypeAlias = "TrackStartEvent | _OtherEventOp"
 

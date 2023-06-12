@@ -23,6 +23,7 @@ SOFTWARE.
 """
 from discord.enums import Enum
 
+
 __all__ = ('NodeStatus', 'TrackSource', 'LoadType', 'TrackEventType', 'DiscordVoiceCloseType')
 
 
@@ -84,6 +85,7 @@ class LoadType(Enum):
     load_failed
         "LOAD_FAILED"
     """
+
     track_loaded = "TRACK_LOADED"
     playlist_loaded = "PLAYLIST_LOADED"
     search_result = "SEARCH_RESULT"
@@ -138,6 +140,7 @@ class DiscordVoiceCloseType(Enum):
     UNKNOWN_ENCRYPTION_MODE
         4016
     """
+
     CLOSE_NORMAL = 1000  # Not Discord but standard websocket
     UNKNOWN_OPCODE = 4001
     FAILED_DECODE_PAYLOAD = 4002

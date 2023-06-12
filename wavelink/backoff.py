@@ -49,7 +49,7 @@ class Backoff:
         self._last_wait: float = 0
 
     def calculate(self) -> float:
-        exponent = min((self._retries ** 2), self._maximum_time)
+        exponent = min((self._retries**2), self._maximum_time)
         wait = self._rand(0, (self._base * 2) * exponent)
 
         if wait <= self._last_wait:

@@ -13,7 +13,8 @@ class TrackInfo(TypedDict):
     title: str
     uri: str | None
     sourceName: str
-    
+
+
 class Track(TypedDict):
     encoded: str
     info: TrackInfo

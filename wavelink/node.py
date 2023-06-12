@@ -27,26 +27,27 @@ import logging
 import random
 import re
 import string
+import urllib.parse
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import aiohttp
 import discord
 from discord.enums import try_enum
 from discord.utils import MISSING, classproperty
-import urllib.parse
 
 from .enums import LoadType, NodeStatus
 from .exceptions import *
 from .websocket import Websocket
 
+
 if TYPE_CHECKING:
+    from .ext import spotify as spotify_
     from .player import Player
     from .tracks import *
     from .types.request import Request
-    from .ext import spotify as spotify_
 
     PlayableT = TypeVar('PlayableT', bound=Playable)
-    
+
 
 __all__ = ('Node', 'NodePool')
 
@@ -99,16 +100,16 @@ class Node:
     """
 
     def __init__(
-            self,
-            *,
-            id: str | None = None,
-            uri: str,
-            password: str,
-            secure: bool = False,
-            use_http: bool = False,
-            session: aiohttp.ClientSession = MISSING,
-            heartbeat: float = 15.0,
-            retries: int | None = None,
+        self,
+        *,
+        id: str | None = None,
+        uri: str,
+        password: str,
+        secure: bool = False,
+        use_http: bool = False,
+        session: aiohttp.ClientSession = MISSING,
+        heartbeat: float = 15.0,
+        retries: int | None = None,
     ) -> None:
         if id is None:
             id = ''.join(random.sample(string.ascii_letters + string.digits, 12))
@@ -217,25 +218,27 @@ class Node:
 
             self._major_version = version_tuple[0]
 
-    async def _send(self,
-                    *,
-                    method: str,
-                    path: str,
-                    guild_id: int | str | None = None,
-                    query: str | None = None,
-                    data: Request | None = None,
-                    ) -> dict[str, Any] | None:
+    async def _send(
+        self,
+        *,
+        method: str,
+        path: str,
+        guild_id: int | str | None = None,
+        query: str | None = None,
+        data: Request | None = None,
+    ) -> dict[str, Any] | None:
 
-        uri: str = f'{self._host}/' \
-                   f'v{self._major_version}/' \
-                   f'{path}' \
-                   f'{f"/{guild_id}" if guild_id else ""}' \
-                   f'{f"?{query}" if query else ""}'
+        uri: str = (
+            f'{self._host}/'
+            f'v{self._major_version}/'
+            f'{path}'
+            f'{f"/{guild_id}" if guild_id else ""}'
+            f'{f"?{query}" if query else ""}'
+        )
 
         async with self._session.request(method=method, url=uri, json=data or {}) as resp:
             if resp.status >= 300:
-                raise InvalidLavalinkResponse(f'An error occurred when attempting to reach: "{uri}".',
-                                              status=resp.status)
+                raise InvalidLavalinkResponse(f'An error occurred when attempting to reach: "{uri}".', status=resp.status)
 
             if resp.status == 204:
                 return
@@ -364,11 +367,7 @@ class NodePool:
 
     @classmethod
     async def connect(
-            cls,
-            *,
-            client: discord.Client,
-            nodes: list[Node],
-            spotify: spotify_.SpotifyClient | None = None
+        cls, *, client: discord.Client, nodes: list[Node], spotify: spotify_.SpotifyClient | None = None
     ) -> dict[str, Node]:
         """|coro|
 
@@ -403,8 +402,9 @@ class NodePool:
             try:
                 await node._connect(client)
             except AuthorizationFailed:
-                logger.error(f'The Node <{node!r}> failed to authenticate properly. '
-                             f'Please check your password and try again.')
+                logger.error(
+                    f'The Node <{node!r}> failed to authenticate properly. ' f'Please check your password and try again.'
+                )
             else:
                 cls.__nodes[node.id] = node
 
@@ -468,13 +468,9 @@ class NodePool:
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
     @classmethod
-    async def get_tracks(cls_,  # type: ignore
-                         query: str,
-                         /,
-                         *,
-                         cls: type[PlayableT],
-                         node: Node | None = None
-                         ) -> list[PlayableT]:
+    async def get_tracks(
+        cls_, query: str, /, *, cls: type[PlayableT], node: Node | None = None  # type: ignore
+    ) -> list[PlayableT]:
         """|coro|
 
         Helper method to retrieve tracks from the NodePool without fetching a :class:`Node`.
@@ -500,13 +496,7 @@ class NodePool:
         return await node.get_tracks(cls=cls, query=query)
 
     @classmethod
-    async def get_playlist(cls_,  # type: ignore
-                           query: str,
-                           /,
-                           *,
-                           cls: Playlist,
-                           node: Node | None = None
-                           ) -> Playlist:
+    async def get_playlist(cls_, query: str, /, *, cls: Playlist, node: Node | None = None) -> Playlist:  # type: ignore
         """|coro|
 
         Helper method to retrieve a playlist from the NodePool without fetching a :class:`Node`.

@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from typing import Any
 
+
 __all__ = (
     'WavelinkException',
     'AuthorizationFailed',
@@ -47,6 +48,7 @@ class WavelinkException(Exception):
 
 class AuthorizationFailed(WavelinkException):
     """Exception raised when password authorization failed for this Lavalink node."""
+
     pass
 
 
@@ -56,6 +58,7 @@ class InvalidNode(WavelinkException):
 
 class InvalidLavalinkVersion(WavelinkException):
     """Exception raised when you try to use wavelink 2 with a Lavalink version under 3.7."""
+
     pass
 
 
@@ -75,11 +78,13 @@ class InvalidLavalinkResponse(WavelinkException):
 
 class NoTracksError(WavelinkException):
     """Exception raised when no tracks could be found."""
+
     pass
 
 
 class QueueEmpty(WavelinkException):
     """Exception raised when you try to retrieve from an empty queue."""
+
     pass
 
 

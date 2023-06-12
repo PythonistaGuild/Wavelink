@@ -22,12 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import discord
-import wavelink
 from discord.ext import commands
+
+import wavelink
 
 
 class Bot(commands.Bot):
-
     def __init__(self) -> None:
         intents = discord.Intents.default()
         intents.message_content = True

@@ -15,10 +15,12 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 
+import os
+
 # -- Project information -----------------------------------------------------
 import re
-import os
 import sys
+
 
 sys.path.insert(0, os.path.abspath("."))
 sys.path.insert(0, os.path.abspath(".."))
@@ -46,7 +48,7 @@ extensions = [
     "sphinxcontrib.asyncio",
     "sphinx.ext.intersphinx",
     "attributetable",
-    "sphinxext.opengraph"
+    "sphinxext.opengraph",
 ]
 
 # OpenGraph Meta Tags
@@ -55,7 +57,7 @@ ogp_description = "Documentation for Wavelink, the Powerful Lavalink wrapper for
 ogp_site_url = "https://wavelink.dev/"
 ogp_custom_meta_tags = [
     '<meta property="og:description" content="A robust and powerful Lavalink wrapper for Discord.py. Wavelink features a fully asynchronous API that\'s intuitive and easy to use with built in Spotify Support and Node Pool Balancing." />',
-    '<meta property="og:title" content="Wavelink Documentation" />'
+    '<meta property="og:title" content="Wavelink Documentation" />',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -74,11 +76,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 html_theme = "furo"
 # html_logo = "logo.png"
 
-html_theme_options = {
-    "sidebar_hide_name": True,
-    "light_logo": "logo.png",
-    "dark_logo": "wl_dark.png"
-}
+html_theme_options = {"sidebar_hide_name": True, "light_logo": "logo.png", "dark_logo": "wl_dark.png"}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -113,7 +111,7 @@ source_suffix = ".rst"
 
 intersphinx_mapping = {
     "py": ("https://docs.python.org/3", None),
-    "dpy": ("https://discordpy.readthedocs.io/en/stable/", None)
+    "dpy": ("https://discordpy.readthedocs.io/en/stable/", None),
 }
 
 extlinks = {

@@ -27,7 +27,8 @@ from typing import TYPE_CHECKING, Any
 
 from discord.enums import try_enum
 
-from .enums import TrackEventType, DiscordVoiceCloseType
+from .enums import DiscordVoiceCloseType, TrackEventType
+
 
 if TYPE_CHECKING:
     from .player import Player

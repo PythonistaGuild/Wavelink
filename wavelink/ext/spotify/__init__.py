@@ -28,7 +28,7 @@ import base64
 import enum
 import re
 import time
-from typing import Any, List, Optional, Type, TypeVar, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, Optional, Type, TypeVar, Union
 
 import aiohttp
 from discord.ext import commands
@@ -36,21 +36,20 @@ from discord.ext import commands
 import wavelink
 from wavelink import Node, NodePool
 
+
 if TYPE_CHECKING:
-    from wavelink import Player, Playable
+    from wavelink import Playable, Player
 
 
-__all__ = ('SpotifySearchType',
-           'SpotifyClient',
-           'SpotifyTrack',
-           'SpotifyRequestError',
-           'decode_url')
+__all__ = ('SpotifySearchType', 'SpotifyClient', 'SpotifyTrack', 'SpotifyRequestError', 'decode_url')
 
 
 GRANTURL = 'https://accounts.spotify.com/api/token?grant_type=client_credentials'
-URLREGEX = re.compile(r'(https?://open.)?(spotify)(.com/|:)'
-                      r'(?P<type>album|playlist|track|artist)([/:])'
-                      r'(?P<id>[a-zA-Z0-9]+)(\?si=[a-zA-Z0-9]+)?(&dl_branch=[0-9]+)?')
+URLREGEX = re.compile(
+    r'(https?://open.)?(spotify)(.com/|:)'
+    r'(?P<type>album|playlist|track|artist)([/:])'
+    r'(?P<id>[a-zA-Z0-9]+)(\?si=[a-zA-Z0-9]+)?(&dl_branch=[0-9]+)?'
+)
 BASEURL = 'https://api.spotify.com/v1/{entity}s/{identifier}'
 RECURL = 'https://api.spotify.com/v1/recommendations?seed_tracks={tracks}'
 
@@ -114,6 +113,7 @@ class SpotifySearchType(enum.Enum):
     unusable
         Unusable type. This type is returned when Wavelink can not be used to play this track.
     """
+
     track = 0
     album = 1
     playlist = 2
@@ -121,7 +121,6 @@ class SpotifySearchType(enum.Enum):
 
 
 class SpotifyAsyncIterator:
-
     def __init__(self, *, query: str, limit: int, type: SpotifySearchType, node: Node):
         self._query = query
         self._limit = limit
@@ -210,20 +209,7 @@ class SpotifyTrack:
         Alias to length.
     """
 
-    __slots__ = (
-        'raw',
-        'album',
-        'images',
-        'artists',
-        'name',
-        'title',
-        'uri',
-        'id',
-        'length',
-        'duration',
-        'isrc',
-        '__dict__'
-    )
+    __slots__ = ('raw', 'album', 'images', 'artists', 'name', 'title', 'uri', 'id', 'length', 'duration', 'isrc', '__dict__')
 
     def __init__(self, data: dict[str, Any]) -> None:
         self.raw: dict[str, Any] = data
@@ -251,11 +237,11 @@ class SpotifyTrack:
     @classmethod
     async def search(
         cls: Type[ST],
-            query: str,
-            *,
-            type: SpotifySearchType = SpotifySearchType.track,
-            node: Node | None = None,
-            return_first: bool = False,
+        query: str,
+        *,
+        type: SpotifySearchType = SpotifySearchType.track,
+        node: Node | None = None,
+        return_first: bool = False,
     ) -> Union[Optional[ST], List[ST]]:
         """|coro|
 
@@ -308,13 +294,14 @@ class SpotifyTrack:
         return await node._spotify._search(query=query, type=type)
 
     @classmethod
-    def iterator(cls,
-                 *,
-                 query: str,
-                 limit: int | None = None,
-                 type: SpotifySearchType = SpotifySearchType.playlist,
-                 node: Node | None = None,
-                 ):
+    def iterator(
+        cls,
+        *,
+        query: str,
+        limit: int | None = None,
+        type: SpotifySearchType = SpotifySearchType.playlist,
+        node: Node | None = None,
+    ):
         """An async iterator version of search.
 
         This can be useful when searching for large playlists or albums with Spotify.
@@ -442,8 +429,10 @@ class SpotifyClient:
     @property
     def grant_headers(self) -> dict:
         authbytes = f'{self._client_id}:{self._client_secret}'.encode()
-        return {'Authorization': f'Basic {base64.b64encode(authbytes).decode()}',
-                'Content-Type': 'application/x-www-form-urlencoded'}
+        return {
+            'Authorization': f'Basic {base64.b64encode(authbytes).decode()}',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
 
     @property
     def bearer_headers(self) -> dict:
@@ -458,11 +447,12 @@ class SpotifyClient:
             self._bearer_token = data['access_token']
             self._expiry = time.time() + (int(data['expires_in']) - 10)
 
-    async def _search(self,
-                      query: str,
-                      type: SpotifySearchType = SpotifySearchType.track,
-                      iterator: bool = False,
-                      ) -> SpotifyTrack | list[SpotifyTrack]:
+    async def _search(
+        self,
+        query: str,
+        type: SpotifySearchType = SpotifySearchType.track,
+        iterator: bool = False,
+    ) -> SpotifyTrack | list[SpotifyTrack]:
 
         if not self._bearer_token or time.time() >= self._expiry:
             await self._get_bearer_token()
@@ -470,9 +460,7 @@ class SpotifyClient:
         regex_result = URLREGEX.match(query)
 
         url = (
-            BASEURL.format(
-                entity=regex_result['type'], identifier=regex_result['id']
-            )
+            BASEURL.format(entity=regex_result['type'], identifier=regex_result['id'])
             if regex_result
             else BASEURL.format(entity=type.name, identifier=query)
         )
@@ -486,21 +474,21 @@ class SpotifyClient:
             return SpotifyTrack(data)
 
         elif data['type'] == 'album':
-            album_data: dict[str, Any]= {
-                                        'album_type': data['album_type'],
-                                        'artists': data['artists'],
-                                        'available_markets': data['available_markets'],
-                                        'external_urls': data['external_urls'],
-                                        'href': data['href'],
-                                        'id': data['id'],
-                                        'images': data['images'],
-                                        'name': data['name'],
-                                        'release_date': data['release_date'],
-                                        'release_date_precision': data['release_date_precision'],
-                                        'total_tracks': data['total_tracks'],
-                                        'type': data['type'],
-                                        'uri': data['uri'],
-                                        }
+            album_data: dict[str, Any] = {
+                'album_type': data['album_type'],
+                'artists': data['artists'],
+                'available_markets': data['available_markets'],
+                'external_urls': data['external_urls'],
+                'href': data['href'],
+                'id': data['id'],
+                'images': data['images'],
+                'name': data['name'],
+                'release_date': data['release_date'],
+                'release_date_precision': data['release_date_precision'],
+                'total_tracks': data['total_tracks'],
+                'type': data['type'],
+                'uri': data['uri'],
+            }
             tracks = []
             for track in data['tracks']['items']:
                 track['album'] = album_data

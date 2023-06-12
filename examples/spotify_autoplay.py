@@ -22,13 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import discord
-import wavelink
 from discord.ext import commands
+
+import wavelink
 from wavelink.ext import spotify
 
 
 class Bot(commands.Bot):
-
     def __init__(self) -> None:
         intents = discord.Intents.default()
         super().__init__(intents=intents, command_prefix='?')
@@ -40,10 +40,7 @@ class Bot(commands.Bot):
         # Wavelink 2.0 has made connecting Nodes easier... Simply create each Node
         # and pass it to NodePool.connect with the client/bot.
         # Fill your Spotify API details and pass it to connect.
-        sc = spotify.SpotifyClient(
-            client_id='CLIENT_ID',
-            client_secret='SECRET'
-        )
+        sc = spotify.SpotifyClient(client_id='CLIENT_ID', client_secret='SECRET')
         node: wavelink.Node = wavelink.Node(uri='http://localhost:2333', password='youshallnotpass')
         await wavelink.NodePool.connect(client=self, nodes=[node], spotify=sc)
 

@@ -24,7 +24,7 @@ SOFTWARE.
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, ClassVar, Literal, overload, Optional, Any
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, overload
 
 import aiohttp
 import yarl
@@ -34,25 +34,16 @@ from .enums import TrackSource
 from .exceptions import NoTracksError
 from .node import Node, NodePool
 
+
 if TYPE_CHECKING:
     from typing_extensions import Self
 
     from .types.track import Track as TrackPayload
 
-__all__ = (
-    'Playable',
-    'Playlist',
-    'YouTubeTrack',
-    'GenericTrack',
-    'YouTubeMusicTrack',
-    'SoundCloudTrack',
-    'YouTubePlaylist'
-)
+__all__ = ('Playable', 'Playlist', 'YouTubeTrack', 'GenericTrack', 'YouTubeMusicTrack', 'SoundCloudTrack', 'YouTubePlaylist')
 
 
-_source_mapping: dict[str, TrackSource] = {
-    'youtube': TrackSource.YouTube
-}
+_source_mapping: dict[str, TrackSource] = {'youtube': TrackSource.YouTube}
 
 
 class Playlist(metaclass=abc.ABCMeta):
@@ -100,7 +91,7 @@ class Playable(metaclass=abc.ABCMeta):
     """
 
     PREFIX: ClassVar[str] = ''
-    
+
     def __init__(self, data: TrackPayload) -> None:
         self.data: TrackPayload = data
         self.encoded: str = data['encoded']
@@ -131,59 +122,29 @@ class Playable(metaclass=abc.ABCMeta):
         if isinstance(other, Playable):
             return self.encoded == other.encoded
         return NotImplemented
-    
+
     @overload
     @classmethod
-    async def search(cls,
-                     query: str,
-                     /,
-                     *,
-                     return_first: Literal[False] = ...,
-                     node: Node | None = ...
-                     ) -> list[Self]:
+    async def search(cls, query: str, /, *, return_first: Literal[False] = ..., node: Node | None = ...) -> list[Self]:
         ...
 
     @overload
     @classmethod
-    async def search(cls,
-                     query: str,
-                     /,
-                     *,
-                     return_first: Literal[True] = ...,
-                     node: Node | None = ...
-                     ) -> Self:
+    async def search(cls, query: str, /, *, return_first: Literal[True] = ..., node: Node | None = ...) -> Self:
         ...
 
     @overload
     @classmethod
-    async def search(cls,
-                     query: str,
-                     /,
-                     *,
-                     return_first: bool = ...,
-                     node: Node | None = ...
-                     ) -> Self | list[Self]:
+    async def search(cls, query: str, /, *, return_first: bool = ..., node: Node | None = ...) -> Self | list[Self]:
         ...
 
     @overload
     @classmethod
-    async def search(cls,
-                     query: str,
-                     /,
-                     *,
-                     return_first: bool = ...,
-                     node: Node | None = ...
-                     ) -> YouTubePlaylist:
+    async def search(cls, query: str, /, *, return_first: bool = ..., node: Node | None = ...) -> YouTubePlaylist:
         ...
 
     @classmethod
-    async def search(cls,
-                     query: str,
-                     /,
-                     *,
-                     return_first: bool = False,
-                     node: Node | None = None
-                     ) -> Self | list[Self]:
+    async def search(cls, query: str, /, *, return_first: bool = False, node: Node | None = None) -> Self | list[Self]:
         """Search and retrieve tracks for the given query.
 
         Parameters
@@ -199,14 +160,18 @@ class Playable(metaclass=abc.ABCMeta):
 
         check = yarl.URL(query)
 
-        if str(check.host) == 'youtube.com' or str(check.host) == 'www.youtube.com' and check.query.get("list") or \
-                cls.PREFIX == 'ytpl:':
+        if (
+            str(check.host) == 'youtube.com'
+            or str(check.host) == 'www.youtube.com'
+            and check.query.get("list")
+            or cls.PREFIX == 'ytpl:'
+        ):
 
             playlist = await NodePool.get_playlist(query, cls=YouTubePlaylist, node=node)
             return playlist
         else:
             tracks = await NodePool.get_tracks(f'{cls.PREFIX}{query}', cls=cls, node=node)
-        
+
         try:
             track = tracks[0]
         except IndexError:
@@ -240,6 +205,7 @@ class GenericTrack(Playable):
 
     Use this track for searching for Local songs or direct URLs.
     """
+
     ...
 
 

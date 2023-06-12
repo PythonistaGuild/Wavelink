@@ -29,18 +29,14 @@ from collections.abc import AsyncIterator, Iterable, Iterator
 from copy import copy
 
 from .exceptions import QueueEmpty
-from .tracks import Playable
 from .ext import spotify
+from .tracks import Playable
 
 
-__all__ = (
-    'BaseQueue',
-    'Queue'
-)
+__all__ = ('BaseQueue', 'Queue')
 
 
 class BaseQueue:
-
     def __init__(self) -> None:
         self._queue: deque[Playable, spotify.SpotifyTrack] = deque()
 
@@ -50,8 +46,7 @@ class BaseQueue:
 
     def __repr__(self) -> str:
         """Official representation with max_size and member count."""
-        return (
-            f"Wavelink Queue: members={self.count}")
+        return f"Wavelink Queue: members={self.count}"
 
     def __bool__(self) -> bool:
         """Treats the queue as a bool, with it evaluating True when it contains members."""
@@ -233,7 +228,6 @@ class BaseQueue:
 
 
 class Queue(BaseQueue):
-
     def __init__(self):
         super().__init__()
         self.history: BaseQueue = BaseQueue()

@@ -22,12 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import discord
-import wavelink
 from discord.ext import commands
+
+import wavelink
 
 
 class Bot(commands.Bot):
-
     def __init__(self) -> None:
         intents = discord.Intents.default()
         super().__init__(intents=intents, command_prefix='?')
@@ -40,4 +40,3 @@ class Bot(commands.Bot):
         # and pass it to NodePool.connect with the client/bot.
         node: wavelink.Node = wavelink.Node(uri='http://localhost:2333', password='youshallnotpass')
         await wavelink.NodePool.connect(client=self, nodes=[node])
-

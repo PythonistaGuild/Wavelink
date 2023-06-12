@@ -37,6 +37,7 @@ from .enums import NodeStatus, TrackEventType
 from .exceptions import *
 from .payloads import TrackEventPayload, WebsocketClosedPayload
 
+
 if TYPE_CHECKING:
     from .node import Node
     from .player import Player
@@ -47,16 +48,7 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 class Websocket:
 
-    __slots__ = (
-        'node',
-        'socket',
-        'retries',
-        'retry',
-        '_original_attempts',
-        'backoff',
-        '_listener_task',
-        '_reconnect_task'
-    )
+    __slots__ = ('node', 'socket', 'retries', 'retry', '_original_attempts', 'backoff', '_listener_task', '_reconnect_task')
 
     def __init__(self, *, node: Node) -> None:
         self.node: Node = node
@@ -79,7 +71,7 @@ class Websocket:
         return {
             'Authorization': self.node.password,
             'User-Id': str(self.node.client.user.id),
-            'Client-Name': f'Wavelink/{__version__}'
+            'Client-Name': f'Wavelink/{__version__}',
         }
 
     def is_connected(self) -> bool:
@@ -129,8 +121,10 @@ class Websocket:
         self.retry = self.backoff.calculate()
 
         if self.retries == 0:
-            logger.error('Wavelink 2.0 was unable to connect, and has exhausted the reconnection attempt limit. '
-                         'Please check your Lavalink Node is started and your connection details are correct.')
+            logger.error(
+                'Wavelink 2.0 was unable to connect, and has exhausted the reconnection attempt limit. '
+                'Please check your Lavalink Node is started and your connection details are correct.'
+            )
 
             await self.cleanup()
             return
@@ -157,8 +151,10 @@ class Websocket:
                 return
 
             if message.data == 1011:
-                logger.error('Lavalink encountered an internal error which can not be resolved. '
-                             'Make sure your Lavalink sever is up to date, and try restarting.')
+                logger.error(
+                    'Lavalink encountered an internal error which can not be resolved. '
+                    'Make sure your Lavalink sever is up to date, and try restarting.'
+                )
 
                 await self.cleanup()
                 return
@@ -195,8 +191,10 @@ class Websocket:
                     continue
 
                 if data['type'] == 'WebSocketClosedEvent':
-                    logger.debug(f'WebSocketClosed Event: '
-                                 f'<code: {data["code"]}, reason: {data["reason"]}, by_discord: {data["byRemote"]}>')
+                    logger.debug(
+                        f'WebSocketClosed Event: '
+                        f'<code: {data["code"]}, reason: {data["reason"]}, by_discord: {data["byRemote"]}>'
+                    )
 
                     payload: WebsocketClosedPayload = WebsocketClosedPayload(data=data, player=player)
 
@@ -205,10 +203,7 @@ class Websocket:
 
                 track = await self.node.build_track(cls=wavelink.GenericTrack, encoded=data['encodedTrack'])
                 payload: TrackEventPayload = TrackEventPayload(
-                    data=data,
-                    track=track,
-                    player=player,
-                    original=player._original
+                    data=data, track=track, player=player, original=player._original
                 )
 
                 if payload.event is TrackEventType.END and payload.reason != 'REPLACED':
@@ -234,9 +229,11 @@ class Websocket:
                 logger.debug(f'Websocket Player Update: {data}')
 
             else:
-                logger.info(f'Received unknown payload from Lavalink: <{data}>. '
-                            f'If this continues consider making a ticket on the Wavelink GitHub. '
-                            f'https://github.com/PythonistaGuild/Wavelink')
+                logger.info(
+                    f'Received unknown payload from Lavalink: <{data}>. '
+                    f'If this continues consider making a ticket on the Wavelink GitHub. '
+                    f'https://github.com/PythonistaGuild/Wavelink'
+                )
 
     def get_player(self, payload: dict[str, Any]) -> Optional['Player']:
         return self.node.players.get(int(payload['guildId']), None)
