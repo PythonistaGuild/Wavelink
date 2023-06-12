@@ -579,17 +579,17 @@ class Player(discord.VoiceProtocol):
         logger.debug(f"Set filter:: {self._filter} ({self.channel.id})")
 
     def _invalidate(self) -> None:
+        try:
+            self.cleanup()
+        except Exception as e:
+            logger.debug(f'Failed to cleanup player, most likely due to never having been connected: {e}')
+
         self._voice_state = {}
         self._player_state = {}
         self.channel = None
 
     async def _destroy(self) -> None:
-        self.autoplay = False
-        self._voice_state = {}
-        self._player_state = {}
-
-        self.cleanup()
-        self.channel = None
+        self._invalidate()
 
         await self.current_node._send(method='DELETE',
                                       path=f'sessions/{self.current_node._session_id}/players',
@@ -603,6 +603,7 @@ class Player(discord.VoiceProtocol):
 
         Disconnect the Player from voice and cleanup the Player state.
         """
+        self._invalidate()
         await self.guild.change_voice_state(channel=None)
 
     async def _swap_state(self) -> None:
