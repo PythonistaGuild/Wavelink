@@ -1,2 +1,5 @@
 # initial black and isort
 e72b960ad971d66637e6a43151ac2768e1216497
+
+# change black ruleset to 120 line length
+ea1abb306b515c81ccb0c4be0886ea4d0cf4ebee
