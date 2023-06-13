@@ -227,7 +227,6 @@ class Node:
         query: str | None = None,
         data: Request | None = None,
     ) -> dict[str, Any] | None:
-
         uri: str = (
             f'{self._host}/'
             f'v{self._major_version}/'
@@ -238,7 +237,9 @@ class Node:
 
         async with self._session.request(method=method, url=uri, json=data or {}) as resp:
             if resp.status >= 300:
-                raise InvalidLavalinkResponse(f'An error occurred when attempting to reach: "{uri}".', status=resp.status)
+                raise InvalidLavalinkResponse(
+                    f'An error occurred when attempting to reach: "{uri}".', status=resp.status
+                )
 
             if resp.status == 204:
                 return
@@ -391,7 +392,6 @@ class NodePool:
             raise RuntimeError('')
 
         for node in nodes:
-
             if spotify:
                 node._spotify = spotify
 
@@ -403,7 +403,8 @@ class NodePool:
                 await node._connect(client)
             except AuthorizationFailed:
                 logger.error(
-                    f'The Node <{node!r}> failed to authenticate properly. ' f'Please check your password and try again.'
+                    f'The Node <{node!r}> failed to authenticate properly. '
+                    f'Please check your password and try again.'
                 )
             else:
                 cls.__nodes[node.id] = node

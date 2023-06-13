@@ -40,7 +40,15 @@ if TYPE_CHECKING:
 
     from .types.track import Track as TrackPayload
 
-__all__ = ('Playable', 'Playlist', 'YouTubeTrack', 'GenericTrack', 'YouTubeMusicTrack', 'SoundCloudTrack', 'YouTubePlaylist')
+__all__ = (
+    'Playable',
+    'Playlist',
+    'YouTubeTrack',
+    'GenericTrack',
+    'YouTubeMusicTrack',
+    'SoundCloudTrack',
+    'YouTubePlaylist',
+)
 
 
 _source_mapping: dict[str, TrackSource] = {'youtube': TrackSource.YouTube}
@@ -166,7 +174,6 @@ class Playable(metaclass=abc.ABCMeta):
             and check.query.get("list")
             or cls.PREFIX == 'ytpl:'
         ):
-
             playlist = await NodePool.get_playlist(query, cls=YouTubePlaylist, node=node)
             return playlist
         else:
@@ -210,7 +217,6 @@ class GenericTrack(Playable):
 
 
 class YouTubeTrack(Playable):
-
     PREFIX: str = 'ytsearch:'
 
     @property

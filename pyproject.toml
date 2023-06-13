@@ -25,13 +25,13 @@ classifiers = [
 "Homepage" = "https://github.com/PythonistaGuild/Wavelink"
 
 [tool.black]
-line-length = 125
+line-length = 120
 skip-string-normalization = true
 
 [tool.isort]
 profile = "black"
 lines_after_imports = 2
-line_length = 125
+line_length = 120
 combine_as_imports = true
 combine_star = true
 

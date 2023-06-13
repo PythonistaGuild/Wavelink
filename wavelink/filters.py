@@ -246,7 +246,6 @@ class Timescale(BaseFilter):
         pitch: float = 1.0,
         rate: float = 1.0,
     ) -> None:
-
         if speed < 0:
             raise ValueError("'speed' must be more than or equal to 0.")
         if pitch < 0:
@@ -288,7 +287,6 @@ class Tremolo(BaseFilter):
     """
 
     def __init__(self, *, frequency: float = 2.0, depth: float = 0.5) -> None:
-
         if frequency < 0:
             raise ValueError("'frequency' must be more than 0.0.")
         if not 0 < depth <= 1:
@@ -323,7 +321,6 @@ class Vibrato(BaseFilter):
     """
 
     def __init__(self, *, frequency: float = 2.0, depth: float = 0.5) -> None:
-
         if not 0 < frequency <= 14:
             raise ValueError("'frequency' must be more than 0.0 and less than or equal to 14.0.")
         if not 0 < depth <= 1:
@@ -450,7 +447,6 @@ class ChannelMix(BaseFilter):
         right_to_left: float = 0.0,
         right_to_right: float = 1.0,
     ) -> None:
-
         _all = (left_to_left, left_to_right, right_to_left, right_to_right)
 
         if any(value for value in _all if value < 0 or value > 1):
@@ -594,7 +590,6 @@ class Filter:
         channel_mix: ChannelMix | None = None,
         low_pass: LowPass | None = None,
     ) -> None:
-
         self.filter: Filter | None = _filter
 
         self.equalizer: Equalizer | None = equalizer
@@ -617,7 +612,6 @@ class Filter:
 
     @property
     def _payload(self) -> dict[str, Any]:
-
         payload = self.filter._payload.copy() if self.filter else {}
 
         if self.equalizer:

@@ -259,7 +259,6 @@ class Player(discord.VoiceProtocol):
 
         if data is None:
             if self.swap_on_disconnect:
-
                 if len(self.nodes) < 2:
                     return
 
@@ -324,7 +323,10 @@ class Player(discord.VoiceProtocol):
         self._player_state.update(**voice)
 
         resp: dict[str, Any] = await self.current_node._send(
-            method='PATCH', path=f'sessions/{self.current_node._session_id}/players', guild_id=self._guild.id, data=voice
+            method='PATCH',
+            path=f'sessions/{self.current_node._session_id}/players',
+            guild_id=self._guild.id,
+            data=voice,
         )
 
         logger.debug(f'Dispatching VOICE_UPDATE: {resp}')
@@ -432,7 +434,6 @@ class Player(discord.VoiceProtocol):
         self._original = track
 
         try:
-
             resp: dict[str, Any] = await self.current_node._send(
                 method='PATCH',
                 path=f'sessions/{self.current_node._session_id}/players',

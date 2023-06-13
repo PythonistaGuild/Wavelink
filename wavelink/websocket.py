@@ -47,8 +47,16 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 
 class Websocket:
-
-    __slots__ = ('node', 'socket', 'retries', 'retry', '_original_attempts', 'backoff', '_listener_task', '_reconnect_task')
+    __slots__ = (
+        'node',
+        'socket',
+        'retries',
+        'retry',
+        '_original_attempts',
+        'backoff',
+        '_listener_task',
+        '_reconnect_task',
+    )
 
     def __init__(self, *, node: Node) -> None:
         self.node: Node = node
@@ -143,7 +151,6 @@ class Websocket:
             message = await self.socket.receive()
 
             if message.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.CLOSING):
-
                 for player in self.node.players.copy().values():
                     await player._update_event(data=None)
 
