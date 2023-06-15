@@ -245,8 +245,16 @@ class SpotifyTrack:
 
         self.isrc: str | None = data["external_ids"].get("isrc")
 
+    def __str__(self) -> str:
+        return f'{self.name} - {self.artists[0]}'
+
+    def __repr__(self) -> str:
+        return f'SpotifyTrack(id={self.id}, isrc={self.isrc}, name={self.name}, duration={self.duration})'
+
     def __eq__(self, other) -> bool:
-        return self.id == other.id
+        if isinstance(other, SpotifyTrack):
+            return self.id == other.id
+        raise NotImplemented
 
     @classmethod
     async def search(
@@ -255,7 +263,6 @@ class SpotifyTrack:
             *,
             type: SpotifySearchType = SpotifySearchType.track,
             node: Node | None = None,
-            return_first: bool = False,
     ) -> Union[Optional[ST], List[ST]]:
         """|coro|
 
@@ -269,12 +276,10 @@ class SpotifyTrack:
             An optional enum value to use when searching with Spotify. Defaults to track.
         node: Optional[:class:`wavelink.Node`]
             An optional Node to use to make the search with.
-        return_first: Optional[bool]
-            An optional bool which when set to True will return only the first track found. Defaults to False.
 
         Returns
         -------
-        Union[Optional[:class:`SpotifyTrack`], List[:class:`SpotifyTrack`]]
+        List[:class:`SpotifyTrack`]
 
         Examples
         --------
@@ -301,10 +306,6 @@ class SpotifyTrack:
         if node is None:
             node: Node = NodePool.get_connected_node()
 
-        if type == SpotifySearchType.track:
-            tracks = await node._spotify._search(query=query, type=type)
-
-            return tracks[0] if return_first else tracks
         return await node._spotify._search(query=query, type=type)
 
     @classmethod
@@ -363,7 +364,7 @@ class SpotifyTrack:
         results = await cls.search(argument)
 
         if not results:
-            raise commands.BadArgument("Could not find any songs matching that query.")
+            raise commands.BadArgument(f"Could not find any songs matching query: {argument}")
 
         return results[0]
 
@@ -462,7 +463,7 @@ class SpotifyClient:
                       query: str,
                       type: SpotifySearchType = SpotifySearchType.track,
                       iterator: bool = False,
-                      ) -> SpotifyTrack | list[SpotifyTrack]:
+                      ) -> list[SpotifyTrack]:
 
         if not self._bearer_token or time.time() >= self._expiry:
             await self._get_bearer_token()
@@ -483,7 +484,7 @@ class SpotifyClient:
             data = await resp.json()
 
         if data['type'] == 'track':
-            return SpotifyTrack(data)
+            return [SpotifyTrack(data)]
 
         elif data['type'] == 'album':
             album_data: dict[str, Any]= {
