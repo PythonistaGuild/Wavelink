@@ -27,6 +27,7 @@ import asyncio
 from collections import deque
 from collections.abc import AsyncIterator, Iterable, Iterator
 from copy import copy
+import random
 
 from .exceptions import QueueEmpty
 from .tracks import Playable
@@ -206,6 +207,10 @@ class BaseQueue:
     def put_at_front(self, item: Playable | spotify.SpotifyTrack) -> None:
         """Put the given item into the front of the queue."""
         self.put_at_index(0, item)
+
+    def shuffle(self) -> None:
+        """Shuffles the queue in place. This does not return anything."""
+        random.shuffle(self._queue)
 
     def extend(self, iterable: Iterable[Playable | spotify.SpotifyTrack], *, atomic: bool = True) -> None:
         """Add the members of the given iterable to the end of the queue.
