@@ -39,7 +39,7 @@ Wavelink features a fully asynchronous API that's intuitive and easy to use with
 
 Documentation
 ---------------------------
-`Official Documentation <https://wavelink.readthedocs.io/en/latest/index.html>`_
+`Official Documentation <https://wavelink.dev/>`_
 
 Support
 ---------------------------
@@ -110,7 +110,12 @@ Getting Started
         else:
             vc: wavelink.Player = ctx.voice_client
 
-        track = await wavelink.YouTubeTrack.search(search, return_first=True)
+        tracks = await wavelink.YouTubeTrack.search(search)
+        if not tracks:
+            await ctx.send(f'No tracks found with query: `{search}`')
+            return
+
+        track = tracks[0]
         await vc.play(track)
 
 
