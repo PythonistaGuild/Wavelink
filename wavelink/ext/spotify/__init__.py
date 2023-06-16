@@ -384,9 +384,8 @@ class SpotifyTrack:
         cls
             The class to convert this Spotify Track to.
         """
-        try:
-            tracks: list[cls] = await cls.search(f'"{self.isrc}"')
-        except wavelink.NoTracksError:
+        tracks: list[cls] = await cls.search(f'"{self.isrc}"')
+        if not tracks:
             tracks: list[cls] = await cls.search(f'{self.name} - {self.artists[0]}')
 
         if not player.autoplay or not populate:
@@ -397,6 +396,9 @@ class SpotifyTrack:
 
         if not sc:
             raise RuntimeError(f"There is no spotify client associated with <{node:!r}>")
+
+        if sc.is_token_expired():
+            await sc._get_bearer_token()
 
         if len(player._track_seeds) == 5:
             player._track_seeds.pop(0)
@@ -437,7 +439,7 @@ class SpotifyClient:
 
         self.session = aiohttp.ClientSession()
 
-        self._bearer_token: str = None  # type: ignore
+        self._bearer_token: str | None = None
         self._expiry: int = 0
 
     @property
@@ -459,13 +461,16 @@ class SpotifyClient:
             self._bearer_token = data['access_token']
             self._expiry = time.time() + (int(data['expires_in']) - 10)
 
+    def is_token_expired(self) -> bool:
+        return time.time() >= self._expiry
+
     async def _search(self,
                       query: str,
                       type: SpotifySearchType = SpotifySearchType.track,
                       iterator: bool = False,
                       ) -> list[SpotifyTrack]:
 
-        if not self._bearer_token or time.time() >= self._expiry:
+        if self.is_token_expired():
             await self._get_bearer_token()
 
         regex_result = URLREGEX.match(query)
