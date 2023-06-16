@@ -26,7 +26,7 @@ sys.path.append(os.path.abspath("extensions"))
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 project = "Wavelink"
-copyright = "2022, PythonistaGuild, EvieePy"
+copyright = "2023, PythonistaGuild, EvieePy"
 author = "PythonistaGuild, EvieePy"
 
 # The full version, including alpha/beta/rc tags
@@ -34,6 +34,7 @@ release = ''
 with open('../wavelink/__init__.py') as f:
     release = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE).group(1)  # type: ignore
 
+version = release
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
