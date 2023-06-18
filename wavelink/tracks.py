@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING, ClassVar, Literal, overload, Optional, Any
 
 import aiohttp
 import yarl
-from discord.ext import commands
+from nextcord.ext import commands
 
 from .enums import TrackSource
 from .exceptions import NoTracksError
@@ -209,7 +209,7 @@ class Playable(metaclass=abc.ABCMeta):
         """Converter which searches for and returns the first track.
 
         Used as a type hint in a
-        `discord.py command <https://discordpy.readthedocs.io/en/stable/ext/commands/commands.html>`_.
+        `nextcord.py command <https://discordpy.readthedocs.io/en/stable/ext/commands/commands.html>`_.
         """
         results = await cls.search(argument)
 

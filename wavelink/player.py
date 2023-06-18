@@ -27,8 +27,8 @@ import datetime
 import logging
 from typing import TYPE_CHECKING, Any, Union
 
-import discord
-from discord.utils import MISSING
+import nextcord
+from nextcord.utils import MISSING
 
 from .enums import *
 from .exceptions import *
@@ -41,7 +41,7 @@ from .tracks import *
 
 
 if TYPE_CHECKING:
-    from discord.types.voice import GuildVoiceState, VoiceServerUpdate
+    from nextcord.types.voice import GuildVoiceState, VoiceServerUpdate
     from typing_extensions import Self
 
     from .types.events import PlayerState, PlayerUpdateOp
@@ -55,14 +55,14 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 
 VoiceChannel = Union[
-    discord.VoiceChannel, discord.StageChannel
+    nextcord.VoiceChannel, nextcord.StageChannel
 ]  # todo: VocalGuildChannel?
 
 
-class Player(discord.VoiceProtocol):
+class Player(nextcord.VoiceProtocol):
     """Wavelink Player class.
 
-    This class is used as a :class:`~discord.VoiceProtocol` and inherits all its members.
+    This class is used as a :class:`~nextcord.VoiceProtocol` and inherits all its members.
 
 
     .. note::
@@ -80,9 +80,9 @@ class Player(discord.VoiceProtocol):
 
     Attributes
     ----------
-    client: :class:`discord.Client`
-        The discord Client or Bot associated with this Player.
-    channel: :class:`discord.VoiceChannel`
+    client: :class:`nextcord.Client`
+        The nextcord Client or Bot associated with this Player.
+    channel: :class:`nextcord.VoiceChannel`
         The channel this player is currently connected to.
     nodes: list[:class:`node.Node`]
         The list of Nodes this player is currently using.
@@ -98,7 +98,7 @@ class Player(discord.VoiceProtocol):
         The current filters applied.
     """
 
-    def __call__(self, client: discord.Client, channel: VoiceChannel) -> Self:
+    def __call__(self, client: nextcord.Client, channel: VoiceChannel) -> Self:
         self.client = client
         self.channel = channel
 
@@ -106,13 +106,13 @@ class Player(discord.VoiceProtocol):
 
     def __init__(
         self,
-        client: discord.Client = MISSING,
+        client: nextcord.Client = MISSING,
         channel: VoiceChannel = MISSING,
         *,
         nodes: list[Node] | None = None,
         swap_node_on_disconnect: bool = True
     ) -> None:
-        self.client: discord.Client = client
+        self.client: nextcord.Client = client
         self.channel: VoiceChannel | None = channel
 
         self.nodes: list[Node]
@@ -135,7 +135,7 @@ class Player(discord.VoiceProtocol):
                 raise RuntimeError('')
             self.client = self.current_node.client
 
-        self._guild: discord.Guild | None = None
+        self._guild: nextcord.Guild | None = None
         self._voice_state: DiscordVoiceState = {}
         self._player_state: dict[str, Any] = {}
 
@@ -224,8 +224,8 @@ class Player(discord.VoiceProtocol):
         return self._volume
 
     @property
-    def guild(self) -> discord.Guild | None:
-        """The discord Guild associated with the Player."""
+    def guild(self) -> nextcord.Guild | None:
+        """The nextcord Guild associated with the Player."""
         return self._guild
 
     @property
@@ -245,7 +245,7 @@ class Player(discord.VoiceProtocol):
 
     @property
     def ping(self) -> int:
-        """The ping to the discord endpoint in milliseconds."""
+        """The ping to the nextcord endpoint in milliseconds."""
         return self._ping
 
     @property
@@ -340,7 +340,7 @@ class Player(discord.VoiceProtocol):
         if self.channel is None:
             self._invalidate()
 
-            msg: str = 'Please use the method "discord.VoiceChannel.connect" and pass this player to cls='
+            msg: str = 'Please use the method "nextcord.VoiceChannel.connect" and pass this player to cls='
             raise InvalidChannelStateError(msg)
 
         if not self.channel.permissions_for(self.channel.guild.me).connect:
@@ -366,14 +366,14 @@ class Player(discord.VoiceProtocol):
 
         await self.channel.guild.change_voice_state(channel=self.channel, **kwargs)
 
-    async def move_to(self, channel: discord.VoiceChannel) -> None:
+    async def move_to(self, channel: nextcord.VoiceChannel) -> None:
         """|coro|
 
         Moves the player to a different voice channel.
 
         Parameters
         -----------
-        channel: :class:`discord.VoiceChannel`
+        channel: :class:`nextcord.VoiceChannel`
             The channel to move to. Must be a voice channel.
         """
         await self.guild.change_voice_state(channel=channel)
@@ -458,7 +458,9 @@ class Player(discord.VoiceProtocol):
 
         self._player_state['track'] = resp['track']['encoded']
 
-        if not (self.queue.loop and self.queue._loaded):
+        if self.queue.loop and self.queue._loaded:
+            pass
+        else:
             self.queue.history.put(track)
 
         self.queue._loaded = track

@@ -84,7 +84,7 @@ class QueueEmpty(WavelinkException):
 
 
 class InvalidChannelStateError(WavelinkException):
-    """Base exception raised when an error occurs trying to connect to a :class:`discord.VoiceChannel`."""
+    """Base exception raised when an error occurs trying to connect to a :class:`nextcord.VoiceChannel`."""
 
 
 class InvalidChannelPermissions(InvalidChannelStateError):

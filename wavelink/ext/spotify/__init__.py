@@ -31,7 +31,7 @@ import time
 from typing import Any, List, Optional, Type, TypeVar, Union, TYPE_CHECKING
 
 import aiohttp
-from discord.ext import commands
+from nextcord.ext import commands
 
 import wavelink
 from wavelink import Node, NodePool
@@ -359,7 +359,7 @@ class SpotifyTrack:
         """Converter which searches for and returns the first track.
 
         Used as a type hint in a
-        `discord.py command <https://discordpy.readthedocs.io/en/stable/ext/commands/commands.html>`_.
+        `nextcord.py command <https://discordpy.readthedocs.io/en/stable/ext/commands/commands.html>`_.
         """
         results = await cls.search(argument)
 

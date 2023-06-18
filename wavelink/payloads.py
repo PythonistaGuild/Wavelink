@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from discord.enums import try_enum
+from nextcord.enums import try_enum
 
 from .enums import TrackEventType, DiscordVoiceCloseType
 
@@ -79,11 +79,11 @@ class WebsocketClosedPayload:
     Attributes
     ----------
     code: :class:`DiscordVoiceCloseType`
-        An Enum representing the close code from Discord.
+        An Enum representing the close code from nextcord.
     reason: Optional[str]
         The reason the Websocket was closed.
     by_discord: bool
-        Whether the websocket was closed by Discord.
+        Whether the websocket was closed by nextcord.
     player: :class:`player.Player`
         The player associated with this event.
     """

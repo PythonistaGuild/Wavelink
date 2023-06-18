@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "Wavelink"
+name = "WavelinkCord"
 version = "2.5.2b"
 authors = [
   { name="EvieePy", email="evieepy@gmail.com" },

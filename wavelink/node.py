@@ -30,9 +30,9 @@ import string
 from typing import TYPE_CHECKING, Any, TypeVar
 
 import aiohttp
-import discord
-from discord.enums import try_enum
-from discord.utils import MISSING, classproperty
+import nextcord
+from nextcord.enums import try_enum
+from nextcord.utils import MISSING, classproperty
 import urllib.parse
 
 from .enums import LoadType, NodeStatus
@@ -94,8 +94,8 @@ class Node:
     ----------
     heartbeat: float
         The time in seconds to send a heartbeat ack. Defaults to 15.0.
-    client: :class:`discord.Client`
-        The discord client used to connect this Node. Could be None if this Node has not been connected.
+    client: :class:`nextcord.Client`
+        The nextcord client used to connect this Node. Could be None if this Node has not been connected.
     """
 
     def __init__(
@@ -125,7 +125,7 @@ class Node:
         self.heartbeat: float = heartbeat
         self._retries: int | None = retries
 
-        self.client: discord.Client | None = None
+        self.client: nextcord.Client | None = None
         self._websocket: Websocket = MISSING
         self._session_id: str | None = None
 
@@ -188,7 +188,7 @@ class Node:
         """
         return self._players.get(guild_id, None)
 
-    async def _connect(self, client: discord.Client) -> None:
+    async def _connect(self, client: nextcord.Client) -> None:
         if client.user is None:
             raise RuntimeError('')
 
@@ -366,7 +366,7 @@ class NodePool:
     async def connect(
             cls,
             *,
-            client: discord.Client,
+            client: nextcord.Client,
             nodes: list[Node],
             spotify: spotify_.SpotifyClient | None = None
     ) -> dict[str, Node]:
@@ -376,8 +376,8 @@ class NodePool:
 
         Parameters
         ----------
-        client: :class:`discord.Client`
-            The discord Client or Bot used to connect the Nodes.
+        client: :class:`nextcord.Client`
+            The nextcord Client or Bot used to connect the Nodes.
         nodes: list[:class:`Node`]
             A list of Nodes to connect.
         spotify: Optional[:class:`ext.spotify.SpotifyClient`]
