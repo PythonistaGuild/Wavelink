@@ -238,7 +238,7 @@ class SpotifyTrack:
         self.id: str = data['id']
         self.length: int = data['duration_ms']
         self.duration: int = self.length
-        self.isrc: Optional[str] = data.get("external_ids", {}).get('irsc')
+        self.isrc: str | None = data.get("external_ids", {}).get('irsc')
 
     def __eq__(self, other) -> bool:
         return self.id == other.id
@@ -273,10 +273,6 @@ class SpotifyTrack:
         """
         if node is None:
             node: Node = NodePool.get_connected_node()
-
-        if type == SpotifySearchType.track:
-            tracks = await node._spotify._search(query=query, type=type)
-            return tracks[0] if return_first and not isinstance(tracks, SpotifyTrack) else tracks
         
         return await node._spotify._search(query=query, type=type)
 
@@ -342,12 +338,11 @@ class SpotifyTrack:
         cls
             The class to convert this Spotify Track to.
         """
-        if self.isrc is None:
+        if not self.isrc:
             tracks: list[cls] = await cls.search(f'{self.name} - {self.artists[0]}')
         else:
-            try:
-                tracks: list[cls] = await cls.search(f'"{self.isrc}"')
-            except wavelink.NoTracksError:
+            tracks: list[cls] = await cls.search(f'"{self.isrc}"')
+            if not tracks:
                 tracks: list[cls] = await cls.search(f'{self.name} - {self.artists[0]}')
 
         if not player.autoplay or not populate:
