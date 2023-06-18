@@ -458,9 +458,7 @@ class Player(discord.VoiceProtocol):
 
         self._player_state['track'] = resp['track']['encoded']
 
-        if self.queue.loop and self.queue._loaded:
-            pass
-        else:
+        if not (self.queue.loop and self.queue._loaded):
             self.queue.history.put(track)
 
         self.queue._loaded = track
