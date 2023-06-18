@@ -181,6 +181,10 @@ class Player(discord.VoiceProtocol):
 
             return
 
+        if self.queue.loop_all:
+            await self.play(self.queue.get())
+            return
+
         if not self.auto_queue:
             return
 
@@ -454,6 +458,8 @@ class Player(discord.VoiceProtocol):
 
         self._player_state['track'] = resp['track']['encoded']
         self.queue._loaded = track
+
+        self.queue.history.put(track)
 
         return track
 
