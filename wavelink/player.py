@@ -380,7 +380,7 @@ class Player(discord.VoiceProtocol):
         logger.info(f"Moving to voice channel:: {channel.id}")
 
     async def play(self,
-                   track: Playable,
+                   track: Playable | spotify.SpotifyTrack,
                    replace: bool = True,
                    start: int | None = None,
                    end: int | None = None,
