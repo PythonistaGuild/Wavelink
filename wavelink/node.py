@@ -35,6 +35,7 @@ from discord.enums import try_enum
 from discord.utils import MISSING, classproperty
 import urllib.parse
 
+from . import __version__
 from .enums import LoadType, NodeStatus
 from .exceptions import *
 from .websocket import Websocket
@@ -208,12 +209,21 @@ class Node:
                 self._major_version = 3
                 return
 
-            version_tuple = tuple(int(v) for v in version.split('.'))
+            try:
+                version_tuple = tuple(int(v) for v in version.split('.'))
+            except ValueError:
+                logging.warning(f'Lavalink "{version}" is unknown and may not be compatible with: '
+                                f'Wavelink "{__version__}". Wavelink is assuming the Lavalink version.')
+
+                self._major_version = 3
+                return
+
             if version_tuple[0] < 3:
-                raise InvalidLavalinkVersion(f'Wavelink 2 is not compatible with Lavalink "{version}".')
+                raise InvalidLavalinkVersion(f'Wavelink "{__version__}" is not compatible with Lavalink "{version}".')
 
             if version_tuple[0] == 3 and version_tuple[1] < 7:
-                raise InvalidLavalinkVersion('Wavelink 2 is not compatible with Lavalink versions under "3.7".')
+                raise InvalidLavalinkVersion(f'Wavelink "{__version__}" is not compatible with '
+                                             f'Lavalink versions under "3.7".')
 
             self._major_version = version_tuple[0]
 
