@@ -365,7 +365,7 @@ class Player(discord.VoiceProtocol):
             self.current_node._players[self._guild.id] = self
 
         await self.channel.guild.change_voice_state(channel=self.channel, **kwargs)
-        logger.info(f'Player {self.guild.id} connected to channel: {channel}')
+        logger.info(f'Player {self.guild.id} connected to channel: {self.channel}')
 
     async def move_to(self, channel: discord.VoiceChannel) -> None:
         """|coro|
