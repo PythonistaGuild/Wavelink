@@ -232,7 +232,17 @@ class Node:
                    f'{f"/{guild_id}" if guild_id else ""}' \
                    f'{f"?{query}" if query else ""}'
 
+        logger.debug(f'Node {self} is sending payload to [{method}] "{uri}" with payload: {data}')
+
         async with self._session.request(method=method, url=uri, json=data or {}) as resp:
+            rdata: dict[str | int, Any] | None = None
+
+            if resp.content_type == 'application/json':
+                rdata = await resp.json()
+
+            logger.debug(f'Node {self} received payload from Lavalink after sending to "{uri}" with response: '
+                         f'<status={resp.status}, data={rdata}>')
+
             if resp.status >= 300:
                 raise InvalidLavalinkResponse(f'An error occurred when attempting to reach: "{uri}".',
                                               status=resp.status)
@@ -240,7 +250,7 @@ class Node:
             if resp.status == 204:
                 return
 
-            return await resp.json()
+            return rdata
 
     async def get_tracks(self, cls: type[PlayableT], query: str) -> list[PlayableT]:
         """|coro|
@@ -264,6 +274,8 @@ class Node:
         list[PlayableT]
             A list of found tracks converted to the provided cls.
         """
+        logger.debug(f'Node {self} is requesting tracks with query "{query}".')
+
         data = await self._send(method='GET', path='loadtracks', query=f'identifier={query}')
         load_type = try_enum(LoadType, data.get("loadType"))
 
@@ -310,6 +322,8 @@ class Node:
         WavelinkException
             An unspecified error occurred when loading the playlist.
         """
+        logger.debug(f'Node {self} is requesting a playlist with query "{query}".')
+
         encoded_query = urllib.parse.quote(query)
         data = await self._send(method='GET', path='loadtracks', query=f'identifier={encoded_query}')
 
@@ -342,6 +356,7 @@ class Node:
         encoded_query = urllib.parse.quote(encoded)
         data = await self._send(method='GET', path='decodetrack', query=f'encodedTrack={encoded_query}')
 
+        logger.debug(f'Node {self} built encoded track with encoding "{encoded}". Response data: {data}')
         return cls(data=data)
 
 
