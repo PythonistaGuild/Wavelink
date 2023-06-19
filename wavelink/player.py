@@ -334,7 +334,7 @@ class Player(discord.VoiceProtocol):
                                                              guild_id=self._guild.id,
                                                              data=voice)
 
-        logger.debug(f'Dispatching VOICE_UPDATE: {resp}')
+        logger.debug(f'Player {self.guild.id} is dispatching VOICE_UPDATE: {resp}')
 
     async def connect(self, *, timeout: float, reconnect: bool, **kwargs: Any) -> None:
         if self.channel is None:
@@ -365,6 +365,7 @@ class Player(discord.VoiceProtocol):
             self.current_node._players[self._guild.id] = self
 
         await self.channel.guild.change_voice_state(channel=self.channel, **kwargs)
+        logger.info(f'Player {self.guild.id} connected to channel: {channel}')
 
     async def move_to(self, channel: discord.VoiceChannel) -> None:
         """|coro|
@@ -377,7 +378,7 @@ class Player(discord.VoiceProtocol):
             The channel to move to. Must be a voice channel.
         """
         await self.guild.change_voice_state(channel=channel)
-        logger.info(f"Moving to voice channel:: {channel.id}")
+        logger.info(f'Player {self.guild.id} moved to channel: {channel}')
 
     async def play(self,
                    track: Playable | spotify.SpotifyTrack,
@@ -454,6 +455,7 @@ class Player(discord.VoiceProtocol):
         except InvalidLavalinkResponse as e:
             self._current = None
             self._original = None
+            logger.debug(f'Player {self._guild.id} attempted to load track: {track}, but failed: {e}')
             raise e
 
         self._player_state['track'] = resp['track']['encoded']
@@ -463,6 +465,7 @@ class Player(discord.VoiceProtocol):
 
         self.queue._loaded = track
 
+        logger.debug(f'Player {self._guild.id} loaded and started playing track: {track}.')
         return track
 
     async def set_volume(self, value: int) -> None:
@@ -591,7 +594,8 @@ class Player(discord.VoiceProtocol):
 
         if self.is_playing() and seek:
             await self.seek(int(self.position))
-        logger.debug(f"Set filter:: {self._filter} ({self.channel.id})")
+
+        logger.debug(f'Player {self.guild.id} set filter to: {_filter}')
 
     def _invalidate(self) -> None:
         try:
@@ -602,6 +606,8 @@ class Player(discord.VoiceProtocol):
         self._voice_state = {}
         self._player_state = {}
         self.channel = None
+
+        logger.debug(f'Player {self._guild.id} was invalidated.')
 
     async def _destroy(self) -> None:
         self._invalidate()
@@ -621,6 +627,8 @@ class Player(discord.VoiceProtocol):
         self._invalidate()
         await self.guild.change_voice_state(channel=None)
 
+        logger.debug(f'Player {self._guild.id} was disconnected.')
+
     async def _swap_state(self) -> None:
         assert self._guild is not None
 
@@ -635,4 +643,4 @@ class Player(discord.VoiceProtocol):
                                                              guild_id=self._guild.id,
                                                              data=data)
 
-        logger.debug(f'Swapping State: {resp}')
+        logger.debug(f'Player {self.guild.id} is swapping State: {resp}')
