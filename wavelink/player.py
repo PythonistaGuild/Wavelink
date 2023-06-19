@@ -545,7 +545,7 @@ class Player(discord.VoiceProtocol):
         ----------
         force: Optional[bool]
             Whether to stop the currently playing track and proceed to the next regardless if :attr:`~Queue.loop`
-            is True. Defaults to True.
+            is ``True``. Defaults to ``True``.
         """
         assert self._guild is not None
 
