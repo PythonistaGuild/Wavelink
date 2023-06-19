@@ -536,19 +536,26 @@ class Player(discord.VoiceProtocol):
         self._paused = False
         logger.debug(f'Player {self.guild.id} was resumed.')
 
-    async def stop(self) -> None:
+    async def stop(self, *, force: bool = True) -> None:
         """|coro|
 
         Stops the currently playing Track.
+
+        Parameters
+        ----------
+        force: Optional[bool]
+            Whether to stop the currently playing track and proceed to the next regardless if :attr:`~Queue.loop`
+            is True. Defaults to True.
         """
         assert self._guild is not None
+
+        if force:
+            self.queue._loaded = None
 
         resp: dict[str, Any] = await self.current_node._send(method='PATCH',
                                                              path=f'sessions/{self.current_node._session_id}/players',
                                                              guild_id=self._guild.id,
                                                              data={'encodedTrack': None})
-
-        self.queue._loaded = None
 
         self._player_state['track'] = None
         logger.debug(f'Player {self.guild.id} was stopped.')
