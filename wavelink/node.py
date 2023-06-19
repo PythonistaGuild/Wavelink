@@ -137,7 +137,7 @@ class Node:
         self._spotify: spotify_.SpotifyClient | None = None
 
     def __repr__(self) -> str:
-        return f'Node: id="{self._id}", uri="{self.uri}", status={self.status}'
+        return f'Node(id="{self._id}", uri="{self.uri}", status={self.status})'
 
     def __eq__(self, other: object) -> bool:
         return self.id == other.id if isinstance(other, Node) else NotImplemented
