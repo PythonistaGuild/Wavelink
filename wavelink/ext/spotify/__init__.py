@@ -443,14 +443,31 @@ class SpotifyClient:
             return SpotifyTrack(data)
 
         elif data['type'] == 'album':
+            album_data: dict[str, Any]= {
+                                        'album_type': data['album_type'],
+                                        'artists': data['artists'],
+                                        'available_markets': data['available_markets'],
+                                        'external_urls': data['external_urls'],
+                                        'href': data['href'],
+                                        'id': data['id'],
+                                        'images': data['images'],
+                                        'name': data['name'],
+                                        'release_date': data['release_date'],
+                                        'release_date_precision': data['release_date_precision'],
+                                        'total_tracks': data['total_tracks'],
+                                        'type': data['type'],
+                                        'uri': data['uri'],
+                                        }
             tracks = []
             for track in data['tracks']['items']:
-                async with self.session.get(track['href'], headers=self.bearer_headers) as resp:
-                    if resp.status != 200:
-                        raise SpotifyRequestError(resp.status, resp.reason)
-                    tracks.append(track := await resp.json())
-            
-            return tracks if iterator else [SpotifyTrack(t) for t in tracks]
+                track['album'] = album_data
+                if iterator:
+                    tracks.append(track)
+                else:
+                    tracks.append(SpotifyTrack(track))
+
+            return tracks
+
 
         elif data['type'] == 'playlist':
             if iterator:
