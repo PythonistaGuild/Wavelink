@@ -195,18 +195,28 @@ class Websocket:
                 logger.debug(f'Node {self.node} websocket received an event payload: {data}')
                 player = self.get_player(data)
 
-                if player is None:
-                    logger.debug(f'Node {self.node} received a payload from Lavalink without an attached player. '
-                                 f'Disregarding.')
-                    continue
-
                 if data['type'] == 'WebSocketClosedEvent':
-                    logger.debug(f'Node {self.node} websocket received WebsocketClosedEvent: '
-                                 f'<code: {data["code"]}, reason: {data["reason"]}, by_discord: {data["byRemote"]}>')
+                    player = player or self.node._invalidated.get(int(data['guildId']), None)
+
+                    if not player:
+                        logger.debug(f'Node {self.node} received a WebsocketClosedEvent in an "unknown" state. '
+                                     f'Disregarding.')
+                        continue
+
+                    await player._destroy()
+
+                    logger.debug(f'Node {self.node} websocket acknowledged "WebsocketClosedEvent": '
+                                 f'<code: {data["code"]}, reason: {data["reason"]}, by_discord: {data["byRemote"]}>. '
+                                 f'Cleanup on player {player.guild.id} has been completed.')
 
                     payload: WebsocketClosedPayload = WebsocketClosedPayload(data=data, player=player)
 
                     self.dispatch('websocket_closed', payload)
+                    continue
+
+                if player is None:
+                    logger.debug(f'Node {self.node} received a payload from Lavalink without an attached player. '
+                                 f'Disregarding.')
                     continue
 
                 track = await self.node.build_track(cls=wavelink.GenericTrack, encoded=data['encodedTrack'])

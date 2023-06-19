@@ -131,6 +131,7 @@ class Node:
         self._session_id: str | None = None
 
         self._players: dict[int, Player] = {}
+        self._invalidated: dict[int, Player] = {}
 
         self._status: NodeStatus = NodeStatus.DISCONNECTED
         self._major_version: int | None = None

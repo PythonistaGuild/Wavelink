@@ -597,9 +597,14 @@ class Player(discord.VoiceProtocol):
 
         logger.debug(f'Player {self.guild.id} set filter to: {_filter}')
 
-    def _invalidate(self) -> None:
+    def _invalidate(self, *, silence: bool = False) -> None:
+        self.current_node._players.pop(self._guild.id, None)
+        self.current_node._invalidated[self._guild.id] = self
+
         try:
             self.cleanup()
+        except AttributeError:
+            pass
         except Exception as e:
             logger.debug(f'Failed to cleanup player, most likely due to never having been connected: {e}')
 
@@ -607,17 +612,20 @@ class Player(discord.VoiceProtocol):
         self._player_state = {}
         self.channel = None
 
-        logger.debug(f'Player {self._guild.id} was invalidated.')
+        if not silence:
+            logger.debug(f'Player {self._guild.id} was invalidated.')
 
-    async def _destroy(self) -> None:
-        self._invalidate()
+    async def _destroy(self, *, guild_id: int | None = None) -> None:
+        self._invalidate(silence=True)
+
+        guild_id = guild_id or self._guild.id
 
         await self.current_node._send(method='DELETE',
                                       path=f'sessions/{self.current_node._session_id}/players',
-                                      guild_id=self._guild.id)
+                                      guild_id=guild_id)
 
-        del self.current_node._players[self._guild.id]
-        logger.debug(f'Player {self._guild.id} was destroyed.')
+        self.current_node._invalidated.pop(guild_id, None)
+        logger.debug(f'Player {guild_id} was destroyed.')
 
     async def disconnect(self, **kwargs) -> None:
         """|coro|
