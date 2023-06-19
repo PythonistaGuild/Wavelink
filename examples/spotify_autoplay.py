@@ -31,6 +31,8 @@ class Bot(commands.Bot):
 
     def __init__(self) -> None:
         intents = discord.Intents.default()
+        intents.message_content = True
+
         super().__init__(intents=intents, command_prefix='?')
 
     async def on_ready(self) -> None:
@@ -72,7 +74,13 @@ async def play(ctx: commands.Context, *, search: str) -> None:
 
     # Set autoplay to True. This can be disabled at anytime...
     vc.autoplay = True
-    track = await spotify.SpotifyTrack.search(search)
+
+    tracks: list[spotify.SpotifyTrack] = await spotify.SpotifyTrack.search(search)
+    if not tracks:
+        await ctx.send('This does not appear to be a valid Spotify URL.')
+        return
+
+    track: spotify.SpotifyTrack = tracks[0]
 
     # IF the player is not playing immediately play the song...
     # otherwise put it in the queue...
