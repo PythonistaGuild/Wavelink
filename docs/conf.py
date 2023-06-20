@@ -128,6 +128,18 @@ extlinks = {
 hoverxref_auto_ref = True
 hoverxref_intersphinx = ['https://docs.python.org/3', 'https://discordpy.readthedocs.io/en/stable/']
 
+hoverxref_role_types = {
+    'hoverxref': 'modal',
+    'ref': 'modal',  # for hoverxref_auto_ref config
+    'confval': 'tooltip',  # for custom object
+    'mod': 'tooltip',  # for Python Sphinx Domain
+    'class': 'tooltip',  # for Python Sphinx Domain
+    'attr': 'tooltip',
+    'func': 'tooltip',
+    'meth': 'tooltip',
+    'exception': 'tooltip'
+}
+
 
 pygments_style = "sphinx"
 pygments_dark_style = "monokai"
