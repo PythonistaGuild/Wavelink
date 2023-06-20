@@ -10,16 +10,3 @@ for (let i = 0; i < classes.length; i++) {
 
    $(`#attributable-${i}`).insertAfter( `.parent-sig-${i}` );
 }
-
-
-const metaTitle = document.head.querySelector('meta[property="og:title"]')
-const metaDesc = document.head.querySelector('meta[property="og:description"]')
-
-
-if (metaTitle.content === '<no title>') {
-   metaTitle.remove();
-}
-
-if (metaDesc.content.startsWith('Getting Started::')) {
-   metaDesc.remove();
-}
