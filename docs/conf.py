@@ -130,15 +130,17 @@ hoverxref_intersphinx = ['https://docs.python.org/3', 'https://discordpy.readthe
 
 hoverxref_role_types = {
     'hoverxref': 'modal',
-    'ref': 'modal',  # for hoverxref_auto_ref config
-    'confval': 'tooltip',  # for custom object
-    'mod': 'tooltip',  # for Python Sphinx Domain
-    'class': 'tooltip',  # for Python Sphinx Domain
+    'ref': 'modal',
+    'confval': 'tooltip',
+    'mod': 'tooltip',
+    'class': 'tooltip',
     'attr': 'tooltip',
     'func': 'tooltip',
     'meth': 'tooltip',
     'exception': 'tooltip'
 }
+
+hoverxref_roles = ['hoverxref', 'ref', 'confval', 'mod', 'class', 'attr', 'func', 'meth', 'exception']
 
 
 pygments_style = "sphinx"
