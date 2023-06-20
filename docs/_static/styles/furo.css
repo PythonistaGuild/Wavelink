@@ -2268,3 +2268,9 @@ ul.search li {
 .text-align\:right>p {
     text-align: right
 }
+
+/* HOVERXREF (TOOLTIP STYLES */
+.tooltipster-content {
+    background-color: var(--color-background-secondary);
+    color: var(--color-content-foreground);
+}
