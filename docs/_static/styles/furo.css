@@ -74,7 +74,7 @@ body {
     --color-topic-title-background: rgba(20,184,166,.1);
     --icon-topic-default: var(--icon-pencil);
     --color-problematic: #b30000;
-    --color-foreground-primary: #000;
+    --color-foreground-primary: #1a1a1a;
     --color-foreground-secondary: #5a5c63;
     --color-foreground-muted: #646776;
     --color-foreground-border: #878787;
@@ -136,7 +136,9 @@ body {
     --color-link: var(--color-brand-content);
     --color-link--hover: var(--color-brand-content);
     --color-link-underline: var(--color-background-border);
-    --color-link-underline--hover: var(--color-foreground-border)
+    --color-link-underline--hover: var(--color-foreground-border);
+    --color-scroll-background: rgba(246, 246, 246, 0.8);
+    --color-scroll-thumb: #cecece;
 }
 
 .highlight {
@@ -470,7 +472,7 @@ html body .only-dark {
         --color-admonition-background: #18181a;
         --color-card-border: var(--color-background-secondary);
         --color-card-background: #18181a;
-        --color-card-marginals-background: var(--color-background-hover)
+        --color-card-marginals-background: var(--color-background-hover);
     }
 
     html body[data-theme=dark] .only-light {
@@ -505,7 +507,9 @@ html body .only-dark {
             --color-admonition-background: #18181a;
             --color-card-border: var(--color-background-secondary);
             --color-card-background: #18181a;
-            --color-card-marginals-background: var(--color-background-hover)
+            --color-card-marginals-background: var(--color-background-hover);
+            --color-scroll-background: #383838;
+            --color-scroll-thumb: #606060
         }
 
         html body:not([data-theme=light]) .only-light {
@@ -2272,5 +2276,23 @@ ul.search li {
 /* HOVERXREF (TOOLTIP STYLES */
 .tooltipster-content {
     background-color: var(--color-background-secondary);
-    color: var(--color-content-foreground);
+    color: var(--color-foreground-primary)!important;
+}
+
+.tooltipster-content > p {
+    color: var(--color-foreground-primary)!important;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 0.8rem;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--color-scroll-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-scroll-thumb);
+  border-radius: 0.1rem;
 }
