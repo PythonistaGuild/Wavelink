@@ -41,6 +41,17 @@ __all__ = (
 
 
 class BaseQueue:
+    """BaseQueue for wavelink.
+
+    All queues inherit from this queue.
+
+    See :class:`Queue` for the default :class:`~wavelink.Player` queue.
+    Internally this queue uses a :class:`collections.deque`.
+
+    .. warning::
+
+        It is not advisable to edit the internal :class:`collections.deque` directly.
+    """
 
     def __init__(self) -> None:
         self._queue: deque[Playable, spotify.SpotifyTrack] = deque()
@@ -50,26 +61,58 @@ class BaseQueue:
         return str([f"'{t}'" for t in self])
 
     def __repr__(self) -> str:
-        """Official representation with max_size and member count."""
+        """Official representation displaying member count."""
         return (
-            f"Wavelink Queue: members={self.count}")
+            f"BaseQueue(member_count={self.count})")
 
     def __bool__(self) -> bool:
-        """Treats the queue as a bool, with it evaluating True when it contains members."""
+        """Treats the queue as a ``bool``, with it evaluating ``True`` when it contains members.
+
+        Example
+        -------
+
+        .. code:: python3
+
+            if player.queue:
+                # queue contains members, do something...
+        """
         return bool(self.count)
 
     def __call__(self, item: Playable | spotify.SpotifyTrack) -> None:
-        """Allows the queue instance to be called directly in order to add a member."""
+        """Allows the queue instance to be called directly in order to add a member.
+
+        Example
+        -------
+
+        .. code:: python3
+
+            player.queue(track)  # adds track to the queue...
+        """
         self.put(item)
 
     def __len__(self) -> int:
-        """Return the number of members in the queue."""
+        """Return the number of members in the queue.
+
+        Example
+        -------
+
+        .. code:: python3
+
+            print(len(player.queue))
+        """
         return self.count
 
     def __getitem__(self, index: int) -> Playable | spotify.SpotifyTrack:
         """Returns a member at the given position.
 
-        Does not remove item from queue.
+        Does **not** remove the item from queue.
+
+        Example
+        -------
+
+        .. code:: python3
+
+            track = player.queue[2]
         """
         if not isinstance(index, int):
             raise ValueError("'int' type required.'")
@@ -77,34 +120,82 @@ class BaseQueue:
         return self._queue[index]
 
     def __setitem__(self, index: int, item: Playable | spotify.SpotifyTrack):
-        """Inserts an item at given position."""
+        """Inserts an item at the given position.
+
+        Example
+        -------
+
+        .. code:: python3
+
+            player.queue[4] = track
+        """
         if not isinstance(index, int):
             raise ValueError("'int' type required.'")
 
         self.put_at_index(index, item)
 
     def __delitem__(self, index: int) -> None:
-        """Delete item at given position."""
+        """Delete item at given position.
+
+        Example
+        -------
+
+        .. code:: python3
+
+            del player.queue[1]
+        """
         self._queue.__delitem__(index)
 
     def __iter__(self) -> Iterator[Playable | spotify.SpotifyTrack]:
         """Iterate over members in the queue.
-        Does not remove items when iterating.
+
+        Does **not** remove items when iterating.
+
+        Example
+        -------
+
+        .. code:: python3
+
+            for track in player.queue:
+                print(track)
         """
         return self._queue.__iter__()
 
     def __reversed__(self) -> Iterator[Playable | spotify.SpotifyTrack]:
-        """Iterate over members in reverse order."""
+        """Iterate over members in a reverse order.
+
+        Example
+        -------
+
+        .. code:: python3
+
+            for track in reversed(player.queue):
+                print(track)
+        """
         return self._queue.__reversed__()
 
     def __contains__(self, item: Playable | spotify.SpotifyTrack) -> bool:
-        """Check if an item is a member of the queue."""
+        """Check if a track is a member of the queue.
+
+        Example
+        -------
+
+        .. code:: python3
+
+            if track in player.queue:
+                # track is in the queue...
+        """
         return item in self._queue
 
     def __add__(self, other: Iterable[Playable | spotify.SpotifyTrack]):
-        """Return a new queue containing all members.
+        """Return a new queue containing all members, including old members.
 
-        The new queue will have the same max_size as the original.
+        Example
+        -------
+
+        .. code:: python3
+
+            player.queue = player.queue + [track1, track2, ...]
         """
         if not isinstance(other, Iterable):
             raise TypeError(f"Adding with the '{type(other)}' type is not supported.")
@@ -114,7 +205,15 @@ class BaseQueue:
         return new_queue
 
     def __iadd__(self, other: Iterable[Playable] | Playable):
-        """Add items to queue."""
+        """Add items to queue from an iterable.
+
+        Example
+        -------
+
+        .. code:: python3
+
+            player.queue += [track1, track2, ...]
+        """
         if isinstance(other, (Playable, spotify.SpotifyTrack)):
             self.put(other)
 
@@ -167,13 +266,13 @@ class BaseQueue:
 
     @property
     def is_empty(self) -> bool:
-        """Returns True if queue has no members."""
+        """Returns ``True`` if queue has no members."""
         return not bool(self.count)
 
     def get(self) -> Playable | spotify.SpotifyTrack:
         """Return next immediately available item in queue if any.
 
-        Raises QueueEmpty if no items in queue.
+        Raises :exc:`~wavelink.QueueEmpty` if no items in queue.
         """
         if self.is_empty:
             raise QueueEmpty("No items currently in the queue.")
@@ -183,7 +282,7 @@ class BaseQueue:
     def pop(self) -> Playable | spotify.SpotifyTrack:
         """Return item from the right end side of the queue.
 
-        Raises QueueEmpty if no items in queue.
+        Raises :exc:`~wavelink.QueueEmpty` if no items in queue.
         """
         if self.is_empty:
             raise QueueEmpty("No items currently in the queue.")
@@ -192,7 +291,8 @@ class BaseQueue:
 
     def find_position(self, item: Playable | spotify.SpotifyTrack) -> int:
         """Find the position a given item within the queue.
-        Raises ValueError if item is not in queue.
+
+        Raises :exc:`ValueError` if item is not in the queue.
         """
         return self._index(self._check_playable(item))
 
@@ -209,15 +309,24 @@ class BaseQueue:
         self.put_at_index(0, item)
 
     def shuffle(self) -> None:
-        """Shuffles the queue in place. This does not return anything."""
+        """Shuffles the queue in place. This does **not** return anything.
+
+        Example
+        -------
+
+        .. code:: python3
+
+            player.queue.shuffle()
+            # Your queue has now been shuffled...
+        """
         random.shuffle(self._queue)
 
     def extend(self, iterable: Iterable[Playable | spotify.SpotifyTrack], *, atomic: bool = True) -> None:
         """Add the members of the given iterable to the end of the queue.
 
-        If atomic is set to True, no tracks will be added upon any exceptions.
-        If atomic is set to False, as many tracks will be added as possible.
+        If atomic is set to ``True``, no tracks will be added upon any exceptions.
 
+        If atomic is set to ``False``, as many tracks will be added as possible.
         """
         if atomic:
             iterable = self._check_playable_container(iterable)
@@ -233,11 +342,36 @@ class BaseQueue:
         return new_queue
 
     def clear(self) -> None:
-        """Remove all items from the queue."""
+        """Remove all items from the queue.
+
+
+        .. note::
+
+            This does not reset the queue. See :meth:`~Queue.reset` for resetting the :class:`Queue` assigned to the
+            player.
+        """
         self._queue.clear()
 
 
 class Queue(BaseQueue):
+    """Main Queue class.
+
+    **All** :class:`~wavelink.Player` have this queue assigned to them.
+
+    .. note::
+
+        This queue inherits from :class:`BaseQueue` but has access to special async methods and loop logic.
+
+    .. warning::
+
+        The :attr:`.history` queue is a :class:`BaseQueue` and has **no** access to async methods or loop logic.
+
+    Attributes
+    ----------
+    history: :class:`BaseQueue`
+        The history queue stores information about all previous played tracks for the :class:`~wavelink.Player`'s
+        session.
+    """
 
     def __init__(self):
         super().__init__()
@@ -254,7 +388,17 @@ class Queue(BaseQueue):
     async def __aiter__(self) -> AsyncIterator[Playable | spotify.SpotifyTrack]:
         """Pops members as it iterates the queue, waiting for new members when exhausted.
 
-        Removes items when iterating.
+        **Does** remove items when iterating.
+
+        Example
+        -------
+
+        .. code:: python3
+
+            async for track in player.queue:
+                # If there is no item in the queue, this will wait for an item to be inserted.
+
+                # Do something with track here...
         """
         while True:
             yield await self.get_wait()
@@ -326,13 +470,18 @@ class Queue(BaseQueue):
     async def put_wait(self, item: Playable | spotify.SpotifyTrack) -> None:
         """|coro|
 
-        Put an item into the queue using await.
+        Put an item into the queue using ``await``.
         """
         self._put(item)
         await asyncio.sleep(0)
 
     def reset(self) -> None:
-        """Clears the state of all queues."""
+        """Clears the state of all queues, including the history queue.
+
+        - sets loop and loop_all to ``False``.
+        - removes all items from the queue and history queue.
+        - cancels any waiting queues.
+        """
         self.clear()
         self.history.clear()
 
