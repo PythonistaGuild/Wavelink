@@ -143,6 +143,8 @@ hoverxref_role_types = {
 hoverxref_roles = list(hoverxref_role_types.keys())
 hoverxref_domains = ['py']
 hoverxref_default_type = 'tooltip'
+hoverxref_tooltip_theme = ['tooltipster-punk', 'tooltipster-shadow', 'tooltipster-shadow-custom']
+
 
 pygments_style = "sphinx"
 pygments_dark_style = "monokai"

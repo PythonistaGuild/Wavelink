@@ -94,10 +94,12 @@ body {
     --color-api-pre-name: var(--color-problematic);
     --color-api-paren: var(--color-foreground-secondary);
     --color-api-keyword: var(--color-foreground-primary);
-    --color-highlight-on-target: #ffc;
+    --color-highlight-on-target: #ffe0fc;
     --color-inline-code-background: var(--color-background-secondary);
     --color-highlighted-background: #def;
     --color-highlighted-text: var(--color-foreground-primary);
+    --color-code-background: #a69cce;
+    --color-codeblock-background: #f8f4ff;
     --color-guilabel-background: #ddeeff80;
     --color-guilabel-border: #bedaf580;
     --color-guilabel-text: var(--color-foreground-primary);
@@ -141,9 +143,6 @@ body {
     --color-scroll-thumb: #cecece;
 }
 
-.highlight {
-    background-color: #F6F6F6;
-}
 
 .class > .sig-object {
     border-left: #0e84b5 solid 3px;
@@ -473,6 +472,7 @@ html body .only-dark {
         --color-card-border: var(--color-background-secondary);
         --color-card-background: #18181a;
         --color-card-marginals-background: var(--color-background-hover);
+        --color-codeblock-background: #1f1e23;
     }
 
     html body[data-theme=dark] .only-light {
@@ -503,13 +503,14 @@ html body .only-dark {
             --color-guilabel-background: #08356380;
             --color-guilabel-border: #13395f80;
             --color-api-keyword: var(--color-foreground-secondary);
-            --color-highlight-on-target: #330;
+            --color-highlight-on-target: #322e3f;
             --color-admonition-background: #18181a;
             --color-card-border: var(--color-background-secondary);
             --color-card-background: #18181a;
             --color-card-marginals-background: var(--color-background-hover);
             --color-scroll-background: #383838;
-            --color-scroll-thumb: #606060
+            --color-scroll-thumb: #606060;
+            --color-codeblock-background: #1f1e23;
         }
 
         html body:not([data-theme=light]) .only-light {
@@ -1411,7 +1412,7 @@ pre.literal-block {
 
 .highlight {
     border-radius: .2rem;
-    width: 100%
+    width: 100%;
 }
 
 .highlight .gp,.highlight span.linenos {
@@ -2275,7 +2276,7 @@ ul.search li {
 
 /* HOVERXREF (TOOLTIP STYLES */
 .tooltipster-content {
-    background-color: var(--color-background-secondary);
+    background-color: var(--color-background-primary);
     color: var(--color-foreground-primary)!important;
 }
 
@@ -2295,4 +2296,8 @@ ul.search li {
 ::-webkit-scrollbar-thumb {
   background-color: var(--color-scroll-thumb);
   border-radius: 0.1rem;
+}
+
+.highlight {
+    background-color: var(--color-codeblock-background)!important;
 }
