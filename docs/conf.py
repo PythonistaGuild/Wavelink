@@ -47,7 +47,8 @@ extensions = [
     "sphinxcontrib.asyncio",
     "sphinx.ext.intersphinx",
     "attributetable",
-    "sphinxext.opengraph"
+    "sphinxext.opengraph",
+    'hoverxref.extension'
 ]
 
 # OpenGraph Meta Tags
@@ -121,6 +122,29 @@ extlinks = {
     'wlissue': ('https://github.com/PythonistaGuild/Wavelink/issues/%s', 'GH-%s'),
     'ddocs': ('https://discord.com/developers/docs/%s', None),
 }
+
+
+# Hoverxref Settings...
+hoverxref_auto_ref = True
+hoverxref_intersphinx = ['py', 'dpy']
+
+hoverxref_role_types = {
+    'hoverxref': 'modal',
+    'ref': 'modal',
+    'confval': 'tooltip',
+    'mod': 'tooltip',
+    'class': 'tooltip',
+    'attr': 'tooltip',
+    'func': 'tooltip',
+    'meth': 'tooltip',
+    'exc': 'tooltip'
+}
+
+hoverxref_roles = list(hoverxref_role_types.keys())
+hoverxref_domains = ['py']
+hoverxref_default_type = 'tooltip'
+hoverxref_tooltip_theme = ['tooltipster-punk', 'tooltipster-shadow', 'tooltipster-shadow-custom']
+
 
 pygments_style = "sphinx"
 pygments_dark_style = "monokai"
