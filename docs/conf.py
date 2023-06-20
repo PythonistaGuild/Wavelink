@@ -46,7 +46,9 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinxcontrib.asyncio",
     "sphinx.ext.intersphinx",
-    "attributetable",
+    'details',
+    'exception_hierarchy',
+    'attributetable',
     "sphinxext.opengraph",
     'hoverxref.extension'
 ]
@@ -97,7 +99,7 @@ napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = False
-autodoc_member_order = "groupwise"
+autodoc_member_order = "bysource"
 
 rst_prolog = """
 .. |coro| replace:: This function is a |corourl|_.
@@ -148,3 +150,17 @@ hoverxref_tooltip_theme = ['tooltipster-punk', 'tooltipster-shadow', 'tooltipste
 
 pygments_style = "sphinx"
 pygments_dark_style = "monokai"
+
+
+html_experimental_html5_writer = True
+
+
+def autodoc_skip_member(app, what, name, obj, skip, options):
+    exclusions = ('__weakref__', '__doc__', '__module__', '__dict__', '__init__')
+    exclude = name in exclusions
+
+    return True if exclude else None
+
+
+def setup(app):
+    app.connect('autodoc-skip-member', autodoc_skip_member)
