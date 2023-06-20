@@ -227,6 +227,7 @@ class Node:
                                              f'Lavalink versions under "3.7".')
 
             self._major_version = version_tuple[0]
+            logger.info(f'Lavalink version "{version}" connected for Node: {self.id}')
 
     async def _send(self,
                     *,
