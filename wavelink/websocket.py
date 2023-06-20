@@ -203,7 +203,8 @@ class Websocket:
                                      f'Disregarding.')
                         continue
 
-                    await player._destroy()
+                    if self.node._invalidated.get(player.guild.id):
+                        await player._destroy()
 
                     logger.debug(f'Node {self.node} websocket acknowledged "WebsocketClosedEvent": '
                                  f'<code: {data["code"]}, reason: {data["reason"]}, by_discord: {data["byRemote"]}>. '
