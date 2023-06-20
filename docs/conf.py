@@ -47,7 +47,8 @@ extensions = [
     "sphinxcontrib.asyncio",
     "sphinx.ext.intersphinx",
     "attributetable",
-    "sphinxext.opengraph"
+    "sphinxext.opengraph",
+    'hoverxref.extension'
 ]
 
 # OpenGraph Meta Tags
@@ -121,6 +122,12 @@ extlinks = {
     'wlissue': ('https://github.com/PythonistaGuild/Wavelink/issues/%s', 'GH-%s'),
     'ddocs': ('https://discord.com/developers/docs/%s', None),
 }
+
+
+# Hoverxref Settings...
+hoverxref_auto_ref = True
+hoverxref_intersphinx = ['https://docs.python.org/3', 'https://discordpy.readthedocs.io/en/stable/']
+
 
 pygments_style = "sphinx"
 pygments_dark_style = "monokai"

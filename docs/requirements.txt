@@ -7,3 +7,4 @@ Pygments
 furo
 discord.py>=2.0.1
 sphinxext-opengraph
+sphinx-hoverxref
