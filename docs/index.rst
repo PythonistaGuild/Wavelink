@@ -61,7 +61,7 @@
    Consider joining the Official Discord server for a fast response to help.<br>
    <a href="https://discord.gg/RAKc3HF"><img src="https://discordapp.com/api/guilds/490948346773635102/widget.png?style=banner2"></a><br><br>
 
-   <b>For issues and contributing with the library, visit:</b> <a href"https://github.com/PythonistaGuild/Wavelink">GitHub</a>
+   <b>For issues and contributing with the library, visit:</b> <a href="https://github.com/PythonistaGuild/Wavelink">GitHub</a>
 
 
 .. rst-class:: index-display-none
