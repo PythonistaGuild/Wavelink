@@ -141,6 +141,7 @@ hoverxref_role_types = {
 }
 
 hoverxref_roles = list(hoverxref_role_types.keys())
+hoverxref_domains = ['py']
 hoverxref_api_host = 'https://readthedocs.org'
 
 
