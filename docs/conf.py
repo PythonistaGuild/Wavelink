@@ -140,7 +140,8 @@ hoverxref_role_types = {
     'exception': 'tooltip'
 }
 
-hoverxref_roles = ['hoverxref', 'ref', 'confval', 'mod', 'class', 'attr', 'func', 'meth', 'exception']
+hoverxref_roles = list(hoverxref_role_types.keys())
+hoverxref_api_host = 'https://readthedocs.org'
 
 
 pygments_style = "sphinx"
