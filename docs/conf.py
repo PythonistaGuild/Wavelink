@@ -54,13 +54,17 @@ extensions = [
 ]
 
 # OpenGraph Meta Tags
+ogp_site_name = "Wavelink Documentation"
 ogp_image = "https://raw.githubusercontent.com/PythonistaGuild/Wavelink/master/logo.png"
 ogp_description = "Documentation for Wavelink, the Powerful Lavalink wrapper for discord.py."
 ogp_site_url = "https://wavelink.dev/"
 ogp_custom_meta_tags = [
-    '<meta property="og:description" content="A robust and powerful Lavalink wrapper for Discord.py. Wavelink features a fully asynchronous API that\'s intuitive and easy to use with built in Spotify Support and Node Pool Balancing." />',
+    '<meta property="og:description" content="Wavelink is a robust and powerful Lavalink wrapper for Discord.py. '
+    'Featuring a fully asynchronous API that\'s intuitive and easy to use with built in '
+    'Spotify Support, Node Pool Balancing, advanced Queues, autoplay feature and looping features built in." />',
     '<meta property="og:title" content="Wavelink Documentation" />'
 ]
+ogp_enable_meta_description = True
 
 # Add any paths that contain templates here, relative to this directory.
 # templates_path = ["_templates"]
