@@ -126,7 +126,7 @@ extlinks = {
 
 # Hoverxref Settings...
 hoverxref_auto_ref = True
-hoverxref_intersphinx = ['https://docs.python.org/3', 'https://discordpy.readthedocs.io/en/stable/']
+hoverxref_intersphinx = ['py', 'dpy']
 
 hoverxref_role_types = {
     'hoverxref': 'modal',
