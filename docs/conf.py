@@ -137,11 +137,12 @@ hoverxref_role_types = {
     'attr': 'tooltip',
     'func': 'tooltip',
     'meth': 'tooltip',
-    'internal': 'tooltip'
+    'exc': 'tooltip'
 }
 
 hoverxref_roles = list(hoverxref_role_types.keys())
-
+hoverxref_domains = ['py']
+hoverxref_default_type = 'tooltip'
 
 pygments_style = "sphinx"
 pygments_dark_style = "monokai"
