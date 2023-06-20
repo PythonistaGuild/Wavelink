@@ -182,11 +182,13 @@ Queues
 .. attributetable:: BaseQueue
 
 .. autoclass:: BaseQueue
+    :special-members:
     :members:
 
 .. attributetable:: Queue
 
 .. autoclass:: Queue
+    :special-members:
     :members:
 
 Filters
