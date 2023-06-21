@@ -318,6 +318,9 @@ class BaseQueue:
 
             player.queue.shuffle()
             # Your queue has now been shuffled...
+
+
+        .. versionadded:: 2.5
         """
         random.shuffle(self._queue)
 
@@ -504,6 +507,9 @@ class Queue(BaseQueue):
         Returns
         -------
         bool
+
+
+        .. versionadded:: 2.0
         """
         return self._loop
 
@@ -528,6 +534,9 @@ class Queue(BaseQueue):
         Returns
         -------
         bool
+
+
+        .. versionadded:: 2.0
         """
         return self._loop_all
 
