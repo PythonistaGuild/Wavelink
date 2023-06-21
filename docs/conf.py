@@ -45,13 +45,13 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.extlinks",
     "sphinx.ext.napoleon",
-    "sphinxcontrib.asyncio",
     "sphinx.ext.intersphinx",
     'details',
     'exception_hierarchy',
     'attributetable',
     "sphinxext.opengraph",
-    'hoverxref.extension'
+    'hoverxref.extension',
+    'sphinxcontrib_trio',
 ]
 
 # OpenGraph Meta Tags
