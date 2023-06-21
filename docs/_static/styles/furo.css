@@ -2346,3 +2346,20 @@ ul.search li {
 .pv-removed > i {
     color: #F76B67;
 }
+
+.operations {
+    background-color: var(--color-codeblock-background);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    border: var(--color-foreground-primary) solid 1px;
+}
+
+.operations > .describe {
+    padding: 0 1rem;
+}
+
+.operations::before {
+    content: "Supported Operations:";
+    font-weight: bold;
+    padding: 1rem;
+}
