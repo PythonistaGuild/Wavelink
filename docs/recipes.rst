@@ -153,6 +153,7 @@ Below are some common examples of how to use the new VoiceProtocol with WaveLink
 
     import discord
     import wavelink
+    from typing import Any
 
     from discord.ext import commands
 
@@ -160,7 +161,8 @@ Below are some common examples of how to use the new VoiceProtocol with WaveLink
     class Player(wavelink.Player):
         """A Player with a DJ attribute."""
 
-        def __init__(self, dj: discord.Member):
+        def __init__(self, dj: discord.Member, *args: Any, **kwargs: Any):
+            super().__init__(*args, **kwargs)
             self.dj = dj
 
 
