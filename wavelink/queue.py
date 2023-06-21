@@ -51,6 +51,63 @@ class BaseQueue:
     .. warning::
 
         It is not advisable to edit the internal :class:`collections.deque` directly.
+
+
+    .. container:: operations
+
+        .. describe:: str(queue)
+
+            Returns a string showing all Playable objects appearing as a list in the queue.
+
+        .. describe:: repr(queue)
+
+            Returns a string representing the queue.
+
+        .. describe:: if queue
+
+            Returns True if members are in the queue. False if the queue is empty.
+
+        .. describe:: queue(track)
+
+            Adds a member to the queue.
+
+        .. describe:: len(queue)
+
+            Returns an int with the count of members in this queue.
+
+        .. describe:: queue[2]
+
+            Returns a member at the given position.
+            Does **not** remove the item from queue.
+
+        .. describe:: queue[4] = track
+
+            Inserts an item into the queue at the given position.
+
+        .. describe:: del queue[1]
+
+            Deletes a member from the queue at the given position.
+
+        .. describe:: for track in queue
+
+            Iterates over the queue.
+            Does **not** remove items when iterating.
+
+        .. describe:: reversed(queue)
+
+            Reverse a reversed version of the queue.
+
+        .. describe:: if track in queue
+
+            Checks whether a track is in the queue.
+
+        .. describe:: queue = queue + [track, track1, track2, ...]
+
+            Return a new queue containing all new and old members from the given iterable.
+
+        .. describe:: queue += [track, track1, track2, ...]
+
+            Add items to queue from the given iterable.
     """
 
     def __init__(self) -> None:
@@ -374,6 +431,14 @@ class Queue(BaseQueue):
     history: :class:`BaseQueue`
         The history queue stores information about all previous played tracks for the :class:`~wavelink.Player`'s
         session.
+
+
+    .. container:: operations
+
+        .. describe:: async for track in queue
+
+            Pops members as it iterates the queue asynchronously, waiting for new members when exhausted.
+            **Does** remove items when iterating.
     """
 
     def __init__(self):
