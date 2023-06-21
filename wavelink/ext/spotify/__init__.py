@@ -182,6 +182,22 @@ class SpotifyRequestError(Exception):
 class SpotifyTrack:
     """A track retrieved via Spotify.
 
+
+    .. container:: operations
+
+        .. describe:: str(track)
+
+            Returns a string representing this SpotifyTrack's name and artists.
+
+        .. describe:: repr(track)
+
+            Returns an official string representation of this SpotifyTrack.
+
+        .. describe:: track == other_track
+
+            Check whether a track is equal to another. Tracks are equal if they both have the same Spotify ID.
+
+
     Attributes
     ----------
     raw: dict[str, Any]
@@ -208,21 +224,6 @@ class SpotifyTrack:
         The track length in milliseconds.
     duration: int
         Alias to length.
-
-
-    .. container:: operations
-
-        .. describe:: str(track)
-
-            Returns a string representing this SpotifyTrack's name and artists.
-
-        .. describe:: repr(track)
-
-            Returns an official string representation of this SpotifyTrack.
-
-        .. describe:: track == other_track
-
-            Check whether a track is equal to another. Tracks are equal if they both have the same Spotify ID.
     """
 
     __slots__ = (

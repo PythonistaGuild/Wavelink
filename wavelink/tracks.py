@@ -71,6 +71,22 @@ class Playlist(metaclass=abc.ABCMeta):
 class Playable(metaclass=abc.ABCMeta):
     """Base ABC Track used in all the Wavelink Track types.
 
+
+    .. container:: operations
+
+        .. describe:: str(track)
+
+            Returns a string representing the tracks name.
+
+        .. describe:: repr(track)
+
+            Returns an official string representation of this track.
+
+        .. describe:: track == other_track
+
+            Check whether a track is equal to another. A track is equal when they have the same Base64 Encoding.
+
+
     Attributes
     ----------
     data: dict[str, Any]
@@ -97,21 +113,6 @@ class Playable(metaclass=abc.ABCMeta):
         The author of this track. Could be None.
     identifier: Optional[str]
         The Youtube/YoutubeMusic identifier for this track. Could be None.
-
-
-    .. container:: operations
-
-        .. describe:: str(track)
-
-            Returns a string representing the tracks name.
-
-        .. describe:: repr(track)
-
-            Returns an official string representation of this track.
-
-        .. describe:: track == other_track
-
-            Check whether a track is equal to another. A track is equal when they have the same Base64 Encoding.
     """
 
     PREFIX: ClassVar[str] = ''
@@ -295,6 +296,14 @@ class SoundCloudTrack(Playable):
 class YouTubePlaylist(Playable, Playlist):
     """Represents a Lavalink YouTube playlist object.
 
+
+    .. container:: operations
+
+        .. describe:: str(playlist)
+
+            Returns a string representing the playlists name.
+
+
     Attributes
     ----------
     name: str
@@ -303,13 +312,6 @@ class YouTubePlaylist(Playable, Playlist):
         The list of :class:`YouTubeTrack` in the playlist.
     selected_track: Optional[int]
         The selected video in the playlist. This could be ``None``.
-
-
-    .. container:: operations
-
-        .. describe:: str(playlist)
-
-            Returns a string representing the playlists name.
     """
 
     PREFIX: str = "ytpl:"

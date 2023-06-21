@@ -539,6 +539,14 @@ class Filter:
     This filter accepts an instance of itself as a parameter which allows
     you to keep previous filters while also applying new ones or overwriting old ones.
 
+
+    .. container:: operations
+
+        .. describe:: repr(filter)
+
+            Returns an official string representation of this filter.
+
+
     Parameters
     ----------
     filter: wavelink.Filter
@@ -561,13 +569,6 @@ class Filter:
         A channel mix filter to apply to the track.
     low_pass: wavelink.LowPass
         A low pass filter to apply to the track.
-
-
-    .. container:: operations
-
-        .. describe:: repr(filter)
-
-            Returns an official string representation of this filter.
     """
 
     def __init__(

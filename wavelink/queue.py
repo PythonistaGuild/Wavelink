@@ -426,12 +426,6 @@ class Queue(BaseQueue):
 
         The :attr:`.history` queue is a :class:`BaseQueue` and has **no** access to async methods or loop logic.
 
-    Attributes
-    ----------
-    history: :class:`BaseQueue`
-        The history queue stores information about all previous played tracks for the :class:`~wavelink.Player`'s
-        session.
-
 
     .. container:: operations
 
@@ -439,6 +433,13 @@ class Queue(BaseQueue):
 
             Pops members as it iterates the queue asynchronously, waiting for new members when exhausted.
             **Does** remove items when iterating.
+
+
+    Attributes
+    ----------
+    history: :class:`BaseQueue`
+        The history queue stores information about all previous played tracks for the :class:`~wavelink.Player`'s
+        session.
     """
 
     def __init__(self):
