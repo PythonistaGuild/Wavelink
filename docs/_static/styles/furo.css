@@ -2304,7 +2304,7 @@ ul.search li {
 
 .pretty-version {
     border-radius: 0.25rem;
-    padding: 0 1rem;
+    padding: 0 0.5rem;
     display: flex;
     flex-direction: row;
 }
