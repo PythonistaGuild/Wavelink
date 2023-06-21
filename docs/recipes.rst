@@ -97,14 +97,12 @@ Below are some common recipes for searching tracks.
 
 .. code:: python3
 
-    track = await wavelink.YouTubeTrack.search("Ocean Drive", return_first=True)
+    tracks = await wavelink.YouTubeTrack.search("Ocean Drive - Duke Dumont")
+    if not tracks:
+        # No tracks were found, do something here...
+        return
 
-
-**Returning more than one result:**
-
-.. code:: python3
-
-    tracks = await wavelink.YouTubeTrack.search("Ocean Drive")
+    track = tracks[0]
 
 
 **As a Discord.py converter:**
@@ -133,14 +131,14 @@ Below are some common examples of how to use the new VoiceProtocol with WaveLink
 
 
     @commands.command()
-    async def connect(self, ctx: commands.Context, *, channel: discord.VoiceChannel = None):
+    async def connect(self, ctx: commands.Context, *, channel: discord.VoiceChannel | None = None):
         try:
             channel = channel or ctx.author.channel.voice
         except AttributeError:
             return await ctx.send('No voice channel to connect to. Please either provide one or join one.')
 
         # vc is short for voice client...
-        # Our "vc" will be our wavelink.Player as typehinted below...
+        # Our "vc" will be our wavelink.Player as type-hinted below...
         # wavelink.Player is also a VoiceProtocol...
 
         vc: wavelink.Player = await channel.connect(cls=wavelink.Player)
@@ -167,7 +165,7 @@ Below are some common examples of how to use the new VoiceProtocol with WaveLink
 
 
     @commands.command()
-    async def connect(self, ctx: commands.Context, *, channel: discord.VoiceChannel = None):
+    async def connect(self, ctx: commands.Context, *, channel: discord.VoiceChannel | None = None):
         try:
             channel = channel or ctx.author.channel.voice
         except AttributeError:
@@ -252,8 +250,20 @@ See the documentation for more info.
     # Check if the player is paused...
     player.is_paused()
 
+    # Check of the player is connected...
+    player.is_connected()
+
     # Get the best connected node...
     node = wavelink.NodePool.get_connected_node()
+
+    # Shuffle the player queue...
+    player.queue.shuffle()
+
+    # Turn on singular track looping...
+    player.queue.loop = True
+
+    # Turn on multi track looping...
+    player.queue.loop_all = True
 
     # Common node properties...
     node.uri
