@@ -97,6 +97,21 @@ class Playable(metaclass=abc.ABCMeta):
         The author of this track. Could be None.
     identifier: Optional[str]
         The Youtube/YoutubeMusic identifier for this track. Could be None.
+
+
+    .. container:: operations
+
+        .. describe:: str(track)
+
+            Returns a string representing the tracks name.
+
+        .. describe:: repr(track)
+
+            Returns an official string representation of this track.
+
+        .. describe:: track == other_track
+
+            Check whether a track is equal to another. A track is equal when they have the same Base64 Encoding.
     """
 
     PREFIX: ClassVar[str] = ''
@@ -149,26 +164,6 @@ class Playable(metaclass=abc.ABCMeta):
                      /,
                      *,
                      node: Node | None = ...
-                     ) -> Self:
-        ...
-
-    @overload
-    @classmethod
-    async def search(cls,
-                     query: str,
-                     /,
-                     *,
-                     node: Node | None = ...
-                     ) -> Self | list[Self]:
-        ...
-
-    @overload
-    @classmethod
-    async def search(cls,
-                     query: str,
-                     /,
-                     *,
-                     node: Node | None = ...
                      ) -> YouTubePlaylist:
         ...
 
@@ -178,7 +173,7 @@ class Playable(metaclass=abc.ABCMeta):
                      /,
                      *,
                      node: Node | None = None
-                     ) -> Self | list[Self]:
+                     ) -> list[Self]:
         """Search and retrieve tracks for the given query.
 
         Parameters
@@ -308,6 +303,13 @@ class YouTubePlaylist(Playable, Playlist):
         The list of :class:`YouTubeTrack` in the playlist.
     selected_track: Optional[int]
         The selected video in the playlist. This could be ``None``.
+
+
+    .. container:: operations
+
+        .. describe:: str(playlist)
+
+            Returns a string representing the playlists name.
     """
 
     PREFIX: str = "ytpl:"

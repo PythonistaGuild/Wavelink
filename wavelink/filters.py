@@ -44,6 +44,13 @@ __all__ = (
 
 
 class BaseFilter(abc.ABC):
+    """
+    .. container:: operations
+
+        .. describe:: repr(filter)
+
+            Returns an official string representation of this filter.
+    """
 
     def __init__(self, name: str | None = None) -> None:
         self.name: str = name or "Unknown"
@@ -555,6 +562,12 @@ class Filter:
     low_pass: wavelink.LowPass
         A low pass filter to apply to the track.
 
+
+    .. container:: operations
+
+        .. describe:: repr(filter)
+
+            Returns an official string representation of this filter.
     """
 
     def __init__(

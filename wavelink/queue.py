@@ -61,7 +61,7 @@ class BaseQueue:
 
         .. describe:: repr(queue)
 
-            Returns a string representing the queue.
+            Returns an official string representation of this queue.
 
         .. describe:: if queue
 

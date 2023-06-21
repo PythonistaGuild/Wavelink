@@ -97,6 +97,13 @@ class Node:
         The time in seconds to send a heartbeat ack. Defaults to 15.0.
     client: :class:`discord.Client`
         The discord client used to connect this Node. Could be None if this Node has not been connected.
+
+
+    .. container:: operations
+
+        .. describe:: repr(node)
+
+            Returns an official string representation of this Node.
     """
 
     def __init__(
