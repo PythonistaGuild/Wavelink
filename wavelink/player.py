@@ -64,10 +64,33 @@ class Player(discord.VoiceProtocol):
 
     This class is used as a :class:`~discord.VoiceProtocol` and inherits all its members.
 
+    You must pass this class to :meth:`discord.VoiceChannel.connect` with ``cls=...``. This ensures the player is
+    set up correctly and put into the discord.py voice client cache.
+
+    You **can** make an instance of this class *before* passing it to
+    :meth:`discord.VoiceChannel.connect` with ``cls=...``, but you **must** still pass it.
+
+    Once you have connected this class you do not need to store it anywhere as it will be stored on the
+    :class:`~wavelink.Node` and in the discord.py voice client cache. Meaning you can access this player where you
+    have access to a :class:`~wavelink.NodePool`, the specific :class:`~wavelink.Node` or a :class:`~discord.Guild`
+    including in :class:`~discord.ext.commands.Context` and :class:`~discord.Interaction`.
+
+    Examples
+    --------
+
+    .. code:: python3
+
+        # Connect the player...
+        player: wavelink.Player = await ctx.author.voice.channel.connect(cls=wavelink.Player)
+
+        # Retrieve the player later...
+        player: wavelink.Player = ctx.guild.voice_client
+
 
     .. note::
 
-        The Player class come with an in-built queue. See :class:`queue.Queue`.
+        The Player class comes with an in-built queue. See :class:`queue.Queue` for more information on how this queue
+        works.
 
     Parameters
     ----------
@@ -93,9 +116,8 @@ class Player(discord.VoiceProtocol):
         Meaning any songs in this queue will be played before auto_queue songs.
     auto_queue: :class:`queue.Queue`
         The built-in AutoPlay Queue. This queue keeps track of recommended songs only.
-        When a song is retrieved from this queue in the AutoPlay event, it is added to the main Queue.history.
-    filter: dict[:class:`str`, :class:`Any`]
-        The current filters applied.
+        When a song is retrieved from this queue in the AutoPlay event,
+        it is added to the main :attr:`wavelink.Queue.history` queue..
     """
 
     def __call__(self, client: discord.Client, channel: VoiceChannel) -> Self:
@@ -195,9 +217,30 @@ class Player(discord.VoiceProtocol):
 
     @property
     def autoplay(self) -> bool:
-        """Bool whether the Player is in AutoPlay mode or not.
+        """Returns a ``bool`` indicating whether the :class:`~Player` is in AutoPlay mode or not.
 
-        Can be set to True or False.
+        This property can be set to ``True`` or ``False``.
+
+        When ``autoplay`` is ``True``, the player will automatically handle fetching and playing the next track from
+        the queue. It also searches tracks in the ``auto_queue``, a special queue populated with recommended tracks,
+        from the Spotify API.
+
+        .. note::
+
+            You can still use the :func:`~wavelink.on_wavelink_track_end` event when ``autoplay`` is ``True``,
+            but it is recommended to **not** do any queue logic or invoking play from this event.
+
+            Most users are able to use ``autoplay`` and :func:`~wavelink.on_wavelink_track_start` together to handle
+            their logic. E.g. sending a message when a track starts playing.
+
+
+        .. note::
+
+            The ``auto_queue`` will not be populated unless you play a :class:`~wavelink.ext.spotify.SpotifyTrack` and
+            have a :class:`~wavelink.ext.spotify.SpotifyClient` set on your :class:`~wavelink.Node`.
+
+
+        .. versionadded:: 2.0
         """
         return self._autoplay
 
@@ -245,19 +288,23 @@ class Player(discord.VoiceProtocol):
 
     @property
     def ping(self) -> int:
-        """The ping to the discord endpoint in milliseconds."""
+        """The ping to the discord endpoint in milliseconds.
+
+        .. versionadded:: 2.0
+        """
         return self._ping
 
     @property
     def current(self) -> Playable | None:
         """The currently playing Track if there is one.
 
-        Could be None if no Track is playing.
+        Could be ``None`` if no Track is playing.
         """
         return self._current
 
     @property
     def filter(self) -> dict[str, Any]:
+        """The currently applied filter."""
         return self._filter._payload
 
     async def _update_event(self, data: PlayerUpdateOp | None) -> None:
@@ -292,12 +339,29 @@ class Player(discord.VoiceProtocol):
         self._ping = state['ping']
 
     async def on_voice_server_update(self, data: VoiceServerUpdate) -> None:
+        """|coro|
+
+        An abstract method that is called when initially connecting to voice. This corresponds to VOICE_SERVER_UPDATE.
+
+        .. warning::
+
+            Do not override this method.
+        """
         self._voice_state['token'] = data['token']
         self._voice_state['endpoint'] = data['endpoint']
 
         await self._dispatch_voice_update()
 
     async def on_voice_state_update(self, data: GuildVoiceState) -> None:
+        """|coro|
+
+        An abstract method that is called when the client’s voice state has changed.
+        This corresponds to VOICE_STATE_UPDATE.
+
+        .. warning::
+
+            Do not override this method.
+        """
         assert self._guild is not None
 
         channel_id = data["channel_id"]
@@ -411,6 +475,8 @@ class Player(discord.VoiceProtocol):
         populate: bool
             Whether to populate the AutoPlay queue. This is done automatically when AutoPlay is on.
             Defaults to False.
+
+            .. versionadded:: 2.0
 
         Returns
         -------
@@ -549,6 +615,11 @@ class Player(discord.VoiceProtocol):
         force: Optional[bool]
             Whether to stop the currently playing track and proceed to the next regardless if :attr:`~Queue.loop`
             is ``True``. Defaults to ``True``.
+
+
+        .. versionchanged:: 2.6
+
+            Added the ``force`` keyword argument.
         """
         assert self._guild is not None
 
@@ -631,6 +702,10 @@ class Player(discord.VoiceProtocol):
         """|coro|
 
         Disconnect the Player from voice and cleanup the Player state.
+
+        .. versionchanged:: 2.5
+
+            The discord.py Voice Client cache and Player are invalidated as soon as this is called.
         """
         self._invalidate()
         await self.guild.change_voice_state(channel=None)
