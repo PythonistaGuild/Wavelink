@@ -48,7 +48,7 @@ class PrettyVersionAddedDirective(Directive):
         version = self.arguments[0]
 
         joined = '\n'.join(self.content) if self.content else ''
-        content = [f'**Version Added:**  *{version}*{" - " if joined else ""}', joined]
+        content = [f'**New in version:**  *{version}*{" - " if joined else ""}', joined]
 
         node = pretty_version_added('\n'.join(content))
         self.state.nested_parse(StringList(content), self.content_offset, node)
@@ -64,7 +64,7 @@ class PrettyVersionChangedDirective(Directive):
         version = self.arguments[0]
 
         joined = '\n'.join(self.content) if self.content else ''
-        content = [f'**Version Changed:** *{version}*{" - " if joined else ""}', joined]
+        content = [f'**Version changed:** *{version}*{" - " if joined else ""}', joined]
 
         node = pretty_version_changed('\n'.join(content))
         self.state.nested_parse(StringList(content), self.content_offset, node)
@@ -80,7 +80,7 @@ class PrettyVersionRemovedDirective(Directive):
         version = self.arguments[0]
 
         joined = '\n'.join(self.content)
-        content = [f'**Version Removed:** *{version}*{" - " if joined else ""}', joined]
+        content = [f'**Removed in version:** *{version}*{" - " if joined else ""}', joined]
 
         node = pretty_version_removed('\n'.join(content))
         self.state.nested_parse(StringList(content), self.content_offset, node)
