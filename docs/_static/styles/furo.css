@@ -2301,3 +2301,48 @@ ul.search li {
 .highlight {
     background-color: var(--color-codeblock-background)!important;
 }
+
+.pretty-version {
+    border-radius: 0.25rem;
+    padding: 0 1rem;
+    display: flex;
+    flex-direction: row;
+}
+
+.pretty-version > p {
+    font-size: small;
+}
+
+.pretty-version > i {
+    align-self: center;
+    margin-right: 0.5rem;
+}
+
+
+.pv-added {
+    border-left: #73D673 3px solid;
+    background-color: rgba(115, 214, 115, 0.1);
+
+}
+
+.pv-changed {
+    border-left: #4373BA 3px solid;
+    background-color: rgba(67, 115, 186, 0.1);
+}
+
+.pv-removed {
+    border-left: #F76B67 3px solid;
+    background-color: rgba(247, 107, 103, 0.1);
+}
+
+.pv-added > i {
+    color: #73D673;
+}
+
+.pv-changed > i {
+    color: #4373BA;
+}
+
+.pv-removed > i {
+    color: #F76B67;
+}
