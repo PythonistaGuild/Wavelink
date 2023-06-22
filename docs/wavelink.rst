@@ -1,6 +1,16 @@
 .. currentmodule:: wavelink
 
 
+API Reference
+-------------
+The wavelink API Reference.
+
+This section outlines the API and all it's components within wavelink.
+
+Wavelink is a robust and powerful Lavalink wrapper for Discord.py. Featuring,
+a fully asynchronous API that's intuitive and easy to use with built in Spotify Support, Node Pool Balancing,
+advanced Queues, autoplay feature and looping features built in.
+
 Event Reference
 ---------------
 
@@ -37,12 +47,49 @@ An event listener in a cog...
 
     Called when the current track has finished playing.
 
+.. function:: on_wavelink_websocket_closed(payload: WebsocketClosedPayload)
+
+    Called when the websocket to the voice server is closed.
+
 
 Payloads
 ---------
 .. attributetable:: TrackEventPayload
 
 .. autoclass:: TrackEventPayload
+    :members:
+
+.. attributetable:: WebsocketClosedPayload
+
+.. autoclass:: WebsocketClosedPayload
+    :members:
+
+
+Enums
+-----
+.. attributetable:: NodeStatus
+
+.. autoclass:: NodeStatus
+    :members:
+
+.. attributetable:: TrackSource
+
+.. autoclass:: TrackSource
+    :members:
+
+.. attributetable:: LoadType
+
+.. autoclass:: LoadType
+    :members:
+
+.. attributetable:: TrackEventType
+
+.. autoclass:: TrackEventType
+    :members:
+
+.. attributetable:: DiscordVoiceCloseType
+
+.. autoclass:: DiscordVoiceCloseType
     :members:
 
 
@@ -150,52 +197,52 @@ Queues
 Filters
 -------
 
-.. attributeable:: Filter
+.. attributetable:: Filter
 
 .. autoclass:: Filter
     :members:
 
-.. attributeable:: Equalizer
+.. attributetable:: Equalizer
 
 .. autoclass:: Equalizer
     :members:
 
-.. attributeable:: Karaoke
+.. attributetable:: Karaoke
 
 .. autoclass:: Karaoke
     :members:
 
-.. attributeable:: Timescale
+.. attributetable:: Timescale
 
 .. autoclass:: Timescale
     :members:
 
-.. attributeable:: Tremolo
+.. attributetable:: Tremolo
 
 .. autoclass:: Tremolo
     :members:
 
-.. attributeable:: Vibrato
+.. attributetable:: Vibrato
 
 .. autoclass:: Vibrato
     :members:
 
-.. attributeable:: Rotation
+.. attributetable:: Rotation
 
 .. autoclass:: Rotation
     :members:
 
-.. attributeable:: Distortion
+.. attributetable:: Distortion
 
 .. autoclass:: Distortion
     :members:
 
-.. attributeable:: ChannelMix
+.. attributetable:: ChannelMix
 
 .. autoclass:: ChannelMix
     :members:
 
-.. attributeable:: LowPass
+.. attributetable:: LowPass
 
 .. autoclass:: LowPass
     :members:
@@ -204,10 +251,54 @@ Filters
 Exceptions
 ----------
 
+.. exception_hierarchy::
+
+    - :exc:`~WavelinkException`
+        - :exc:`~AuthorizationFailed`
+        - :exc:`~InvalidNode`
+        - :exc:`~InvalidLavalinkVersion`
+        - :exc:`~InvalidLavalinkResponse`
+        - :exc:`~NoTracksError`
+        - :exc:`~QueueEmpty`
+        - :exc:`~InvalidChannelStateError`
+            - :exc:`~InvalidChannelPermissions`
+
+
 .. py:exception:: WavelinkException
+
+    Base wavelink exception.
+
 .. py:exception:: AuthorizationFailed
+
+    Exception raised when password authorization failed for this Lavalink node.
+
 .. py:exception:: InvalidNode
+
 .. py:exception:: InvalidLavalinkVersion
+
+    Exception raised when you try to use wavelink 2 with a Lavalink version under 3.7.
+
 .. py:exception:: InvalidLavalinkResponse
+
+    Exception raised when wavelink receives an invalid response from Lavalink.
+
+    status: :class:`int` | :class:`None`
+        The status code. Could be :class:`None`.
+
 .. py:exception:: NoTracksError
+
+    Exception raised when no tracks could be found.
+
 .. py:exception:: QueueEmpty
+
+    Exception raised when you try to retrieve from an empty queue.
+
+.. py:exception:: InvalidChannelStateError
+
+    Base exception raised when an error occurs trying to connect to a :class:`discord.VoiceChannel`.
+
+.. py:exception:: InvalidChannelPermissions
+
+    Exception raised when the client does not have correct permissions to join the channel.
+
+    Could also be raised when there are too many users already in a user limited channel.

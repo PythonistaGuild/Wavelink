@@ -23,18 +23,18 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from discord.enums import try_enum
 
-from .enums import TrackEventType
+from .enums import TrackEventType, DiscordVoiceCloseType
 
 if TYPE_CHECKING:
     from .player import Player
     from .tracks import Playable
     from .types.events import EventOp
 
-__all__ = ('TrackEventPayload', )
+__all__ = ('TrackEventPayload', 'WebsocketClosedPayload')
 
 
 class TrackEventPayload:
@@ -66,3 +66,30 @@ class TrackEventPayload:
         self.player: Player = player
 
         self.reason: str = data.get('reason')
+
+
+class WebsocketClosedPayload:
+    """The Wavelink WebsocketClosed Event Payload.
+
+    .. warning::
+
+        This class should not be created manually, instead you will receive it from the
+        wavelink `on_wavelink_websocket_closed` event.
+
+    Attributes
+    ----------
+    code: :class:`DiscordVoiceCloseType`
+        An Enum representing the close code from Discord.
+    reason: Optional[str]
+        The reason the Websocket was closed.
+    by_discord: bool
+        Whether the websocket was closed by Discord.
+    player: :class:`player.Player`
+        The player associated with this event.
+    """
+
+    def __init__(self, *, data: dict[str, Any], player: Player) -> None:
+        self.code: DiscordVoiceCloseType = try_enum(DiscordVoiceCloseType, data['code'])
+        self.reason: str = data.get('reason')
+        self.by_discord: bool = data.get('byRemote')
+        self.player: Player = player

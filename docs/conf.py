@@ -26,7 +26,7 @@ sys.path.append(os.path.abspath("extensions"))
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 project = "Wavelink"
-copyright = "2022, PythonistaGuild, EvieePy"
+copyright = "2023, PythonistaGuild, EvieePy"
 author = "PythonistaGuild, EvieePy"
 
 # The full version, including alpha/beta/rc tags
@@ -34,19 +34,38 @@ release = ''
 with open('../wavelink/__init__.py') as f:
     release = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE).group(1)  # type: ignore
 
+version = release
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'prettyversion',
     "sphinx.ext.autodoc",
     "sphinx.ext.extlinks",
     "sphinx.ext.napoleon",
-    "sphinxcontrib.asyncio",
     "sphinx.ext.intersphinx",
-    "attributetable",
+    'details',
+    'exception_hierarchy',
+    'attributetable',
+    "sphinxext.opengraph",
+    'hoverxref.extension',
+    'sphinxcontrib_trio',
 ]
+
+# OpenGraph Meta Tags
+ogp_site_name = "Wavelink Documentation"
+ogp_image = "https://raw.githubusercontent.com/PythonistaGuild/Wavelink/master/logo.png"
+ogp_description = "Documentation for Wavelink, the Powerful Lavalink wrapper for discord.py."
+ogp_site_url = "https://wavelink.dev/"
+ogp_custom_meta_tags = [
+    '<meta property="og:description" content="Wavelink is a robust and powerful Lavalink wrapper for Discord.py. '
+    'Featuring a fully asynchronous API that\'s intuitive and easy to use with built in '
+    'Spotify Support, Node Pool Balancing, advanced Queues, autoplay feature and looping features built in." />',
+    '<meta property="og:title" content="Wavelink Documentation" />'
+]
+ogp_enable_meta_description = True
 
 # Add any paths that contain templates here, relative to this directory.
 # templates_path = ["_templates"]
@@ -85,7 +104,7 @@ napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = False
-autodoc_member_order = "groupwise"
+autodoc_member_order = "bysource"
 
 rst_prolog = """
 .. |coro| replace:: This function is a |corourl|_.
@@ -101,7 +120,52 @@ rst_prolog = """
 # source_suffix = ['.rst', '.md']
 source_suffix = ".rst"
 
-intersphinx_mapping = {"py": ("https://docs.python.org/3", None)}
+intersphinx_mapping = {
+    "py": ("https://docs.python.org/3", None),
+    "dpy": ("https://discordpy.readthedocs.io/en/stable/", None)
+}
+
+extlinks = {
+    'wlissue': ('https://github.com/PythonistaGuild/Wavelink/issues/%s', 'GH-%s'),
+    'ddocs': ('https://discord.com/developers/docs/%s', None),
+}
+
+
+# Hoverxref Settings...
+hoverxref_auto_ref = True
+hoverxref_intersphinx = ['py', 'dpy']
+
+hoverxref_role_types = {
+    'hoverxref': 'modal',
+    'ref': 'modal',
+    'confval': 'tooltip',
+    'mod': 'tooltip',
+    'class': 'tooltip',
+    'attr': 'tooltip',
+    'func': 'tooltip',
+    'meth': 'tooltip',
+    'exc': 'tooltip'
+}
+
+hoverxref_roles = list(hoverxref_role_types.keys())
+hoverxref_domains = ['py']
+hoverxref_default_type = 'tooltip'
+hoverxref_tooltip_theme = ['tooltipster-punk', 'tooltipster-shadow', 'tooltipster-shadow-custom']
+
 
 pygments_style = "sphinx"
 pygments_dark_style = "monokai"
+
+
+html_experimental_html5_writer = True
+
+
+def autodoc_skip_member(app, what, name, obj, skip, options):
+    exclusions = ('__weakref__', '__doc__', '__module__', '__dict__', '__init__')
+    exclude = name in exclusions
+
+    return True if exclude else None
+
+
+def setup(app):
+    app.connect('autodoc-skip-member', autodoc_skip_member)

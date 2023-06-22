@@ -103,12 +103,16 @@ def decode_url(url: str) -> Optional[dict]:
 class SpotifySearchType(enum.Enum):
     """An enum specifying which type to search for with a given Spotify ID.
 
+    Attributes
+    ----------
     track
         Default search type. Unless specified otherwise this will always be the search type.
     album
-        Search for an album.
+        Album search type.
     playlist
-        Search for a playlist.
+        Playlist search type.
+    unusable
+        Unusable type. This type is returned when Wavelink can not be used to play this track.
     """
     track = 0
     album = 1
@@ -178,6 +182,22 @@ class SpotifyRequestError(Exception):
 class SpotifyTrack:
     """A track retrieved via Spotify.
 
+
+    .. container:: operations
+
+        .. describe:: str(track)
+
+            Returns a string representing this SpotifyTrack's name and artists.
+
+        .. describe:: repr(track)
+
+            Returns an official string representation of this SpotifyTrack.
+
+        .. describe:: track == other_track
+
+            Check whether a track is equal to another. Tracks are equal if they both have the same Spotify ID.
+
+
     Attributes
     ----------
     raw: dict[str, Any]
@@ -240,8 +260,16 @@ class SpotifyTrack:
         self.duration: int = self.length
         self.isrc: str | None = data.get("external_ids", {}).get('irsc')
 
+    def __str__(self) -> str:
+        return f'{self.name} - {self.artists[0]}'
+
+    def __repr__(self) -> str:
+        return f'SpotifyTrack(id={self.id}, isrc={self.isrc}, name={self.name}, duration={self.duration})'
+
     def __eq__(self, other) -> bool:
-        return self.id == other.id
+        if isinstance(other, SpotifyTrack):
+            return self.id == other.id
+        raise NotImplemented
 
     @classmethod
     async def search(
@@ -250,7 +278,6 @@ class SpotifyTrack:
             *,
             type: SpotifySearchType = SpotifySearchType.track,
             node: Node | None = None,
-            return_first: bool = False,
     ) -> Union[Optional[ST], List[ST]]:
         """|coro|
 
@@ -260,20 +287,40 @@ class SpotifyTrack:
         ----------
         query: str
             The song to search for.
-        type: Optional[:class:`spotify.SpotifySearchType`]
+        type: Optional[:class:`~SpotifySearchType`]
             An optional enum value to use when searching with Spotify. Defaults to track.
         node: Optional[:class:`wavelink.Node`]
             An optional Node to use to make the search with.
-        return_first: Optional[bool]
-            An optional bool which when set to True will return only the first track found. Defaults to False.
 
         Returns
         -------
-        Union[Optional[Track], List[Track]]
+        List[:class:`SpotifyTrack`]
+
+        Examples
+        --------
+        Searching for a singular tack to play...
+
+        .. code:: python3
+
+            track: spotify.SpotifyTrack = await spotify.SpotifyTrack.search(query=SPOTIFY_URL)
+
+
+        Searching for all tracks in an album...
+
+        .. code:: python3
+
+            tracks: list[spotify.SpotifyTrack] =
+            await spotify.SpotifyTrack.search(query=SPOTIFY_URL, type=spotify.SpotifySearchType.album)
+
+
+        .. note::
+
+            See :func:`~.decode_url` for gathering information about the supplied URL, including search type.
+            Before using this method.
         """
         if node is None:
             node: Node = NodePool.get_connected_node()
-        
+
         return await node._spotify._search(query=query, type=type)
 
     @classmethod
@@ -294,10 +341,10 @@ class SpotifyTrack:
             The Spotify URL or ID to search for. Must be of type Playlist or Album.
         limit: Optional[int]
             Limit the amount of tracks returned.
-        type: :class:`SpotifySearchType`
+        type: :class:`~SpotifySearchType`
             The type of search. Must be either playlist or album. Defaults to playlist.
-        node: Optional[:class:`Node`]
-            An optional node to use when querying for tracks. Defaults to best available.
+        node: Optional[:class:`wavelink.Node`]
+            An optional node to use when querying for tracks. Defaults to the best available.
 
         Examples
         --------
@@ -306,6 +353,12 @@ class SpotifyTrack:
 
                 async for track in spotify.SpotifyTrack.iterator(query=..., type=spotify.SpotifySearchType.playlist):
                     ...
+
+
+        .. note::
+
+            See :func:`~.decode_url` for gathering information about the supplied URL, including search type.
+            Before using this method.
         """
 
         if type is not SpotifySearchType.album and type is not SpotifySearchType.playlist:
@@ -320,24 +373,33 @@ class SpotifyTrack:
     async def convert(cls: Type[ST], ctx: commands.Context, argument: str) -> ST:
         """Converter which searches for and returns the first track.
 
-        Used as a type hint in a discord.py command.
+        Used as a type hint in a
+        `discord.py command <https://discordpy.readthedocs.io/en/stable/ext/commands/commands.html>`_.
         """
         results = await cls.search(argument)
 
         if not results:
-            raise commands.BadArgument("Could not find any songs matching that query.")
+            raise commands.BadArgument(f"Could not find any songs matching query: {argument}")
 
         return results[0]
 
     async def fulfill(self, *, player: Player, cls: Playable, populate: bool) -> Playable:
-        """
+        """Used to fulfill the :class:`wavelink.Player` Auto Play Queue.
+
+        .. warning::
+
+            Usually you would not call this directly. Instead you would set :attr:`wavelink.Player.autoplay` to true,
+            and allow the player to fulfill this request automatically.
+
+
         Parameters
         ----------
         player: :class:`wavelink.player.Player`
-            If Player.autoplay is enabled, this search will fill the AutoPlay Queue.
+            If :attr:`wavelink.Player.autoplay` is enabled, this search will fill the AutoPlay Queue with more tracks.
         cls
             The class to convert this Spotify Track to.
         """
+
         if not self.isrc:
             tracks: list[cls] = await cls.search(f'{self.name} - {self.artists[0]}')
         else:
@@ -353,6 +415,9 @@ class SpotifyTrack:
 
         if not sc:
             raise RuntimeError(f"There is no spotify client associated with <{node:!r}>")
+
+        if sc.is_token_expired():
+            await sc._get_bearer_token()
 
         if len(player._track_seeds) == 5:
             player._track_seeds.pop(0)
@@ -377,7 +442,7 @@ class SpotifyTrack:
 
 
 class SpotifyClient:
-    """Spotify client passed to Nodes for searching via Spotify.
+    """Spotify client passed to :class:`wavelink.Node` for searching via Spotify.
 
     Parameters
     ----------
@@ -393,7 +458,7 @@ class SpotifyClient:
 
         self.session = aiohttp.ClientSession()
 
-        self._bearer_token: str = None  # type: ignore
+        self._bearer_token: str | None = None
         self._expiry: int = 0
 
     @property
@@ -415,13 +480,16 @@ class SpotifyClient:
             self._bearer_token = data['access_token']
             self._expiry = time.time() + (int(data['expires_in']) - 10)
 
+    def is_token_expired(self) -> bool:
+        return time.time() >= self._expiry
+
     async def _search(self,
                       query: str,
                       type: SpotifySearchType = SpotifySearchType.track,
                       iterator: bool = False,
-                      ) -> SpotifyTrack | list[SpotifyTrack]:
+                      ) -> list[SpotifyTrack]:
 
-        if not self._bearer_token or time.time() >= self._expiry:
+        if self.is_token_expired():
             await self._get_bearer_token()
 
         regex_result = URLREGEX.match(query)
@@ -440,7 +508,7 @@ class SpotifyClient:
             data = await resp.json()
 
         if data['type'] == 'track':
-            return SpotifyTrack(data)
+            return [SpotifyTrack(data)]
 
         elif data['type'] == 'album':
             album_data: dict[str, Any]= {

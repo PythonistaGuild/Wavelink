@@ -56,7 +56,12 @@ async def play(ctx: commands.Context, *, search: str) -> None:
     else:
         vc: wavelink.Player = ctx.voice_client
 
-    track = await wavelink.YouTubeTrack.search(search, return_first=True)
+    tracks: list[wavelink.YouTubeTrack] = await wavelink.YouTubeTrack.search(search)
+    if not tracks:
+        await ctx.send(f'Sorry I could not find any songs with search: `{search}`')
+        return
+
+    track: wavelink.YouTubeTrack = tracks[0]
     await vc.play(track)
 
 
