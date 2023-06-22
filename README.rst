@@ -132,7 +132,7 @@ Getting Started
 Lavalink Installation
 ---------------------
 
-Head to the official `Lavalink repo <<https://github.com/lavalink-devs/Lavalink>`_ and give it a star!
+Head to the official `Lavalink repo <https://github.com/lavalink-devs/Lavalink>`_ and give it a star!
 
 - Create a folder for storing Lavalink.jar and related files/folders.
 - Copy and paste the example `application.yml <https://github.com/freyacodes/Lavalink#server-configuration>`_ to ``application.yml`` in the folder we created earlier. You can open the yml in Notepad or any simple text editor.
