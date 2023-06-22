@@ -219,7 +219,7 @@ class SpotifyTrack:
     id: str
         The spotify ID for this track.
     isrc: str | None
-        The International Standard Recording Code associated with this track if given.
+        The International Standard Recording Code associated with this track.
     length: int
         The track length in milliseconds.
     duration: int
@@ -258,8 +258,7 @@ class SpotifyTrack:
         self.id: str = data['id']
         self.length: int = data['duration_ms']
         self.duration: int = self.length
-
-        self.isrc: str | None = data["external_ids"].get("isrc")
+        self.isrc: str | None = data.get("external_ids", {}).get('irsc')
 
     def __str__(self) -> str:
         return f'{self.name} - {self.artists[0]}'
@@ -400,9 +399,13 @@ class SpotifyTrack:
         cls
             The class to convert this Spotify Track to.
         """
-        tracks: list[cls] = await cls.search(f'"{self.isrc}"')
-        if not tracks:
+
+        if not self.isrc:
             tracks: list[cls] = await cls.search(f'{self.name} - {self.artists[0]}')
+        else:
+            tracks: list[cls] = await cls.search(f'"{self.isrc}"')
+            if not tracks:
+                tracks: list[cls] = await cls.search(f'{self.name} - {self.artists[0]}')
 
         if not player.autoplay or not populate:
             return tracks[0]
@@ -533,6 +536,7 @@ class SpotifyClient:
 
             return tracks
 
+
         elif data['type'] == 'playlist':
             if iterator:
                 if not data['tracks']['next']:
@@ -551,5 +555,4 @@ class SpotifyClient:
 
                         url = data['next']
             else:
-                tracks = data['tracks']['items']
-                return [SpotifyTrack(t) for t in tracks]
+                return [SpotifyTrack(t['track']) for t in data['tracks']['items']]
