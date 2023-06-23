@@ -181,6 +181,8 @@ class Player(discord.VoiceProtocol):
         self._auto_threshold: int = 20
         self._filter: Filter | None = None
 
+        self._destroyed: bool = False
+
     async def _auto_play_event(self, payload: TrackEventPayload) -> None:
         if not self.autoplay:
             return
@@ -400,33 +402,42 @@ class Player(discord.VoiceProtocol):
 
         logger.debug(f'Player {self.guild.id} is dispatching VOICE_UPDATE: {resp}')
 
-    async def connect(self, *, timeout: float, reconnect: bool, **kwargs: Any) -> None:
-        if self.channel is None:
-            self._invalidate()
-
-            msg: str = 'Please use the method "discord.VoiceChannel.connect" and pass this player to cls='
-            raise InvalidChannelStateError(msg)
-
-        if not self.channel.permissions_for(self.channel.guild.me).connect:
-            self._invalidate()
+    def _connection_check(self, channel: VoiceChannel) -> None:
+        if not channel.permissions_for(channel.guild.me).connect:
+            logger.debug(f'Player tried connecting to channel "{channel.id}", but does not have correct permissions.')
 
             raise InvalidChannelPermissions('You do not have connect permissions to join this channel.')
 
-        limit: int = self.channel.user_limit
-        total: int = len(self.channel.members)
+        limit: int = channel.user_limit
+        total: int = len(channel.members)
 
         if limit == 0:
             pass
 
         elif total >= limit:
-            self._invalidate()
-
             msg: str = f'There are currently too many users in this channel. <{total}/{limit}>'
+            logger.debug(f'Player tried connecting to channel "{channel.id}", but the it is full. <{total}/{limit}>')
+
             raise InvalidChannelPermissions(msg)
+
+    async def connect(self, *, timeout: float, reconnect: bool, **kwargs: Any) -> None:
+        if self.channel is None:
+            self._invalidate(before_connect=True)
+
+            msg: str = 'Please use the method "discord.VoiceChannel.connect" and pass this player to cls='
+            logger.debug(f'Player tried connecting without a channel. {msg}')
+
+            raise InvalidChannelStateError(msg)
 
         if not self._guild:
             self._guild = self.channel.guild
             self.current_node._players[self._guild.id] = self
+
+        try:
+            self._connection_check(self.channel)
+        except InvalidChannelPermissions as e:
+            self._invalidate(before_connect=True)
+            raise e
 
         await self.channel.guild.change_voice_state(channel=self.channel, **kwargs)
         logger.info(f'Player {self.guild.id} connected to channel: {self.channel}')
@@ -441,6 +452,8 @@ class Player(discord.VoiceProtocol):
         channel: :class:`discord.VoiceChannel`
             The channel to move to. Must be a voice channel.
         """
+        self._connection_check(channel)
+
         await self.guild.change_voice_state(channel=channel)
         logger.info(f'Player {self.guild.id} moved to channel: {channel}')
 
@@ -668,9 +681,11 @@ class Player(discord.VoiceProtocol):
 
         logger.debug(f'Player {self.guild.id} set filter to: {_filter}')
 
-    def _invalidate(self, *, silence: bool = False) -> None:
+    def _invalidate(self, *, silence: bool = False, before_connect: bool = False) -> None:
         self.current_node._players.pop(self._guild.id, None)
-        self.current_node._invalidated[self._guild.id] = self
+
+        if not before_connect:
+            self.current_node._invalidated[self._guild.id] = self
 
         try:
             self.cleanup()
@@ -687,6 +702,9 @@ class Player(discord.VoiceProtocol):
             logger.debug(f'Player {self._guild.id} was invalidated.')
 
     async def _destroy(self, *, guild_id: int | None = None) -> None:
+        if self._destroyed:
+            return
+
         self._invalidate(silence=True)
 
         guild_id = guild_id or self._guild.id
@@ -695,6 +713,7 @@ class Player(discord.VoiceProtocol):
                                       path=f'sessions/{self.current_node._session_id}/players',
                                       guild_id=guild_id)
 
+        self._destroyed = True
         self.current_node._invalidated.pop(guild_id, None)
         logger.debug(f'Player {guild_id} was destroyed.')
 
