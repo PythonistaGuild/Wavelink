@@ -403,6 +403,9 @@ class Player(discord.VoiceProtocol):
         logger.debug(f'Player {self.guild.id} is dispatching VOICE_UPDATE: {resp}')
 
     def _connection_check(self, channel: VoiceChannel) -> None:
+        if channel.permissions_for(channel.guild.me).administrator:
+            return
+
         if not channel.permissions_for(channel.guild.me).connect:
             logger.debug(f'Player tried connecting to channel "{channel.id}", but does not have correct permissions.')
 
