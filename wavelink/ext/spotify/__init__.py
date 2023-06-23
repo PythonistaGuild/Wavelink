@@ -48,7 +48,7 @@ __all__ = ('SpotifySearchType',
 
 
 GRANTURL = 'https://accounts.spotify.com/api/token?grant_type=client_credentials'
-URLREGEX = re.compile(r'(https?://open.)?(spotify)(.com/|:)'
+URLREGEX = re.compile(r'(https?://open.)?(spotify)(.com/|:)(.*[/:])?'
                       r'(?P<type>album|playlist|track|artist)([/:])'
                       r'(?P<id>[a-zA-Z0-9]+)(\?si=[a-zA-Z0-9]+)?(&dl_branch=[0-9]+)?')
 BASEURL = 'https://api.spotify.com/v1/{entity}s/{identifier}'
