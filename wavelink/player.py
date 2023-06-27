@@ -184,6 +184,8 @@ class Player(discord.VoiceProtocol):
         self._destroyed: bool = False
 
     async def _auto_play_event(self, payload: TrackEventPayload) -> None:
+        logger.debug(f'Player {self.guild.id} entered autoplay event.')
+
         if not self.autoplay:
             return
 
@@ -210,12 +212,16 @@ class Player(discord.VoiceProtocol):
             return
 
         if not self.auto_queue:
+            logger.debug(f'Player {self.guild.id} has no auto queue. Exiting autoplay event.')
             return
 
         await self.queue.put_wait(await self.auto_queue.get_wait())
         populate = self.auto_queue.is_empty
 
-        await self.play(await self.queue.get_wait(), populate=populate)
+        track = await self.queue.get_wait()
+        await self.play(track, populate=populate)
+
+        logger.debug(f'Player {self.guild.id} playing track "{track}" from autoplay with populate={populate}.')
 
     @property
     def autoplay(self) -> bool:
