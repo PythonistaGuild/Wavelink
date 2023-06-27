@@ -3,7 +3,7 @@
 
 Intro
 -----
-The Spotify extension is a QoL extension that helps in searching for and queueing tracks from Spotify URL's or ID's. To get started create a :class:`~SpotifyClient` and pass in your credentials. You then pass this to your :class:`wavelink.Node`'s.
+The Spotify extension is a QoL extension that helps in searching for and queueing tracks from Spotify URLs. To get started create a :class:`~SpotifyClient` and pass in your credentials. You then pass this to your :class:`wavelink.Node`'s.
 
 An example:
 
@@ -61,6 +61,13 @@ An example:
 Helpers
 -------
 .. autofunction:: decode_url
+
+
+Payloads
+--------
+.. attributetable:: SpotifyDecodePayload
+
+.. autoclass:: SpotifyDecodePayload
 
 
 Client
