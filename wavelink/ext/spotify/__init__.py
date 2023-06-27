@@ -25,10 +25,9 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import enum
-import re
+import logging
 import time
-from typing import Any, List, Optional, Type, TypeVar, Union, TYPE_CHECKING
+from typing import Any, List, Optional, Self, Type, TypeVar, Union, TYPE_CHECKING
 
 import aiohttp
 from discord.ext import commands
@@ -36,88 +35,27 @@ from discord.ext import commands
 import wavelink
 from wavelink import Node, NodePool
 
+from .utils import *
+
+
 if TYPE_CHECKING:
     from wavelink import Player, Playable
 
 
-__all__ = ('SpotifySearchType',
-           'SpotifyClient',
-           'SpotifyTrack',
-           'SpotifyRequestError',
-           'decode_url')
+__all__ = (
+    'SpotifySearchType',
+    'SpotifyClient',
+    'SpotifyTrack',
+    'SpotifyRequestError',
+    'decode_url',
+    'SpotifyDecodePayload'
+)
 
 
-GRANTURL = 'https://accounts.spotify.com/api/token?grant_type=client_credentials'
-URLREGEX = re.compile(r'(https?://open.)?(spotify)(.com/|:)(.*[/:])?'
-                      r'(?P<type>album|playlist|track|artist)([/:])'
-                      r'(?P<id>[a-zA-Z0-9]+)(\?si=[a-zA-Z0-9]+)?(&dl_branch=[0-9]+)?')
-BASEURL = 'https://api.spotify.com/v1/{entity}s/{identifier}'
-RECURL = 'https://api.spotify.com/v1/recommendations?seed_tracks={tracks}'
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 ST = TypeVar("ST", bound="Playable")
-
-
-def decode_url(url: str) -> Optional[dict]:
-    """Check whether the given URL is a valid Spotify URL and return it's type and ID.
-
-    Parameters
-    ----------
-    url: str
-        The URL to check.
-
-    Returns
-    -------
-    Optional[dict]
-        An mapping of :class:`SpotifySearchType` and Spotify ID. Type will be either track, album or playlist.
-        If type is not track, album or playlist, a special unusable type is returned.
-
-        Could return None if the URL is invalid.
-
-    Examples
-    --------
-
-    .. code:: python3
-
-        from wavelink.ext import spotify
-
-        ...
-
-        decoded = spotify.decode_url("https://open.spotify.com/track/6BDLcvvtyJD2vnXRDi1IjQ?si=e2e5bd7aaf3d4a2a")
-
-        if decoded and decoded['type'] is spotify.SpotifySearchType.track:
-            track = await spotify.SpotifyTrack.search(query=decoded["id"], type=decoded["type"])
-    """
-    match = URLREGEX.match(url)
-    if match:
-        try:
-            type_ = SpotifySearchType[match['type']]
-        except KeyError:
-            type_ = SpotifySearchType.unusable
-
-        return {'type': type_, 'id': match['id']}
-
-    return None
-
-
-class SpotifySearchType(enum.Enum):
-    """An enum specifying which type to search for with a given Spotify ID.
-
-    Attributes
-    ----------
-    track
-        Default search type. Unless specified otherwise this will always be the search type.
-    album
-        Album search type.
-    playlist
-        Playlist search type.
-    unusable
-        Unusable type. This type is returned when Wavelink can not be used to play this track.
-    """
-    track = 0
-    album = 1
-    playlist = 2
-    unusable = 3
 
 
 class SpotifyAsyncIterator:
@@ -273,12 +211,11 @@ class SpotifyTrack:
 
     @classmethod
     async def search(
-        cls: Type[ST],
+            cls,
             query: str,
             *,
-            type: SpotifySearchType = SpotifySearchType.track,
             node: Node | None = None,
-    ) -> Union[Optional[ST], List[ST]]:
+    ) -> list[Self]:
         """|coro|
 
         Search for tracks with the given query.
@@ -286,9 +223,7 @@ class SpotifyTrack:
         Parameters
         ----------
         query: str
-            The song to search for.
-        type: Optional[:class:`~SpotifySearchType`]
-            An optional enum value to use when searching with Spotify. Defaults to track.
+            The Spotify URL to query for.
         node: Optional[:class:`wavelink.Node`]
             An optional Node to use to make the search with.
 
@@ -302,33 +237,45 @@ class SpotifyTrack:
 
         .. code:: python3
 
-            track: spotify.SpotifyTrack = await spotify.SpotifyTrack.search(query=SPOTIFY_URL)
+            tracks: list[spotify.SpotifyTrack] = await spotify.SpotifyTrack.search(query=SPOTIFY_URL)
+            if not tracks:
+                # No tracks found, do something?
+                return
+
+            track: spotify.SpotifyTrack = tracks[0]
 
 
         Searching for all tracks in an album...
 
         .. code:: python3
 
-            tracks: list[spotify.SpotifyTrack] =
-            await spotify.SpotifyTrack.search(query=SPOTIFY_URL, type=spotify.SpotifySearchType.album)
+            tracks: list[spotify.SpotifyTrack] = await spotify.SpotifyTrack.search(query=SPOTIFY_URL)
+            if not tracks:
+                # No tracks found, do something?
+                return
 
 
-        .. note::
+        .. versionchanged:: 2.6.0
 
-            See :func:`~.decode_url` for gathering information about the supplied URL, including search type.
-            Before using this method.
+            This method no longer takes in the ``type`` parameter. The query provided will be automatically decoded,
+            if the ``type`` returned by :func:`decode_url` is unusable, this method will return an empty :class:`list`
         """
         if node is None:
             node: Node = NodePool.get_connected_node()
 
-        return await node._spotify._search(query=query, type=type)
+        decoded: SpotifyDecodePayload = decode_url(query)
+
+        if decoded.type is SpotifySearchType.unusable:
+            logger.debug(f'Spotify search handled an unusable search type for query: "{query}".')
+            return []
+
+        return await node._spotify._search(query=query, type=decoded.type)
 
     @classmethod
     def iterator(cls,
                  *,
                  query: str,
                  limit: int | None = None,
-                 type: SpotifySearchType = SpotifySearchType.playlist,
                  node: Node | None = None,
                  ):
         """An async iterator version of search.
@@ -338,11 +285,9 @@ class SpotifyTrack:
         Parameters
         ----------
         query: str
-            The Spotify URL or ID to search for. Must be of type Playlist or Album.
+            The Spotify URL to search for. Must be of type Playlist or Album.
         limit: Optional[int]
             Limit the amount of tracks returned.
-        type: :class:`~SpotifySearchType`
-            The type of search. Must be either playlist or album. Defaults to playlist.
         node: Optional[:class:`wavelink.Node`]
             An optional node to use when querying for tracks. Defaults to the best available.
 
@@ -351,23 +296,25 @@ class SpotifyTrack:
 
         .. code:: python3
 
-                async for track in spotify.SpotifyTrack.iterator(query=..., type=spotify.SpotifySearchType.playlist):
+                async for track in spotify.SpotifyTrack.iterator(query=...):
                     ...
 
 
-        .. note::
+        .. versionchanged:: 2.6.0
 
-            See :func:`~.decode_url` for gathering information about the supplied URL, including search type.
-            Before using this method.
+            This method no longer takes in the ``type`` parameter. The query provided will be automatically decoded,
+            if the ``type`` returned by :func:`decode_url` is not either ``album`` or ``playlist`` this method will
+            raise a :exc:`TypeError`.
         """
+        decoded: SpotifyDecodePayload = decode_url(query)
 
-        if type is not SpotifySearchType.album and type is not SpotifySearchType.playlist:
-            raise TypeError("Iterator search type must be either album or playlist.")
+        if decoded.type is not SpotifySearchType.album and decoded.type is not SpotifySearchType.playlist:
+            raise TypeError('Spotify iterator query must be either a valid Spotify album or playlist URL.')
 
         if node is None:
             node = NodePool.get_connected_node()
 
-        return SpotifyAsyncIterator(query=query, limit=limit, node=node, type=type)
+        return SpotifyAsyncIterator(query=query, limit=limit, node=node, type=decoded.type)
 
     @classmethod
     async def convert(cls: Type[ST], ctx: commands.Context, argument: str) -> ST:
@@ -501,8 +448,12 @@ class SpotifyClient:
             if regex_result
             else BASEURL.format(entity=type.name, identifier=query)
         )
+
         async with self.session.get(url, headers=self.bearer_headers) as resp:
-            if resp.status != 200:
+            if resp.status == 400:
+                return []
+
+            elif resp.status != 200:
                 raise SpotifyRequestError(resp.status, resp.reason)
 
             data = await resp.json()
@@ -511,7 +462,7 @@ class SpotifyClient:
             return [SpotifyTrack(data)]
 
         elif data['type'] == 'album':
-            album_data: dict[str, Any]= {
+            album_data: dict[str, Any] = {
                                         'album_type': data['album_type'],
                                         'artists': data['artists'],
                                         'available_markets': data['available_markets'],
@@ -535,7 +486,6 @@ class SpotifyClient:
                     tracks.append(SpotifyTrack(track))
 
             return tracks
-
 
         elif data['type'] == 'playlist':
             if iterator:
