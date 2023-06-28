@@ -381,7 +381,7 @@ class SpotifyTrack:
         recos = [SpotifyTrack(t) for t in data['tracks']]
         for reco in recos:
             if reco in player.auto_queue or reco in player.auto_queue.history:
-                pass
+                continue
 
             await player.auto_queue.put_wait(reco)
 
