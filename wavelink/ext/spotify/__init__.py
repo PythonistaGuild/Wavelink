@@ -27,7 +27,7 @@ import asyncio
 import base64
 import logging
 import time
-from typing import Any, List, Optional, Self, Type, TypeVar, Union, TYPE_CHECKING
+from typing import Any, List, Optional, Type, TypeVar, Union, TYPE_CHECKING
 
 import aiohttp
 from discord.ext import commands
@@ -215,7 +215,7 @@ class SpotifyTrack:
             query: str,
             *,
             node: Node | None = None,
-    ) -> list[Self]:
+    ) -> list['SpotifyTrack']:
         """|coro|
 
         Search for tracks with the given query.
