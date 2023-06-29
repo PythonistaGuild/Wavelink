@@ -80,17 +80,18 @@
 .. rst-class:: index-display-none
 .. toctree::
    :maxdepth: 1
-   :caption: Spotify Extension
+   :caption: API Reference
 
-   ext/spotify
+   wavelink
 
 
 .. rst-class:: index-display-none
 .. toctree::
    :maxdepth: 1
-   :caption: API Reference
+   :caption: Spotify Extension
 
-   wavelink
+   ext/spotify
+
 
 
 .. raw:: html
