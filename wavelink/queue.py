@@ -30,7 +30,7 @@ from copy import copy
 import random
 
 from .exceptions import QueueEmpty
-from .tracks import Playable, YouTubePlaylist
+from .tracks import Playable, YouTubePlaylist, SoundCloudPlaylist
 from .ext import spotify
 
 
@@ -356,8 +356,8 @@ class BaseQueue:
     def put(self, item: Playable | spotify.SpotifyTrack) -> None:
         """Put the given item into the back of the queue.
 
-        If the provided ``item`` is a :class:`~wavelink.YouTubePlaylist`, all tracks from this playlist will be put
-        into the queue.
+        If the provided ``item`` is a :class:`~wavelink.YouTubePlaylist` or :class:`~wavelink.SoundCloudPlaylist`, all
+        tracks from this playlist will be put into the queue.
 
 
         .. note::
@@ -373,7 +373,7 @@ class BaseQueue:
         """
         self._check_playable(item)
 
-        if isinstance(item, YouTubePlaylist):
+        if isinstance(item, (YouTubePlaylist, SoundCloudPlaylist)):
             for track in item.tracks:
                 self._put(track)
         else:
@@ -513,7 +513,7 @@ class Queue(BaseQueue):
     async def _put(self, item: Playable | spotify.SpotifyTrack) -> None:
         self._check_playable(item)
 
-        if isinstance(item, YouTubePlaylist):
+        if isinstance(item, (YouTubePlaylist, SoundCloudPlaylist)):
             for track in item.tracks:
                 super()._put(track)
                 await asyncio.sleep(0)
@@ -572,8 +572,8 @@ class Queue(BaseQueue):
 
         Put an item into the queue asynchronously using ``await``.
 
-        If the provided ``item`` is a :class:`~wavelink.YouTubePlaylist`, all tracks from this playlist will be put
-        into the queue.
+        If the provided ``item`` is a :class:`~wavelink.YouTubePlaylist` or :class:`~wavelink.SoundCloudPlaylist`, all
+        tracks from this playlist will be put into the queue.
 
 
         .. note::
