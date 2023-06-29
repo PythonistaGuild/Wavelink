@@ -137,6 +137,9 @@ class Playable(metaclass=abc.ABCMeta):
         self.author: str | None = info.get('author')
         self.identifier: str | None = info.get('identifier')
 
+    def __hash__(self) -> int:
+        return hash(self.encoded)
+
     def __str__(self) -> str:
         return self.title
 
