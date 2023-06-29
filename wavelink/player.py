@@ -117,7 +117,7 @@ class Player(discord.VoiceProtocol):
     auto_queue: :class:`queue.Queue`
         The built-in AutoPlay Queue. This queue keeps track of recommended songs only.
         When a song is retrieved from this queue in the AutoPlay event,
-        it is added to the main :attr:`wavelink.Queue.history` queue..
+        it is added to the main :attr:`wavelink.Queue.history` queue.
     """
 
     def __call__(self, client: discord.Client, channel: VoiceChannel) -> Self:
@@ -178,7 +178,7 @@ class Player(discord.VoiceProtocol):
         self._track_seeds: list[str] = []
         self._autoplay: bool = False
         self.auto_queue: Queue = Queue()
-        self._auto_threshold: int = 20
+        self._auto_threshold: int = 100
         self._filter: Filter | None = None
 
         self._destroyed: bool = False
@@ -209,8 +209,10 @@ class Player(discord.VoiceProtocol):
             return
 
         if self.queue:
+            track = self.queue.get()
+
             populate = len(self.auto_queue) < self._auto_threshold
-            await self.play(self.queue.get(), populate=populate)
+            await self.play(track, populate=populate)
 
             logger.debug(f'Player {self.guild.id} autoplay found track in default queue, populate={populate}.')
             return
@@ -239,7 +241,8 @@ class Player(discord.VoiceProtocol):
 
         When ``autoplay`` is ``True``, the player will automatically handle fetching and playing the next track from
         the queue. It also searches tracks in the ``auto_queue``, a special queue populated with recommended tracks,
-        from the Spotify API.
+        from the Spotify API or YouTube Recommendations.
+
 
         .. note::
 
@@ -252,11 +255,18 @@ class Player(discord.VoiceProtocol):
 
         .. note::
 
-            The ``auto_queue`` will not be populated unless you play a :class:`~wavelink.ext.spotify.SpotifyTrack` and
-            have a :class:`~wavelink.ext.spotify.SpotifyClient` set on your :class:`~wavelink.Node`.
+            The ``auto_queue`` will be populated when you play a :class:`~wavelink.ext.spotify.SpotifyTrack` or
+            :class:`~wavelink.YouTubeTrack`, and have initially set ``populate`` to ``True`` in
+            :meth:`~wavelink.Player.play`. See :meth:`~wavelink.Player.play` for more info.
 
 
         .. versionadded:: 2.0
+
+
+        .. versionchanged:: 2.6.0
+
+            The autoplay event now populates the ``auto_queue`` when playing :class:`~wavelink.YouTubeTrack` **or**
+            :class:`~wavelink.ext.spotify.SpotifyTrack`.
         """
         return self._autoplay
 
@@ -490,7 +500,7 @@ class Player(discord.VoiceProtocol):
         Parameters
         ----------
         track: :class:`tracks.Playable`
-            The :class:`tracks.Playable` track to start playing.
+            The :class:`tracks.Playable` or :class:`~wavelink.ext.spotify.SpotifyTrack` track to start playing.
         replace: bool
             Whether this track should replace the current track. Defaults to ``True``.
         start: Optional[int]
@@ -503,25 +513,75 @@ class Player(discord.VoiceProtocol):
             Sets the volume of the player. Must be between ``0`` and ``1000``.
             Defaults to ``None`` which will not change the volume.
         populate: bool
-            Whether to populate the AutoPlay queue. This is done automatically when AutoPlay is on.
-            Defaults to False.
+            Whether to populate the AutoPlay queue. Defaults to ``False``.
 
             .. versionadded:: 2.0
 
         Returns
         -------
-        :class:`tracks.Playable`
+        :class:`~tracks.Playable`
             The track that is now playing.
+
+
+        .. note::
+
+            If you pass a :class:`~wavelink.YouTubeTrack` **or** :class:`~wavelink.ext.spotify.SpotifyTrack` and set
+            ``populate=True``, **while** :attr:`~wavelink.Player.autoplay` is set to ``True``, this method will populate
+            the ``auto_queue`` with recommended songs. When the ``auto_queue`` is low on tracks this method will
+            automatically populate the ``auto_queue`` with more tracks, and continue this cycle until either the
+            player has been disconnected or :attr:`~wavelink.Player.autoplay` is set to ``False``.
+
+
+        Example
+        -------
+
+        .. code:: python3
+
+            tracks: list[wavelink.YouTubeTrack] = await wavelink.YouTubeTrack.search(...)
+            if not tracks:
+                # Do something as no tracks were found...
+                return
+
+            await player.queue.put_wait(tracks[0])
+
+            if not player.is_playing():
+                await player.play(player.queue.get(), populate=True)
+
+
+        .. versionchanged:: 2.6.0
+
+            This method now accepts :class:`~wavelink.YouTubeTrack` or :class:`~wavelink.ext.spotify.SpotifyTrack`
+            when populating the ``auto_queue``.
         """
         assert self._guild is not None
 
-        if isinstance(track, spotify.SpotifyTrack):
+        if isinstance(track, YouTubeTrack) and self.autoplay and populate:
+            query: str = f'https://www.youtube.com/watch?v={track.identifier}&list=RD{track.identifier}'
+
+            recos: YouTubePlaylist = await self.current_node.get_playlist(query=query, cls=YouTubePlaylist)
+            recos: list[YouTubeTrack] = getattr(recos, 'tracks', [])
+
+            queues = set(self.queue) | set(self.auto_queue) | set(self.auto_queue.history) | {track}
+
+            for track_ in recos:
+                if track_ in queues:
+                    continue
+
+                await self.auto_queue.put_wait(track_)
+
+            self.auto_queue.shuffle()
+
+        elif isinstance(track, spotify.SpotifyTrack):
             original = track
             track = await track.fulfill(player=self, cls=YouTubeTrack, populate=populate)
 
+            if populate:
+                self.auto_queue.shuffle()
+
             for attr, value in original.__dict__.items():
                 if hasattr(track, attr):
-                    logger.warning(f'Unable to set attribute "{attr}" as it conflicts with new track type.')
+                    logger.warning(f'Player {self.guild.id} was unable to set attribute "{attr}" '
+                                   f'when converting a SpotifyTrack as it conflicts with the new track type.')
                     continue
 
                 setattr(track, attr, value)
