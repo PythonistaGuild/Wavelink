@@ -46,7 +46,8 @@ __all__ = (
     'GenericTrack',
     'YouTubeMusicTrack',
     'SoundCloudTrack',
-    'YouTubePlaylist'
+    'YouTubePlaylist',
+    'SoundCloudPlaylist'
 )
 
 
@@ -171,6 +172,16 @@ class Playable(metaclass=abc.ABCMeta):
                      ) -> YouTubePlaylist:
         ...
 
+    @overload
+    @classmethod
+    async def search(cls,
+                     query: str,
+                     /,
+                     *,
+                     node: Node | None = ...
+                     ) -> SoundCloudPlaylist:
+        ...
+
     @classmethod
     async def search(cls,
                      query: str,
@@ -195,6 +206,10 @@ class Playable(metaclass=abc.ABCMeta):
                 cls.PREFIX == 'ytpl:':
 
             playlist = await NodePool.get_playlist(query, cls=YouTubePlaylist, node=node)
+            return playlist
+        elif str(check.host) == 'soundcloud.com' or str(check.host) == 'www.soundcloud.com' and 'sets' in check.parts:
+
+            playlist = await NodePool.get_playlist(query, cls=SoundCloudPlaylist, node=node)
             return playlist
         elif check.host:
             tracks = await NodePool.get_tracks(query, cls=cls, node=node)
@@ -332,6 +347,45 @@ class YouTubePlaylist(Playable, Playlist):
             self.tracks.append(track)
 
         self.source = TrackSource.YouTube
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class SoundCloudPlaylist(Playable, Playlist):
+    """Represents a Lavalink SoundCloud playlist object.
+
+
+    .. container:: operations
+
+        .. describe:: str(playlist)
+
+            Returns a string representing the playlists name.
+
+
+    Attributes
+    ----------
+    name: str
+        The name of the playlist.
+    tracks: :class:`SoundCloudTrack`
+        The list of :class:`SoundCloudTrack` in the playlist.
+    selected_track: Optional[int]
+        The selected video in the playlist. This could be ``None``.
+    """
+
+    def __init__(self, data: dict):
+        self.tracks: list[SoundCloudTrack] = []
+        self.name: str = data["playlistInfo"]["name"]
+
+        self.selected_track: Optional[int] = data["playlistInfo"].get("selectedTrack")
+        if self.selected_track is not None:
+            self.selected_track = int(self.selected_track)
+
+        for track_data in data["tracks"]:
+            track = SoundCloudTrack(track_data)
+            self.tracks.append(track)
+
+        self.source = TrackSource.SoundCloud
 
     def __str__(self) -> str:
         return self.name
