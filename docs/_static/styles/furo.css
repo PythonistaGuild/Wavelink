@@ -2307,6 +2307,7 @@ ul.search li {
     padding: 0 0.5rem;
     display: flex;
     flex-direction: row;
+    margin-bottom: 1rem;
 }
 
 .pretty-version > p {
