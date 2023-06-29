@@ -30,7 +30,7 @@ from copy import copy
 import random
 
 from .exceptions import QueueEmpty
-from .tracks import Playable
+from .tracks import Playable, YouTubePlaylist
 from .ext import spotify
 
 
@@ -354,8 +354,30 @@ class BaseQueue:
         return self._index(self._check_playable(item))
 
     def put(self, item: Playable | spotify.SpotifyTrack) -> None:
-        """Put the given item into the back of the queue."""
-        self._put(self._check_playable(item))
+        """Put the given item into the back of the queue.
+
+        If the provided ``item`` is a :class:`~wavelink.YouTubePlaylist`, all tracks from this playlist will be put
+        into the queue.
+
+
+        .. note::
+
+            Inserting playlists is currently only supported via this method, which means you can only insert them into
+            the back of the queue. Future versions of wavelink may add support for inserting playlists from a specific
+            index, or at the front of the queue.
+
+
+        .. versionchanged:: 2.6.0
+
+            Added support for directly adding a :class:`~wavelink.YouTubePlaylist` to the queue.
+        """
+        self._check_playable(item)
+
+        if isinstance(item, YouTubePlaylist):
+            for track in item.tracks:
+                self._put(track)
+        else:
+            self._put(item)
 
     def put_at_index(self, index: int, item: Playable | spotify.SpotifyTrack) -> None:
         """Put the given item into the queue at the specified index."""
@@ -488,8 +510,17 @@ class Queue(BaseQueue):
         self._loaded = item
         return item
 
-    def _put(self, item: Playable | spotify.SpotifyTrack) -> None:
-        super()._put(item)
+    async def _put(self, item: Playable | spotify.SpotifyTrack) -> None:
+        self._check_playable(item)
+
+        if isinstance(item, YouTubePlaylist):
+            for track in item.tracks:
+                super()._put(track)
+                await asyncio.sleep(0)
+        else:
+            super()._put(item)
+            await asyncio.sleep(0)
+
         self._wakeup_next()
 
     def _insert(self, index: int, item: Playable | spotify.SpotifyTrack) -> None:
@@ -539,10 +570,24 @@ class Queue(BaseQueue):
     async def put_wait(self, item: Playable | spotify.SpotifyTrack) -> None:
         """|coro|
 
-        Put an item into the queue using ``await``.
+        Put an item into the queue asynchronously using ``await``.
+
+        If the provided ``item`` is a :class:`~wavelink.YouTubePlaylist`, all tracks from this playlist will be put
+        into the queue.
+
+
+        .. note::
+
+            Inserting playlists is currently only supported via this method, which means you can only insert them into
+            the back of the queue. Future versions of wavelink may add support for inserting playlists from a specific
+            index, or at the front of the queue.
+
+
+        .. versionchanged:: 2.6.0
+
+            Added support for directly adding a :class:`~wavelink.YouTubePlaylist` to the queue.
         """
-        self._put(item)
-        await asyncio.sleep(0)
+        await self._put(item)
 
     def reset(self) -> None:
         """Clears the state of all queues, including the history queue.
