@@ -265,7 +265,7 @@ class SpotifyTrack:
 
         decoded: SpotifyDecodePayload = decode_url(query)
 
-        if decoded.type is SpotifySearchType.unusable:
+        if not decoded or decoded.type is SpotifySearchType.unusable:
             logger.debug(f'Spotify search handled an unusable search type for query: "{query}".')
             return []
 
@@ -308,7 +308,7 @@ class SpotifyTrack:
         """
         decoded: SpotifyDecodePayload = decode_url(query)
 
-        if decoded.type is not SpotifySearchType.album and decoded.type is not SpotifySearchType.playlist:
+        if not decoded or decoded.type is not SpotifySearchType.album and decoded.type is not SpotifySearchType.playlist:
             raise TypeError('Spotify iterator query must be either a valid Spotify album or playlist URL.')
 
         if node is None:
