@@ -200,7 +200,7 @@ class SpotifyTrack:
         self.length: int = data['duration_ms']
         self.duration: int = self.length
         self.isrc: str | None = data.get("external_ids", {}).get('irsc')
-        self.explicit: bool = True if data.get('explicit', False) == "true" or data.get('explicit', False) else False
+        self.explicit: bool = True if data.get('explicit', False) == "true" or data.get('explicit', False) == True else False
 
     def __str__(self) -> str:
         return f'{self.name} - {self.artists[0]}'
