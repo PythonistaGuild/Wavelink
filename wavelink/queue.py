@@ -589,6 +589,34 @@ class Queue(BaseQueue):
         """
         await self._put(item)
 
+    def put(self, item: Playable | spotify.SpotifyTrack) -> None:
+        """Put the given item into the back of the queue.
+
+        If the provided ``item`` is a :class:`~wavelink.YouTubePlaylist`, all tracks from this playlist will be put
+        into the queue.
+
+
+        .. note::
+
+            Inserting playlists is currently only supported via this method, which means you can only insert them into
+            the back of the queue. Future versions of wavelink may add support for inserting playlists from a specific
+            index, or at the front of the queue.
+
+
+        .. versionchanged:: 2.6.0
+
+            Added support for directly adding a :class:`~wavelink.YouTubePlaylist` to the queue.
+        """
+        self._check_playable(item)
+
+        if isinstance(item, YouTubePlaylist):
+            for track in item.tracks:
+                super()._put(track)
+        else:
+            super()._put(item)
+
+        self._wakeup_next()
+
     def reset(self) -> None:
         """Clears the state of all queues, including the history queue.
 
