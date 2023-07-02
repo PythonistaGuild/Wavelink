@@ -549,7 +549,8 @@ class NodePool:
 
         .. warning::
 
-            The only playlist currently supported is :class:`tracks.YouTubePlaylist`.
+            The only playlists currently supported are :class:`tracks.YouTubePlaylist` and
+            :class:`tracks.YouTubePlaylist`.
 
 
         Parameters
