@@ -39,7 +39,7 @@ Wavelink features a fully asynchronous API that's intuitive and easy to use with
 
 Documentation
 ---------------------------
-`Official Documentation <https://wavelink.readthedocs.io/en/latest/index.html>`_
+`Official Documentation <https://wavelink.dev/>`_
 
 Support
 ---------------------------
@@ -110,7 +110,12 @@ Getting Started
         else:
             vc: wavelink.Player = ctx.voice_client
 
-        track = await wavelink.YouTubeTrack.search(search, return_first=True)
+        tracks = await wavelink.YouTubeTrack.search(search)
+        if not tracks:
+            await ctx.send(f'No tracks found with query: `{search}`')
+            return
+
+        track = tracks[0]
         await vc.play(track)
 
 
@@ -127,7 +132,7 @@ Getting Started
 Lavalink Installation
 ---------------------
 
-Head to the official `Lavalink repo <https://github.com/freyacodes/Lavalink>`_ and give it a star!
+Head to the official `Lavalink repo <https://github.com/lavalink-devs/Lavalink>`_ and give it a star!
 
 - Create a folder for storing Lavalink.jar and related files/folders.
 - Copy and paste the example `application.yml <https://github.com/freyacodes/Lavalink#server-configuration>`_ to ``application.yml`` in the folder we created earlier. You can open the yml in Notepad or any simple text editor.
@@ -135,7 +140,7 @@ Head to the official `Lavalink repo <https://github.com/freyacodes/Lavalink>`_ a
 - Set local to true in the ``application.yml`` if you wish to use ``wavelink.LocalTrack`` for local machine search options... Otherwise ignore.
 - Save and exit.
 - Install `Java 17(Windows) <https://download.oracle.com/java/17/latest/jdk-17_windows-x64_bin.exe>`_ or **Java 13+** on the machine you are running.
-- Download `Lavalink.jar <https://ci.fredboat.com/viewLog.html?buildId=lastSuccessful&buildTypeId=Lavalink_Build&tab=artifacts&guest=1>`_ and place it in the folder created earlier.
+- Download `Lavalink.jar <https://github.com/lavalink-devs/Lavalink/releases>`_ and place it in the folder created earlier.
 - Open a cmd prompt or terminal and change directory ``cd`` into the folder we made earlier.
 - Run: ``java -jar Lavalink.jar``
 

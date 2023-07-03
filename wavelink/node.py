@@ -36,6 +36,7 @@ from disnake.enums import try_enum
 from disnake.utils import MISSING, classproperty
 import urllib.parse
 
+from . import __version__
 from .enums import LoadType, NodeStatus
 from .exceptions import *
 from .websocket import Websocket
@@ -70,6 +71,14 @@ class Node:
     .. warning::
 
         The Node will not be connected until passed to :meth:`NodePool.connect`.
+
+
+    .. container:: operations
+
+        .. describe:: repr(node)
+
+            Returns an official string representation of this Node.
+
 
     Parameters
     ----------
@@ -131,6 +140,7 @@ class Node:
         self._session_id: str | None = None
 
         self._players: dict[int, Player] = {}
+        self._invalidated: dict[int, Player] = {}
 
         self._status: NodeStatus = NodeStatus.DISCONNECTED
         self._major_version: int | None = None
@@ -138,7 +148,7 @@ class Node:
         self._spotify: spotify_.SpotifyClient | None = None
 
     def __repr__(self) -> str:
-        return f'Node: id="{self._id}", uri="{self.uri}", status={self.status}'
+        return f'Node(id="{self._id}", uri="{self.uri}", status={self.status})'
 
     def __eq__(self, other: object) -> bool:
         return self.id == other.id if isinstance(other, Node) else NotImplemented
@@ -209,14 +219,24 @@ class Node:
                 self._major_version = 3
                 return
 
-            version_tuple = tuple(int(v) for v in version.split('.'))
+            try:
+                version_tuple = tuple(int(v) for v in version.split('.'))
+            except ValueError:
+                logging.warning(f'Lavalink "{version}" is unknown and may not be compatible with: '
+                                f'Wavelink "{__version__}". Wavelink is assuming the Lavalink version.')
+
+                self._major_version = 3
+                return
+
             if version_tuple[0] < 3:
-                raise InvalidLavalinkVersion(f'Wavelink 2 is not compatible with Lavalink "{version}".')
+                raise InvalidLavalinkVersion(f'Wavelink "{__version__}" is not compatible with Lavalink "{version}".')
 
             if version_tuple[0] == 3 and version_tuple[1] < 7:
-                raise InvalidLavalinkVersion('Wavelink 2 is not compatible with Lavalink versions under "3.7".')
+                raise InvalidLavalinkVersion(f'Wavelink "{__version__}" is not compatible with '
+                                             f'Lavalink versions under "3.7".')
 
             self._major_version = version_tuple[0]
+            logger.info(f'Lavalink version "{version}" connected for Node: {self.id}')
 
     async def _send(self,
                     *,
@@ -233,7 +253,17 @@ class Node:
                    f'{f"/{guild_id}" if guild_id else ""}' \
                    f'{f"?{query}" if query else ""}'
 
+        logger.debug(f'Node {self} is sending payload to [{method}] "{uri}" with payload: {data}')
+
         async with self._session.request(method=method, url=uri, json=data or {}) as resp:
+            rdata: dict[str | int, Any] | None = None
+
+            if resp.content_type == 'application/json':
+                rdata = await resp.json()
+
+            logger.debug(f'Node {self} received payload from Lavalink after sending to "{uri}" with response: '
+                         f'<status={resp.status}, data={rdata}>')
+
             if resp.status >= 300:
                 raise InvalidLavalinkResponse(f'An error occurred when attempting to reach: "{uri}".',
                                               status=resp.status)
@@ -241,7 +271,7 @@ class Node:
             if resp.status == 204:
                 return
 
-            return await resp.json()
+            return rdata
 
     async def get_tracks(self, cls: type[PlayableT], query: str) -> list[PlayableT]:
         """|coro|
@@ -265,6 +295,8 @@ class Node:
         list[PlayableT]
             A list of found tracks converted to the provided cls.
         """
+        logger.debug(f'Node {self} is requesting tracks with query "{query}".')
+
         data = await self._send(method='GET', path='loadtracks', query=f'identifier={query}')
         load_type = try_enum(LoadType, data.get("loadType"))
 
@@ -311,7 +343,10 @@ class Node:
         WavelinkException
             An unspecified error occurred when loading the playlist.
         """
-        data = await self._send(method='GET', path='loadtracks', query=f'identifier={query}')
+        logger.debug(f'Node {self} is requesting a playlist with query "{query}".')
+
+        encoded_query = urllib.parse.quote(query)
+        data = await self._send(method='GET', path='loadtracks', query=f'identifier={encoded_query}')
 
         load_type = try_enum(LoadType, data.get("loadType"))
 
@@ -339,9 +374,10 @@ class Node:
         encoded: str
             The Tracks unique encoded string.
         """
-        encoded = urllib.parse.quote(encoded)
-        data = await self._send(method='GET', path='decodetrack', query=f'encodedTrack={encoded}')
+        encoded_query = urllib.parse.quote(encoded)
+        data = await self._send(method='GET', path='decodetrack', query=f'encodedTrack={encoded_query}')
 
+        logger.debug(f'Node {self} built encoded track with encoding "{encoded}". Response data: {data}')
         return cls(data=data)
 
 
@@ -514,7 +550,8 @@ class NodePool:
 
         .. warning::
 
-            The only playlist currently supported is :class:`tracks.YouTubePlaylist`.
+            The only playlists currently supported are :class:`tracks.YouTubePlaylist` and
+            :class:`tracks.YouTubePlaylist`.
 
 
         Parameters

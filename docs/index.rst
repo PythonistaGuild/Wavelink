@@ -1,6 +1,10 @@
+:og:description: Wavelink is a robust and powerful Lavalink wrapper for Discord.py. Featuring, a fully asynchronous API that's intuitive and easy to use with built in Spotify Support, Node Pool Balancing, advanced Queues, autoplay feature and looping features built in.
+:og:title: Wavelink Documentation
+
+
 .. meta::
    :title: Wavelink Documentation
-   :description: Documentation for Wavelink, the Powerful Lavalink wrapper for discord.py.
+   :description: Wavelink is a robust and powerful Lavalink wrapper for Discord.py. Featuring, a fully asynchronous API that's intuitive and easy to use with built in Spotify Support, Node Pool Balancing, advanced Queues, autoplay feature and looping features built in.
    :language: en-US
    :keywords: wavelink, lavalink, python api
    :copyright: PythonistaGuild. 2019 - Present
@@ -44,16 +48,14 @@
       <div class="index-apis-section">
          <b>Wavelink Reference:</b>
          <ul class="index-featuring-list">
-            <li><a href="wavelink.html" class="reference internal">API Reference</a>
+            <li><a href="wavelink.html" class="reference internal">API Reference</a></li>
          </ul>
       </div>
 
       <div class="index-apis-section">
          <b>Wavelink Extension API's:</b>
          <ul class="index-featuring-list">
-            <li>Spotify Support coming soon...
-            <li>YouTube AutoPlay coming soon...
-
+            <li><a href="ext/spotify.html" class="reference internal">Spotify Extension</a></li>
          </ul>
       </div>
    </div>
@@ -63,7 +65,7 @@
    Consider joining the Official Discord server for a fast response to help.<br>
    <a href="https://discord.gg/RAKc3HF"><img src="https://discordapp.com/api/guilds/490948346773635102/widget.png?style=banner2"></a><br><br>
 
-   <b>For issues and contributing with the library, visit:</b> <a href"https://github.com/PythonistaGuild/Wavelink">GitHub</a>
+   <b>For issues and contributing with the library, visit:</b> <a href="https://github.com/PythonistaGuild/Wavelink">GitHub</a>
 
 
 .. rst-class:: index-display-none
@@ -81,6 +83,15 @@
    :caption: API Reference
 
    wavelink
+
+
+.. rst-class:: index-display-none
+.. toctree::
+   :maxdepth: 1
+   :caption: Spotify Extension
+
+   ext/spotify
+
 
 
 .. raw:: html
