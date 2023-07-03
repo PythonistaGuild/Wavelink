@@ -157,7 +157,7 @@ class SpotifyTrack:
         The URI for this spotify track.
     id: str
         The spotify ID for this track.
-    isrc: str | None
+    isrc: Optional[str]
         The International Standard Recording Code associated with this track.
     length: int
         The track length in milliseconds.
@@ -197,7 +197,7 @@ class SpotifyTrack:
         self.id: str = data['id']
         self.length: int = data['duration_ms']
         self.duration: int = self.length
-        self.isrc: str | None = data.get("external_ids", {}).get('irsc')
+        self.isrc: Optional[str] = data.get("external_ids", {}).get('irsc', None)
 
     def __str__(self) -> str:
         return f'{self.name} - {self.artists[0]}'
@@ -215,7 +215,7 @@ class SpotifyTrack:
             cls,
             query: str,
             *,
-            node: Node | None = None,
+            node: Optional[Node] = None,
     ) -> list['SpotifyTrack']:
         """|coro|
 
@@ -274,8 +274,8 @@ class SpotifyTrack:
     def iterator(cls,
                  *,
                  query: str,
-                 limit: int | None = None,
-                 node: Node | None = None,
+                 limit: Optional[int] = None,
+                 node: Optional[Node] = None,
                  ):
         """An async iterator version of search.
 
@@ -353,7 +353,7 @@ class SpotifyTrack:
             return tracks[0]
 
         node: Node = player.current_node
-        sc: SpotifyClient | None = node._spotify
+        sc: Optional[SpotifyClient] = node._spotify
 
         if not sc:
             raise RuntimeError(f"There is no spotify client associated with <{node:!r}>")
@@ -400,7 +400,7 @@ class SpotifyClient:
 
         self.session = aiohttp.ClientSession()
 
-        self._bearer_token: str | None = None
+        self._bearer_token: Optional[str] = None
         self._expiry: int = 0
 
     @property

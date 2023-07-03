@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import random
 from collections.abc import Callable
+from typing import Optional
 
 
 class Backoff:
@@ -36,10 +37,10 @@ class Backoff:
         The amount of times to backoff before resetting. Defaults to 5. If set to None, backoff will run indefinitely.
     """
 
-    def __init__(self, *, base: int = 1, maximum_time: float = 30.0, maximum_tries: int | None = 5) -> None:
+    def __init__(self, *, base: int = 1, maximum_time: float = 30.0, maximum_tries: Optional[int] = 5) -> None:
         self._base: int = base
         self._maximum_time: float = maximum_time
-        self._maximum_tries: int | None = maximum_tries
+        self._maximum_tries: Optional[int] = maximum_tries
         self._retries: int = 1
 
         rand = random.Random()

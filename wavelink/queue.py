@@ -28,6 +28,7 @@ from collections import deque
 from collections.abc import AsyncIterator, Iterable, Iterator
 from copy import copy
 import random
+from typing import Union
 
 from .exceptions import QueueEmpty
 from .tracks import Playable, YouTubePlaylist, SoundCloudPlaylist
@@ -135,7 +136,7 @@ class BaseQueue:
         """
         return bool(self.count)
 
-    def __call__(self, item: Playable | spotify.SpotifyTrack) -> None:
+    def __call__(self, Union[Playable, spotify.SpotifyTrack]) -> None:
         """Allows the queue instance to be called directly in order to add a member.
 
         Example
@@ -159,7 +160,7 @@ class BaseQueue:
         """
         return self.count
 
-    def __getitem__(self, index: int) -> Playable | spotify.SpotifyTrack:
+    def __getitem__(self, index: int) -> Union[Playable, spotify.SpotifyTrack]:
         """Returns a member at the given position.
 
         Does **not** remove the item from queue.
@@ -176,7 +177,7 @@ class BaseQueue:
 
         return self._queue[index]
 
-    def __setitem__(self, index: int, item: Playable | spotify.SpotifyTrack):
+    def __setitem__(self, index: int, Union[Playable, spotify.SpotifyTrack]):
         """Inserts an item at the given position.
 
         Example
@@ -203,7 +204,7 @@ class BaseQueue:
         """
         self._queue.__delitem__(index)
 
-    def __iter__(self) -> Iterator[Playable | spotify.SpotifyTrack]:
+    def __iter__(self) -> Iterator[Union[Playable, spotify.SpotifyTrack]]:
         """Iterate over members in the queue.
 
         Does **not** remove items when iterating.
@@ -218,7 +219,7 @@ class BaseQueue:
         """
         return self._queue.__iter__()
 
-    def __reversed__(self) -> Iterator[Playable | spotify.SpotifyTrack]:
+    def __reversed__(self) -> Iterator[Union[Playable, spotify.SpotifyTrack]]:
         """Iterate over members in a reverse order.
 
         Example
@@ -231,7 +232,7 @@ class BaseQueue:
         """
         return self._queue.__reversed__()
 
-    def __contains__(self, item: Playable | spotify.SpotifyTrack) -> bool:
+    def __contains__(self, Union[Playable, spotify.SpotifyTrack]) -> bool:
         """Check if a track is a member of the queue.
 
         Example
@@ -244,7 +245,7 @@ class BaseQueue:
         """
         return item in self._queue
 
-    def __add__(self, other: Iterable[Playable | spotify.SpotifyTrack]):
+    def __add__(self, other: Iterable[Union[Playable, spotify.SpotifyTrack]]):
         """Return a new queue containing all members, including old members.
 
         Example
@@ -261,7 +262,7 @@ class BaseQueue:
         new_queue.extend(other)
         return new_queue
 
-    def __iadd__(self, other: Iterable[Playable] | Playable):
+    def __iadd__(self, other: Union[Iterable[Playable], Playable]):
         """Add items to queue from an iterable.
 
         Example
@@ -282,33 +283,33 @@ class BaseQueue:
 
         raise TypeError(f"Adding '{type(other)}' type to the queue is not supported.")
 
-    def _get(self) -> Playable | spotify.SpotifyTrack:
+    def _get(self) -> Union[Playable, spotify.SpotifyTrack]:
         if self.is_empty:
             raise QueueEmpty("No items currently in the queue.")
 
         return self._queue.popleft()
 
-    def _drop(self) -> Playable | spotify.SpotifyTrack:
+    def _drop(self) -> Union[Playable, spotify.SpotifyTrack]:
         return self._queue.pop()
 
-    def _index(self, item: Playable | spotify.SpotifyTrack) -> int:
+    def _index(self, Union[Playable, spotify.SpotifyTrack]) -> int:
         return self._queue.index(item)
 
-    def _put(self, item: Playable | spotify.SpotifyTrack) -> None:
+    def _put(self, Union[Playable, spotify.SpotifyTrack]) -> None:
         self._queue.append(item)
 
-    def _insert(self, index: int, item: Playable | spotify.SpotifyTrack) -> None:
+    def _insert(self, index: int, Union[Playable, spotify.SpotifyTrack]) -> None:
         self._queue.insert(index, item)
 
     @staticmethod
-    def _check_playable(item: Playable | spotify.SpotifyTrack) -> Playable | spotify.SpotifyTrack:
+    def _check_playable(Union[Playable, spotify.SpotifyTrack]) -> Union[Playable, spotify.SpotifyTrack]:
         if not isinstance(item, (Playable, spotify.SpotifyTrack)):
             raise TypeError("Only Playable objects are supported.")
 
         return item
 
     @classmethod
-    def _check_playable_container(cls, iterable: Iterable) -> list[Playable | spotify.SpotifyTrack]:
+    def _check_playable_container(cls, iterable: Iterable) -> list[Union[Playable, spotify.SpotifyTrack]]:
         iterable = list(iterable)
 
         for item in iterable:
@@ -326,7 +327,7 @@ class BaseQueue:
         """Returns ``True`` if queue has no members."""
         return not bool(self.count)
 
-    def get(self) -> Playable | spotify.SpotifyTrack:
+    def get(self) -> Union[Playable, spotify.SpotifyTrack]:
         """Return next immediately available item in queue if any.
 
         Raises :exc:`~wavelink.QueueEmpty` if no items in queue.
@@ -336,7 +337,7 @@ class BaseQueue:
 
         return self._get()
 
-    def pop(self) -> Playable | spotify.SpotifyTrack:
+    def pop(self) -> Union[Playable, spotify.SpotifyTrack]:
         """Return item from the right end side of the queue.
 
         Raises :exc:`~wavelink.QueueEmpty` if no items in queue.
@@ -346,14 +347,14 @@ class BaseQueue:
 
         return self._queue.pop()
 
-    def find_position(self, item: Playable | spotify.SpotifyTrack) -> int:
+    def find_position(self, Union[Playable, spotify.SpotifyTrack]) -> int:
         """Find the position a given item within the queue.
 
         Raises :exc:`ValueError` if item is not in the queue.
         """
         return self._index(self._check_playable(item))
 
-    def put(self, item: Playable | spotify.SpotifyTrack) -> None:
+    def put(self, Union[Playable, spotify.SpotifyTrack]) -> None:
         """Put the given item into the back of the queue.
 
         If the provided ``item`` is a :class:`~wavelink.YouTubePlaylist` or :class:`~wavelink.SoundCloudPlaylist`, all
@@ -379,11 +380,11 @@ class BaseQueue:
         else:
             self._put(item)
 
-    def put_at_index(self, index: int, item: Playable | spotify.SpotifyTrack) -> None:
+    def put_at_index(self, index: int, Union[Playable, spotify.SpotifyTrack]) -> None:
         """Put the given item into the queue at the specified index."""
         self._insert(index, self._check_playable(item))
 
-    def put_at_front(self, item: Playable | spotify.SpotifyTrack) -> None:
+    def put_at_front(self, Union[Playable, spotify.SpotifyTrack]) -> None:
         """Put the given item into the front of the queue."""
         self.put_at_index(0, item)
 
@@ -403,7 +404,7 @@ class BaseQueue:
         """
         random.shuffle(self._queue)
 
-    def extend(self, iterable: Iterable[Playable | spotify.SpotifyTrack], *, atomic: bool = True) -> None:
+    def extend(self, iterable: Iterable[Union[Playable, spotify.SpotifyTrack]], *, atomic: bool = True) -> None:
         """Add the members of the given iterable to the end of the queue.
 
         If atomic is set to ``True``, no tracks will be added upon any exceptions.
@@ -476,7 +477,7 @@ class Queue(BaseQueue):
         self._finished = asyncio.Event()
         self._finished.set()
 
-    async def __aiter__(self) -> AsyncIterator[Playable | spotify.SpotifyTrack]:
+    async def __aiter__(self) -> AsyncIterator[Union[Playable, spotify.SpotifyTrack]]:
         """Pops members as it iterates the queue, waiting for new members when exhausted.
 
         **Does** remove items when iterating.
@@ -494,10 +495,10 @@ class Queue(BaseQueue):
         while True:
             yield await self.get_wait()
 
-    def get(self) -> Playable | spotify.SpotifyTrack:
+    def get(self) -> Union[Playable, spotify.SpotifyTrack]:
         return self._get()
 
-    def _get(self) -> Playable | spotify.SpotifyTrack:
+    def _get(self) -> Union[Playable, spotify.SpotifyTrack]:
         if self.loop and self._loaded:
             return self._loaded
 
@@ -510,7 +511,7 @@ class Queue(BaseQueue):
         self._loaded = item
         return item
 
-    async def _put(self, item: Playable | spotify.SpotifyTrack) -> None:
+    async def _put(self, Union[Playable, spotify.SpotifyTrack]) -> None:
         self._check_playable(item)
 
         if isinstance(item, (YouTubePlaylist, SoundCloudPlaylist)):
@@ -523,7 +524,7 @@ class Queue(BaseQueue):
 
         self._wakeup_next()
 
-    def _insert(self, index: int, item: Playable | spotify.SpotifyTrack) -> None:
+    def _insert(self, index: int, Union[Playable, spotify.SpotifyTrack]) -> None:
         super()._insert(index, item)
         self._wakeup_next()
 
@@ -535,7 +536,7 @@ class Queue(BaseQueue):
                 waiter.set_result(None)
                 break
 
-    async def get_wait(self) -> Playable | spotify.SpotifyTrack:
+    async def get_wait(self) -> Union[Playable, spotify.SpotifyTrack]:
         """|coro|
 
         Return the next item in queue once available.
@@ -567,7 +568,7 @@ class Queue(BaseQueue):
 
         return self.get()
 
-    async def put_wait(self, item: Playable | spotify.SpotifyTrack) -> None:
+    async def put_wait(self, Union[Playable, spotify.SpotifyTrack]) -> None:
         """|coro|
 
         Put an item into the queue asynchronously using ``await``.
@@ -589,7 +590,7 @@ class Queue(BaseQueue):
         """
         await self._put(item)
 
-    def put(self, item: Playable | spotify.SpotifyTrack) -> None:
+    def put(self, item: Union[Playable, spotify.SpotifyTrack]) -> None:
         """Put the given item into the back of the queue.
 
         If the provided ``item`` is a :class:`~wavelink.YouTubePlaylist`, all tracks from this playlist will be put

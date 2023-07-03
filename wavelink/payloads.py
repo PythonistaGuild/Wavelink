@@ -60,10 +60,10 @@ class TrackEventPayload:
         The reason this event was fired.
     """
 
-    def __init__(self, *, data: EventOp, track: Playable, original: Playable | None, player: Player) -> None:
+    def __init__(self, *, data: EventOp, track: Playable, original: Optional[Playable], player: Player) -> None:
         self.event: TrackEventType = try_enum(TrackEventType, data['type'])
         self.track: Playable = track
-        self.original: Playable | None = original
+        self.original: Optional[Playable] = original
         self.player: Player = player
 
         self.reason: str = data.get('reason')

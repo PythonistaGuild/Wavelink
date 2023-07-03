@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import abc
 import collections
-from typing import Any
+from typing import Any, Optional
 
 
 __all__ = (
@@ -52,7 +52,7 @@ class BaseFilter(abc.ABC):
             Returns an official string representation of this filter.
     """
 
-    def __init__(self, name: str | None = None) -> None:
+    def __init__(self, name: Optional[str] = None) -> None:
         self.name: str = name or "Unknown"
 
     def __repr__(self) -> str:
@@ -573,30 +573,30 @@ class Filter:
 
     def __init__(
         self,
-        _filter: Filter | None = None,
+        _filter: Optional[Filter] = None,
         /, *,
-        equalizer: Equalizer | None = None,
-        karaoke: Karaoke | None = None,
-        timescale: Timescale | None = None,
-        tremolo: Tremolo | None = None,
-        vibrato: Vibrato | None = None,
-        rotation: Rotation | None = None,
-        distortion: Distortion | None = None,
-        channel_mix: ChannelMix | None = None,
-        low_pass: LowPass | None = None
+        equalizer: Optional[Equalizer] = None,
+        karaoke: Optional[Karaoke] = None,
+        timescale: Optional[Timescale] = None,
+        tremolo: Optional[Tremolo] = None,
+        vibrato: Optional[Vibrato] = None,
+        rotation: Optional[Rotation] = None,
+        distortion: Optional[Distortion] = None,
+        channel_mix: Optional[ChannelMix] = None,
+        low_pass: Optional[LowPass] = None
     ) -> None:
 
-        self.filter: Filter | None = _filter
+        self.filter: Optional[Filter] = _filter
 
-        self.equalizer: Equalizer | None = equalizer
-        self.karaoke: Karaoke | None = karaoke
-        self.timescale: Timescale | None = timescale
-        self.tremolo: Tremolo | None = tremolo
-        self.vibrato: Vibrato | None = vibrato
-        self.rotation: Rotation | None = rotation
-        self.distortion: Distortion | None = distortion
-        self.channel_mix: ChannelMix | None = channel_mix
-        self.low_pass: LowPass | None = low_pass
+        self.equalizer: Optional[Equalizer] = equalizer
+        self.karaoke: Optional[Karaoke] = karaoke
+        self.timescale: Optional[Timescale] = timescale
+        self.tremolo: Optional[Tremolo] = tremolo
+        self.vibrato: Optional[Vibrato] = vibrato
+        self.rotation: Optional[Rotation] = rotation
+        self.distortion: Optional[Distortion] = distortion
+        self.channel_mix: Optional[ChannelMix] = channel_mix
+        self.low_pass: Optional[LowPass] = low_pass
 
     def __repr__(self) -> str:
         return f"<wavelink.Filter equalizer={self.equalizer}, " \

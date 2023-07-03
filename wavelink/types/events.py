@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import Literal, TypedDict, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing_extensions import NotRequired, TypeAlias
@@ -21,7 +21,7 @@ class TrackStartEvent(_BaseEventOp):
 class _OtherEventOp(_BaseEventOp):
     type: _OtherEventOpType
 
-EventOp: TypeAlias = "TrackStartEvent | _OtherEventOp"
+EventOp: TypeAlias = Union[TrackStartEvent, _OtherEventOp]
 
 
 class PlayerState(TypedDict):

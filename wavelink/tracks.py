@@ -132,12 +132,12 @@ class Playable(metaclass=abc.ABCMeta):
 
         self.title: str = info.get('title', 'Unknown Title')
 
-        source: str | None = info.get('sourceName')
+        source: Optional[str] = info.get('sourceName')
         self.source: TrackSource = _source_mapping.get(source, TrackSource.Unknown)
 
-        self.uri: str | None = info.get('uri')
-        self.author: str | None = info.get('author')
-        self.identifier: str | None = info.get('identifier')
+        self.uri: Optional[str] = info.get('uri')
+        self.author: Optional[str] = info.get('author')
+        self.identifier: Optional[str] = info.get('identifier')
 
     def __hash__(self) -> int:
         return hash(self.encoded)
@@ -159,7 +159,7 @@ class Playable(metaclass=abc.ABCMeta):
                      query: str,
                      /,
                      *,
-                     node: Node | None = ...
+                     node: Optional[Node] = ...
                      ) -> list[Self]:
         ...
 
@@ -169,7 +169,7 @@ class Playable(metaclass=abc.ABCMeta):
                      query: str,
                      /,
                      *,
-                     node: Node | None = ...
+                     node: Optional[Node] = ...
                      ) -> YouTubePlaylist:
         ...
 
@@ -179,7 +179,7 @@ class Playable(metaclass=abc.ABCMeta):
                      query: str,
                      /,
                      *,
-                     node: Node | None = ...
+                     node: Optional[Node] = ...
                      ) -> SoundCloudPlaylist:
         ...
 
@@ -188,7 +188,7 @@ class Playable(metaclass=abc.ABCMeta):
                      query: str,
                      /,
                      *,
-                     node: Node | None = None
+                     node: Optional[Node] = None
                      ) -> list[Self]:
         """Search and retrieve tracks for the given query.
 
@@ -271,7 +271,7 @@ class YouTubeTrack(Playable):
 
     thumb = thumbnail
 
-    async def fetch_thumbnail(self, *, node: Node | None = None) -> str:
+    async def fetch_thumbnail(self, *, node: Optional[Node] = None) -> str:
         """Fetch the max resolution thumbnail with a fallback if it does not exist.
 
         This sets and overrides the default ``thumbnail`` and ``thumb`` properties.

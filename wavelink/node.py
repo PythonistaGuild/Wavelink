@@ -28,7 +28,7 @@ import logging
 import random
 import re
 import string
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
 
 import aiohttp
 import disnake
@@ -111,14 +111,14 @@ class Node:
     def __init__(
             self,
             *,
-            id: str | None = None,
+            id: Optional[str] = None,
             uri: str,
             password: str,
             secure: bool = False,
             use_http: bool = False,
             session: aiohttp.ClientSession = MISSING,
             heartbeat: float = 15.0,
-            retries: int | None = None,
+            retries: Optional[int] = None,
     ) -> None:
         if id is None:
             id = ''.join(random.sample(string.ascii_letters + string.digits, 12))
@@ -133,19 +133,19 @@ class Node:
 
         self._session: aiohttp.ClientSession = session
         self.heartbeat: float = heartbeat
-        self._retries: int | None = retries
+        self._retries: Optional[int] = retries
 
-        self.client: disnake.Client | None = None
+        self.client: Optional[disnake.Client] = None
         self._websocket: Websocket = MISSING
-        self._session_id: str | None = None
+        self._session_id: Optional[str] = None
 
         self._players: dict[int, Player] = {}
         self._invalidated: dict[int, Player] = {}
 
         self._status: NodeStatus = NodeStatus.DISCONNECTED
-        self._major_version: int | None = None
+        self._major_version: Optional[int] = None
 
-        self._spotify: spotify_.SpotifyClient | None = None
+        self._spotify: Optional[spotify_.SpotifyClient] = None
 
     def __repr__(self) -> str:
         return f'Node(id="{self._id}", uri="{self.uri}", status={self.status})'
@@ -183,7 +183,7 @@ class Node:
         """
         return self._status
 
-    def get_player(self, guild_id: int, /) -> Player | None:
+    def get_player(self, guild_id: int, /) -> Optional[Player]:
         """Return the :class:`player.Player` associated with the provided guild ID.
 
         If no :class:`player.Player` is found, returns None.
@@ -242,10 +242,10 @@ class Node:
                     *,
                     method: str,
                     path: str,
-                    guild_id: int | str | None = None,
-                    query: str | None = None,
-                    data: Request | None = None,
-                    ) -> dict[str, Any] | None:
+                    guild_id: Union[int, Optional[str]] = None,
+                    query: Optional[str] = None,
+                    data: Optional[Request] = None,
+                    ) -> Optional[dict[str, Any]]:
 
         uri: str = f'{self._host}/' \
                    f'v{self._major_version}/' \
@@ -256,7 +256,7 @@ class Node:
         logger.debug(f'Node {self} is sending payload to [{method}] "{uri}" with payload: {data}')
 
         async with self._session.request(method=method, url=uri, json=data or {}) as resp:
-            rdata: dict[str | int, Any] | None = None
+            rdata: Optional[dict[Union[str, int], Any]] = None
 
             if resp.content_type == 'application/json':
                 rdata = await resp.json()
@@ -404,7 +404,7 @@ class NodePool:
             *,
             client: disnake.Client,
             nodes: list[Node],
-            spotify: spotify_.SpotifyClient | None = None
+            spotify: Optional[spotify_.SpotifyClient] = None
     ) -> dict[str, Node]:
         """|coro|
 
@@ -452,7 +452,7 @@ class NodePool:
         return cls.__nodes
 
     @classmethod
-    def get_node(cls, id: str | None = None) -> Node:
+    def get_node(cls, id: Optional[str] = None) -> Node:
         """Retrieve a :class:`Node` with the given ID or best, if no ID was passed.
 
         Parameters
@@ -509,7 +509,7 @@ class NodePool:
                          /,
                          *,
                          cls: type[PlayableT],
-                         node: Node | None = None
+                         node: Optional[Node] = None
                          ) -> list[PlayableT]:
         """|coro|
 
@@ -541,7 +541,7 @@ class NodePool:
                            /,
                            *,
                            cls: Playlist,
-                           node: Node | None = None
+                           node: Optional[Node] = None
                            ) -> Playlist:
         """|coro|
 

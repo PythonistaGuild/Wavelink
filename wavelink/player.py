@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import datetime
 import logging
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import disnake
 from disnake.utils import MISSING
@@ -132,11 +132,11 @@ class Player(disnake.VoiceProtocol):
         client: disnake.Client = MISSING,
         channel: VoiceChannel = MISSING,
         *,
-        nodes: list[Node] | None = None,
+        nodes: Optional[list[Node]] = None,
         swap_node_on_disconnect: bool = True
     ) -> None:
         self.client: disnake.Client = client
-        self.channel: VoiceChannel | None = channel
+        self.channel: Optional[VoiceChannel] = channel
 
         self.nodes: list[Node]
         self.current_node: Node
@@ -158,20 +158,20 @@ class Player(disnake.VoiceProtocol):
                 raise RuntimeError('')
             self.client = self.current_node.client
 
-        self._guild: disnake.Guild | None = None
+        self._guild: Optional[disnake.Guild] = None
         self._voice_state: disnakeVoiceState = {}
         self._player_state: dict[str, Any] = {}
 
         self.swap_on_disconnect: bool = swap_node_on_disconnect
 
-        self.last_update: datetime.datetime | None = None
+        self.last_update: Optional[datetime.datetime] = None
         self.last_position: int = 0
 
         self._ping: int = 0
 
         self.queue: Queue = Queue()
-        self._current: Playable | None = None
-        self._original: Playable | None = None
+        self._current: Optional[Playable] = None
+        self._original: Optional[Playable] = None
 
         self._volume: int = 50
         self._paused: bool = False
@@ -180,7 +180,7 @@ class Player(disnake.VoiceProtocol):
         self._autoplay: bool = False
         self.auto_queue: Queue = Queue()
         self._auto_threshold: int = 100
-        self._filter: Filter | None = None
+        self._filter: Optional[Filter] = None
 
         self._destroyed: bool = False
 
@@ -294,7 +294,7 @@ class Player(disnake.VoiceProtocol):
         return self._volume
 
     @property
-    def guild(self) -> disnake.Guild | None:
+    def guild(self) -> Optional[disnake.Guild]:
         """The disnake Guild associated with the Player."""
         return self._guild
 
@@ -322,7 +322,7 @@ class Player(disnake.VoiceProtocol):
         return self._ping
 
     @property
-    def current(self) -> Playable | None:
+    def current(self) -> Optional[Playable]:
         """The currently playing Track if there is one.
 
         Could be ``None`` if no Track is playing.
@@ -334,7 +334,7 @@ class Player(disnake.VoiceProtocol):
         """The currently applied filter."""
         return self._filter._payload
 
-    async def _update_event(self, data: PlayerUpdateOp | None) -> None:
+    async def _update_event(self, data: Optional[PlayerUpdateOp]) -> None:
         assert self._guild is not None
 
         if data is None: 
@@ -405,7 +405,7 @@ class Player(disnake.VoiceProtocol):
             assert self._guild is not None
             self.current_node._players[self._guild.id] = self
 
-    async def _dispatch_voice_update(self, data: disnakeVoiceState | None = None) -> None:
+    async def _dispatch_voice_update(self, data: Optional[disnakeVoiceState] = None) -> None:
         assert self._guild is not None
 
         data = data or self._voice_state
@@ -486,11 +486,11 @@ class Player(disnake.VoiceProtocol):
         logger.info(f'Player {self.guild.id} moved to channel: {channel}')
 
     async def play(self,
-                   track: Playable | spotify.SpotifyTrack,
+                   track: Union[Playable, spotify.SpotifyTrack],
                    replace: bool = True,
-                   start: int | None = None,
-                   end: int | None = None,
-                   volume: int | None = None,
+                   start: Optional[int] = None,
+                   end: Optional[int] = None,
+                   volume: Optional[int] = None,
                    *,
                    populate: bool = False
                    ) -> Playable:
@@ -562,7 +562,7 @@ class Player(disnake.VoiceProtocol):
             recos: YouTubePlaylist = await self.current_node.get_playlist(query=query, cls=YouTubePlaylist)
             recos: list[YouTubeTrack] = getattr(recos, 'tracks', [])
 
-            queues = set(self.queue) | set(self.auto_queue) | set(self.auto_queue.history) | {track}
+            queues = set(self.queue) or set(self.auto_queue) or set(self.auto_queue.history) or {track}
 
             for track_ in recos:
                 if track_ in queues:
@@ -779,7 +779,7 @@ class Player(disnake.VoiceProtocol):
         if not silence:
             logger.debug(f'Player {self._guild.id} was invalidated.')
 
-    async def _destroy(self, *, guild_id: int | None = None) -> None:
+    async def _destroy(self, *, guild_id: Optional[int] = None) -> None:
         if self._destroyed:
             return
 

@@ -61,16 +61,16 @@ class Websocket:
 
     def __init__(self, *, node: Node) -> None:
         self.node: Node = node
-        self.socket: aiohttp.ClientWebSocketResponse | None = None
+        self.socket: Optional[aiohttp.ClientWebSocketResponse] = None
 
-        self.retries: int | None = node._retries
+        self.retries: Optional[int] = node._retries
         self.retry: float = 1
-        self._original_attempts: int | None = node._retries
+        self._original_attempts: Optional[int] = node._retries
 
         self.backoff: Backoff = Backoff()
 
-        self._listener_task: asyncio.Task | None = None
-        self._reconnect_task: asyncio.Task | None = None
+        self._listener_task: Optional[asyncio.Task] = None
+        self._reconnect_task: Optional[asyncio.Task] = None
 
     @property
     def headers(self) -> dict[str, str]:

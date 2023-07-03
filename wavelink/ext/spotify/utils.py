@@ -23,7 +23,7 @@ SOFTWARE.
 """
 import enum
 import re
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 
 __all__ = (
@@ -117,7 +117,7 @@ class SpotifyDecodePayload:
     def id(self) -> str:
         return self.__id
 
-    def __getitem__(self, item: Any) -> SpotifySearchType | str:
+    def __getitem__(self, item: Any) -> Union[SpotifySearchType, str]:
         valid: list[str] = ['type', 'id']
 
         if item not in valid:
@@ -126,7 +126,7 @@ class SpotifyDecodePayload:
         return getattr(self, item)
 
 
-def decode_url(url: str) -> SpotifyDecodePayload | None:
+def decode_url(url: str) -> Optional[SpotifyDecodePayload]:
     """Check whether the given URL is a valid Spotify URL and return a :class:`SpotifyDecodePayload` if this URL
     is valid, or ``None`` if this URL is invalid.
 

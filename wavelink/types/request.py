@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypedDict
+from typing import Optional, TypedDict, Union, TYPE_CHECKING
 
 from .state import VoiceState
 
@@ -23,11 +23,11 @@ class _BaseRequest(TypedDict, total=False):
 
 
 class EncodedTrackRequest(_BaseRequest):
-    encodedTrack: str | None
+    encodedTrack: Optional[str]
 
 
 class IdentifierRequest(_BaseRequest):
     identifier: str
 
 
-Request: TypeAlias = '_BaseRequest | EncodedTrackRequest | IdentifierRequest'
+Request: TypeAlias = Union[_BaseRequest, EncodedTrackRequest, IdentifierRequest]

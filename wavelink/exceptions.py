@@ -23,7 +23,7 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 __all__ = (
     'WavelinkException',
@@ -64,13 +64,13 @@ class InvalidLavalinkResponse(WavelinkException):
 
     Attributes
     ----------
-    status: int | None
+    status: Optional[int]
         The status code. Could be None.
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args)
-        self.status: int | None = kwargs.get('status')
+        self.status: Optional[int] = kwargs.get('status')
 
 
 class NoTracksError(WavelinkException):

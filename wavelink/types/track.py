@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Optional, TypedDict
 
 
 class TrackInfo(TypedDict):
@@ -11,7 +11,7 @@ class TrackInfo(TypedDict):
     isStream: bool
     position: int
     title: str
-    uri: str | None
+    uri: Optional[str]
     sourceName: str
     
 class Track(TypedDict):
