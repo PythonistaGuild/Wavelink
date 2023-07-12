@@ -162,6 +162,8 @@ class SpotifyTrack:
         The track length in milliseconds.
     duration: int
         Alias to length.
+    explicit: bool
+        Whether this track is explicit or not.
     """
 
     __slots__ = (
@@ -175,6 +177,7 @@ class SpotifyTrack:
         'id',
         'length',
         'duration',
+        'explicit',
         'isrc',
         '__dict__'
     )
@@ -197,6 +200,7 @@ class SpotifyTrack:
         self.length: int = data['duration_ms']
         self.duration: int = self.length
         self.isrc: str | None = data.get("external_ids", {}).get('irsc')
+        self.explicit: bool = data.get('explicit', False) in {"true", True}
 
     def __str__(self) -> str:
         return f'{self.name} - {self.artists[0]}'
