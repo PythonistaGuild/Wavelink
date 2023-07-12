@@ -93,11 +93,12 @@ class Websocket:
 
         self.node._status = NodeStatus.CONNECTING
 
-        try:
-            self._listener_task.cancel()
-        except Exception as e:
-            logger.debug(f'Node {self.node} encountered an error while cancelling the websocket listener: {e}. '
-                         f'This is likely not an issue and will not affect connection.')
+        if self._listener_task:
+            try:
+                self._listener_task.cancel()
+            except Exception as e:
+                logger.debug(f'Node {self.node} encountered an error while cancelling the websocket listener: {e}. '
+                             f'This is likely not an issue and will not affect connection.')
 
         uri: str = self.node._host.removeprefix('https://').removeprefix('http://')
 
