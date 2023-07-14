@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2019-Present PythonistaGuild
+Copyright (c) 2019-Current PythonistaGuild, EvieePy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,551 +24,306 @@ SOFTWARE.
 from __future__ import annotations
 
 import logging
-import random
-import re
-import string
-from typing import TYPE_CHECKING, Any, TypeVar
+import secrets
+from typing import TYPE_CHECKING, Iterable, Union
 
 import aiohttp
 import discord
-from discord.enums import try_enum
-from discord.utils import MISSING, classproperty
-import urllib.parse
+from discord.utils import classproperty
 
 from . import __version__
-from .enums import LoadType, NodeStatus
-from .exceptions import *
+from .enums import NodeStatus
+from .exceptions import (AuthorizationFailedException, InvalidClientException,
+                         InvalidNodeException, LavalinkException)
 from .websocket import Websocket
 
 if TYPE_CHECKING:
     from .player import Player
-    from .tracks import *
+    from .tracks import Playable, Playlist
     from .types.request import Request
-    from .ext import spotify as spotify_
+    from .types.response import (EmptyLoadedResponse, ErrorLoadedResponse,
+                                 ErrorResponse, InfoResponse, PlayerResponse,
+                                 PlaylistLoadedResponse, SearchLoadedResponse,
+                                 StatsResponse, TrackLoadedResponse,
+                                 UpdateResponse)
+    from .types.tracks import PlaylistPayload, TrackPayload
 
-    PlayableT = TypeVar('PlayableT', bound=Playable)
-    
-
-__all__ = ('Node', 'NodePool')
+    LoadedResponse = Union[
+        TrackLoadedResponse, SearchLoadedResponse, PlaylistLoadedResponse, EmptyLoadedResponse, ErrorLoadedResponse
+    ]
 
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-# noinspection PyShadowingBuiltins
 class Node:
-    """The base Wavelink Node.
-
-    The Node is responsible for keeping the Websocket alive, tracking the state of Players
-    and fetching/decoding Tracks and Playlists.
-
-    .. note::
-
-        The Node class should only be created once per Lavalink connection.
-        To retrieve a Node use the appropriate :class:`NodePool` methods instead.
-
-    .. warning::
-
-        The Node will not be connected until passed to :meth:`NodePool.connect`.
-
-
-    .. container:: operations
-
-        .. describe:: repr(node)
-
-            Returns an official string representation of this Node.
-
-
-    Parameters
-    ----------
-    id: Optional[str]
-        The unique identifier for this Node. If not passed, one will be generated randomly.
-    uri: str
-        The uri to connect to your Lavalink server. E.g ``http://localhost:2333``.
-    password: str
-        The password used to connect to your Lavalink server.
-    secure: Optional[bool]
-        Whether the connection should use https/wss.
-    use_http: Optional[bool]
-        Whether to use http:// over ws:// when connecting to the Lavalink websocket. Defaults to False.
-    session: Optional[aiohttp.ClientSession]
-        The session to use for this Node. If no session is passed a default will be used.
-    heartbeat: float
-        The time in seconds to send a heartbeat ack. Defaults to 15.0.
-    retries: Optional[int]
-        The amount of times this Node will try to reconnect after a disconnect.
-        If not set the Node will try unlimited times.
-
-    Attributes
-    ----------
-    heartbeat: float
-        The time in seconds to send a heartbeat ack. Defaults to 15.0.
-    client: :class:`discord.Client`
-        The discord client used to connect this Node. Could be None if this Node has not been connected.
-    """
-
     def __init__(
-            self,
-            *,
-            id: str | None = None,
-            uri: str,
-            password: str,
-            secure: bool = False,
-            use_http: bool = False,
-            session: aiohttp.ClientSession = MISSING,
-            heartbeat: float = 15.0,
-            retries: int | None = None,
+        self,
+        *,
+        identifier: str | None = None,
+        uri: str,
+        password: str,
+        session: aiohttp.ClientSession | None = None,
+        heartbeat: float = 15.0,
+        retries: int | None = None,
+        client: discord.Client | None = None,
     ) -> None:
-        if id is None:
-            id = ''.join(random.sample(string.ascii_letters + string.digits, 12))
+        self._identifier = identifier or secrets.token_urlsafe(12)
+        self._uri = uri.removesuffix("/")
+        self._password = password
+        self._session = session or aiohttp.ClientSession()
+        self._heartbeat = heartbeat
+        self._retries = retries
+        self._client = client
 
-        self._id: str = id
-        self._uri: str = uri
-        self._secure: bool = secure
-        self._use_http: bool = use_http
-        host: str = re.sub(r'(?:http|ws)s?://', '', self._uri)
-        self._host: str = f'{"https://" if secure else "http://"}{host}'
-        self._password: str = password
-
-        self._session: aiohttp.ClientSession = session
-        self.heartbeat: float = heartbeat
-        self._retries: int | None = retries
-
-        self.client: discord.Client | None = None
-        self._websocket: Websocket = MISSING
+        self._status: NodeStatus = NodeStatus.DISCONNECTED
         self._session_id: str | None = None
 
         self._players: dict[int, Player] = {}
-        self._invalidated: dict[int, Player] = {}
-
-        self._status: NodeStatus = NodeStatus.DISCONNECTED
-        self._major_version: int | None = None
-
-        self._spotify: spotify_.SpotifyClient | None = None
 
     def __repr__(self) -> str:
-        return f'Node(id="{self._id}", uri="{self.uri}", status={self.status})'
+        return f"Node(identifier={self.identifier}, uri={self.uri}, status={self.status}, players={len(self.players)})"
 
     def __eq__(self, other: object) -> bool:
-        return self.id == other.id if isinstance(other, Node) else NotImplemented
+        if not isinstance(other, Node):
+            raise NotImplemented
+
+        return other.identifier == self.identifier
 
     @property
-    def id(self) -> str:
-        """The Nodes unique identifier."""
-        return self._id
+    def headers(self) -> dict[str, str]:
+        assert self.client is not None
+        assert self.client.user is not None
+
+        data = {
+            "Authorization": self.password,
+            "User-Id": str(self.client.user.id),
+            "Client-Name": f"Wavelink/{__version__}",
+        }
+
+        return data
+
+    @property
+    def identifier(self) -> str:
+        """The unique identifier for this :class:`Node`.
+
+
+        .. versionchanged:: 3.0.0
+            This property was previously known as ``id``.
+        """
+        return self._identifier
 
     @property
     def uri(self) -> str:
-        """The URI used to connect this Node to Lavalink."""
-        return self._host
-
-    @property
-    def password(self) -> str:
-        """The password used to connect this Node to Lavalink."""
-        return self._password
-
-    @property
-    def players(self) -> dict[int, Player]:
-        """A mapping of Guild ID to Player."""
-        return self._players
+        """The URI used to connect this :class:`Node` to Lavalink."""
+        return self._uri
 
     @property
     def status(self) -> NodeStatus:
-        """The connection status of this Node.
+        """The current :class:`Node` status.
 
-        DISCONNECTED
-        CONNECTING
-        CONNECTED
+        Refer to: :class:`~wavelink.NodeStatus`
         """
         return self._status
 
-    def get_player(self, guild_id: int, /) -> Player | None:
-        """Return the :class:`player.Player` associated with the provided guild ID.
+    @property
+    def players(self) -> dict[int, Player]:
+        """A mapping of :attr:`discord.Guild.id` to :class:`~wavelink.Player`."""
+        return self._players
 
-        If no :class:`player.Player` is found, returns None.
+    @property
+    def client(self) -> discord.Client | None:
+        """The :class:`discord.Client` associated with this :class:`Node`.
 
-        Parameters
-        ----------
-        guild_id: int
-            The Guild ID to return a Player for.
+        Could be ``None`` if it has not been set yet.
 
-        Returns
-        -------
-        Optional[:class:`player.Player`]
+
+        .. versionadded:: 3.0.0
         """
+        return self._client
+
+    @property
+    def password(self) -> str:
+        """The password used to connect this :class:`Node` to Lavalink.
+
+        .. versionadded:: 3.0.0
+        """
+        return self._password
+
+    @property
+    def heartbeat(self) -> float:
+        """The duration in seconds that the :class:`Node` websocket should send a heartbeat.
+
+        .. versionadded:: 3.0.0
+        """
+        return self._heartbeat
+
+    @property
+    def session_id(self) -> str | None:
+        """The Lavalink session ID. Could be None if this :class:`Node` has not connected yet.
+
+
+        .. versionadded:: 3.0.0
+        """
+        return self._session_id
+
+    async def _connect(self, *, client: discord.Client | None) -> None:
+        client_ = self._client or client
+
+        if not client_:
+            raise InvalidClientException(f"Unable to connect {self!r} as you have not provided a valid discord.Client.")
+
+        self._client = client_
+        websocket: Websocket = Websocket(node=self)
+        await websocket.connect()
+
+    async def _fetch_players(self) -> list[PlayerResponse]:
+        ...
+
+    async def _fetch_player(self) -> PlayerResponse:
+        ...
+
+    async def _update_player(self, guild_id: int, /, *, data: Request, replace: bool = False) -> PlayerResponse:
+        no_replace: bool = not replace
+
+        uri: str = f"{self.uri}/v4/sessions/{self.session_id}/players/{guild_id}?noReplace={no_replace}"
+
+        async with self._session.patch(url=uri, json=data, headers=self.headers) as resp:
+            if resp.status == 200:
+                resp_data: PlayerResponse = await resp.json()
+                return resp_data
+
+        raise LavalinkException(
+            f"Failed to fulfill request to Lavalink: status={resp.status}, reason={resp.reason}",
+            status=resp.status,
+            reason=resp.reason,
+        )
+
+    async def _destroy_player(self) -> None:
+        ...
+
+    async def _update_session(self) -> UpdateResponse:
+        ...
+
+    async def _fetch_tracks(self) -> LoadedResponse:
+        ...
+
+    async def _decode_track(self) -> TrackPayload:
+        ...
+
+    async def _decode_tracks(self) -> list[TrackPayload]:
+        ...
+
+    async def _fetch_info(self) -> InfoResponse:
+        ...
+
+    async def _fetch_stats(self) -> StatsResponse:
+        ...
+
+    async def _fetch_version(self) -> str:
+        ...
+
+    def get_player(self, guild_id: int, /) -> Player | None:
         return self._players.get(guild_id, None)
 
-    async def _connect(self, client: discord.Client) -> None:
-        if client.user is None:
-            raise RuntimeError('')
 
-        if not self._session:
-            self._session = aiohttp.ClientSession(headers={'Authorization': self._password})
-
-        self.client = client
-
-        self._websocket = Websocket(node=self)
-
-        await self._websocket.connect()
-
-        async with self._session.get(f'{self._host}/version') as resp:
-            version: str = await resp.text()
-
-            if version.endswith('-SNAPSHOT'):
-                self._major_version = 3
-                return
-
-            try:
-                version_tuple = tuple(int(v) for v in version.split('.'))
-            except ValueError:
-                logging.warning(f'Lavalink "{version}" is unknown and may not be compatible with: '
-                                f'Wavelink "{__version__}". Wavelink is assuming the Lavalink version.')
-
-                self._major_version = 3
-                return
-
-            if version_tuple[0] < 3:
-                raise InvalidLavalinkVersion(f'Wavelink "{__version__}" is not compatible with Lavalink "{version}".')
-
-            if version_tuple[0] == 3 and version_tuple[1] < 7:
-                raise InvalidLavalinkVersion(f'Wavelink "{__version__}" is not compatible with '
-                                             f'Lavalink versions under "3.7".')
-
-            self._major_version = version_tuple[0]
-            logger.info(f'Lavalink version "{version}" connected for Node: {self.id}')
-
-    async def _send(self,
-                    *,
-                    method: str,
-                    path: str,
-                    guild_id: int | str | None = None,
-                    query: str | None = None,
-                    data: Request | None = None,
-                    ) -> dict[str, Any] | None:
-
-        uri: str = f'{self._host}/' \
-                   f'v{self._major_version}/' \
-                   f'{path}' \
-                   f'{f"/{guild_id}" if guild_id else ""}' \
-                   f'{f"?{query}" if query else ""}'
-
-        logger.debug(f'Node {self} is sending payload to [{method}] "{uri}" with payload: {data}')
-
-        async with self._session.request(method=method, url=uri, json=data or {}) as resp:
-            rdata: dict[str | int, Any] | None = None
-
-            if resp.content_type == 'application/json':
-                rdata = await resp.json()
-
-            logger.debug(f'Node {self} received payload from Lavalink after sending to "{uri}" with response: '
-                         f'<status={resp.status}, data={rdata}>')
-
-            if resp.status >= 300:
-                raise InvalidLavalinkResponse(f'An error occurred when attempting to reach: "{uri}".',
-                                              status=resp.status)
-
-            if resp.status == 204:
-                return
-
-            return rdata
-
-    async def get_tracks(self, cls: type[PlayableT], query: str) -> list[PlayableT]:
-        """|coro|
-
-        Search for and retrieve Tracks based on the query and cls provided.
-
-        .. note::
-
-            If the query is not a Local search or direct URL, you will need to provide a search prefix.
-            E.g. ``ytsearch:`` for a YouTube search.
-
-        Parameters
-        ----------
-        cls: type[PlayableT]
-            The type of Playable tracks that should be returned.
-        query: str
-            The query to search for and return tracks.
-
-        Returns
-        -------
-        list[PlayableT]
-            A list of found tracks converted to the provided cls.
-        """
-        logger.debug(f'Node {self} is requesting tracks with query "{query}".')
-
-        data = await self._send(method='GET', path='loadtracks', query=f'identifier={query}')
-        load_type = try_enum(LoadType, data.get("loadType"))
-
-        if load_type is LoadType.load_failed:
-            # TODO - Proper Exception...
-
-            raise ValueError('Track Failed to load.')
-
-        if load_type is LoadType.no_matches:
-            return []
-
-        if load_type is LoadType.track_loaded:
-            track_data = data["tracks"][0]
-            return [cls(track_data)]
-
-        if load_type is not LoadType.search_result:
-            # TODO - Proper Exception...
-
-            raise ValueError('Track Failed to load.')
-
-        return [cls(track_data) for track_data in data["tracks"]]
-
-    async def get_playlist(self, cls: Playlist, query: str):
-        """|coro|
-
-        Search for and return a :class:`tracks.Playlist` given an identifier.
-
-        Parameters
-        ----------
-        cls: Type[:class:`tracks.Playlist`]
-            The type of which playlist should be returned, this must subclass :class:`tracks.Playlist`.
-        query: str
-            The playlist's identifier. This may be a YouTube playlist URL for example.
-
-        Returns
-        -------
-        Optional[:class:`tracks.Playlist`]:
-            The related wavelink track object or ``None`` if none was found.
-
-        Raises
-        ------
-        ValueError
-            Loading the playlist failed.
-        WavelinkException
-            An unspecified error occurred when loading the playlist.
-        """
-        logger.debug(f'Node {self} is requesting a playlist with query "{query}".')
-
-        encoded_query = urllib.parse.quote(query)
-        data = await self._send(method='GET', path='loadtracks', query=f'identifier={encoded_query}')
-
-        load_type = try_enum(LoadType, data.get("loadType"))
-
-        if load_type is LoadType.load_failed:
-            # TODO Proper exception...
-            raise ValueError('Tracks failed to Load.')
-
-        if load_type is LoadType.no_matches:
-            return None
-
-        if load_type is not LoadType.playlist_loaded:
-            raise WavelinkException("Track failed to load.")
-
-        return cls(data)
-
-    async def build_track(self, *, cls: type[PlayableT], encoded: str) -> PlayableT:
-        """|coro|
-
-        Build a track from the provided encoded string with the given Track class.
-
-        Parameters
-        ----------
-        cls: type[PlayableT]
-            The type of Playable track that should be returned.
-        encoded: str
-            The Tracks unique encoded string.
-        """
-        encoded_query = urllib.parse.quote(encoded)
-        data = await self._send(method='GET', path='decodetrack', query=f'encodedTrack={encoded_query}')
-
-        logger.debug(f'Node {self} built encoded track with encoding "{encoded}". Response data: {data}')
-        return cls(data=data)
-
-
-# noinspection PyShadowingBuiltins
-class NodePool:
-    """The Wavelink NodePool is responsible for keeping track of all :class:`Node`.
-
-    Attributes
-    ----------
-    nodes: dict[str, :class:`Node`]
-        A mapping of :class:`Node` identifier to :class:`Node`.
-
-
-    .. warning::
-
-        This class should never be initialised. All methods are class methods.
-    """
-
+class Pool:
     __nodes: dict[str, Node] = {}
 
     @classmethod
-    async def connect(
-            cls,
-            *,
-            client: discord.Client,
-            nodes: list[Node],
-            spotify: spotify_.SpotifyClient | None = None
-    ) -> dict[str, Node]:
+    async def connect(cls, *, nodes: Iterable[Node], client: discord.Client | None = None) -> dict[str, Node]:
         """|coro|
 
-        Connect a list of Nodes.
+        Connect the provided Iterable[:class:`Node`] to Lavalink.
 
         Parameters
         ----------
-        client: :class:`discord.Client`
-            The discord Client or Bot used to connect the Nodes.
-        nodes: list[:class:`Node`]
-            A list of Nodes to connect.
-        spotify: Optional[:class:`ext.spotify.SpotifyClient`]
-            The spotify Client to use when searching for Spotify Tracks.
+        nodes: Iterable[:class:`Node`]
+            The :class:`Node`'s to connect to Lavalink.
+        client: :class:`discord.Client` | None
+            The :class:`discord.Client` to use to connect the :class:`Node`. If the Node already has a client
+            set, this method will *not* override it. Defaults to None.
 
         Returns
         -------
         dict[str, :class:`Node`]
-            A mapping of :class:`Node` identifier to :class:`Node`.
+            A mapping of :attr:`Node.identifier` to :class:`Node` associated with the :class:`Pool`.
+
+
+        .. versionchanged:: 3.0.0
+            The ``client`` parameter is no longer required.
         """
-        if client.user is None:
-            raise RuntimeError('')
-
         for node in nodes:
+            client_ = node.client or client
 
-            if spotify:
-                node._spotify = spotify
+            if node.identifier in cls.__nodes:
+                msg: str = f'Unable to connect {node!r} as you already have a node with identifier "{node.identifier}"'
+                logger.error(msg)
 
-            if node.id in cls.__nodes:
-                logger.error(f'A Node with the ID "{node.id}" already exists on the NodePool. Disregarding.')
+                continue
+
+            if node.status in (NodeStatus.CONNECTING, NodeStatus.CONNECTED):
+                logger.error(f"Unable to connect {node!r} as it is already in a connecting or connected state.")
                 continue
 
             try:
-                await node._connect(client)
-            except AuthorizationFailed:
-                logger.error(f'The Node <{node!r}> failed to authenticate properly. '
-                             f'Please check your password and try again.')
+                await node._connect(client=client_)
+            except InvalidClientException as e:
+                logger.error(e)
+            except AuthorizationFailedException:
+                logger.error(f"Failed to authenticate {node!r} on Lavalink with the provided password.")
             else:
-                cls.__nodes[node.id] = node
+                cls.__nodes[node.identifier] = node
 
         return cls.nodes
 
     @classproperty
     def nodes(cls) -> dict[str, Node]:
-        """A mapping of :class:`Node` identifier to :class:`Node`."""
-        return cls.__nodes
+        """A mapping of :attr:`Node.identifier` to :class:`Node` that have previously been successfully connected.
+
+
+        .. versionchanged:: 3.0.0
+            This property now returns a copy.
+        """
+        nodes = cls.__nodes.copy()
+        return nodes
 
     @classmethod
-    def get_node(cls, id: str | None = None) -> Node:
-        """Retrieve a :class:`Node` with the given ID or best, if no ID was passed.
+    def get_node(cls, identifier: str | None = None, /) -> Node:
+        """Retrieve a :class:`Node` from the :class:`Pool` with the given identifier.
+
+        If no identifier is provided, this method returns the ``best`` node.
 
         Parameters
         ----------
-        id: Optional[str]
-            The unique identifier of the :class:`Node` to retrieve. If not passed the best :class:`Node`
-            will be fetched.
-
-        Returns
-        -------
-        :class:`Node`
+        identifier: str | None
+            An optional identifier to retrieve a :class:`Node`.
 
         Raises
         ------
-        InvalidNode
-            The given id does nto resolve to a :class:`Node` or no :class:`Node` has been connected.
+        InvalidNodeException
+            Raised when a Node can not be found, or no :class:`Node` exists on the :class:`Pool`.
+
+
+        .. versionchanged:: 3.0.0
+            The ``id`` parameter was changed to ``identifier``.
         """
-        if id:
-            if id not in cls.__nodes:
-                raise InvalidNode(f'A Node with ID "{id}" does not exist on the Wavelink NodePool.')
-
-            return cls.__nodes[id]
-
         if not cls.__nodes:
-            raise InvalidNode('No Node currently exists on the Wavelink NodePool.')
+            raise InvalidNodeException("No nodes are currently assigned to the wavelink.Pool.")
 
-        nodes = cls.__nodes.values()
+        if identifier:
+            if identifier not in cls.__nodes:
+                raise InvalidNodeException(f'A Node with the identifier "{identifier}" does not exist.')
+
+            return cls.__nodes[identifier]
+
+        nodes: list[Node] = list(cls.__nodes.values())
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
     @classmethod
-    def get_connected_node(cls) -> Node:
-        """Get the best available connected :class:`Node`.
-
-        Returns
-        -------
-        :class:`Node`
-            The best available connected Node.
-
-        Raises
-        ------
-        InvalidNode
-            No Nodes are currently in the connected state.
-        """
-
-        nodes: list[Node] = [n for n in cls.__nodes.values() if n.status is NodeStatus.CONNECTED]
-        if not nodes:
-            raise InvalidNode('There are no Nodes on the Wavelink NodePool that are currently in the connected state.')
-
-        return sorted(nodes, key=lambda n: len(n.players))[0]
+    async def _fetch_tracks(cls, query: str, /, cls_: type[Playable]) -> list[Playable]:
+        ...
 
     @classmethod
-    async def get_tracks(cls_,  # type: ignore
-                         query: str,
-                         /,
-                         *,
-                         cls: type[PlayableT],
-                         node: Node | None = None
-                         ) -> list[PlayableT]:
-        """|coro|
-
-        Helper method to retrieve tracks from the NodePool without fetching a :class:`Node`.
-
-        Parameters
-        ----------
-        query: str
-            The query to search for and return tracks.
-        cls: type[PlayableT]
-            The type of Playable tracks that should be returned.
-        node: Optional[:class:`Node`]
-            The node to use for retrieving tracks. If not passed, the best :class:`Node` will be used.
-            Defaults to None.
-
-        Returns
-        -------
-        list[PlayableT]
-            A list of found tracks converted to the provided cls.
-        """
-        if not node:
-            node = cls_.get_connected_node()
-
-        return await node.get_tracks(cls=cls, query=query)
-
-    @classmethod
-    async def get_playlist(cls_,  # type: ignore
-                           query: str,
-                           /,
-                           *,
-                           cls: Playlist,
-                           node: Node | None = None
-                           ) -> Playlist:
-        """|coro|
-
-        Helper method to retrieve a playlist from the NodePool without fetching a :class:`Node`.
-
-
-        .. warning::
-
-            The only playlists currently supported are :class:`tracks.YouTubePlaylist` and
-            :class:`tracks.YouTubePlaylist`.
-
-
-        Parameters
-        ----------
-        query: str
-            The query to search for and return a playlist.
-        cls: type[PlayableT]
-            The type of Playlist that should be returned.
-        node: Optional[:class:`Node`]
-            The node to use for retrieving tracks. If not passed, the best :class:`Node` will be used.
-            Defaults to None.
-
-        Returns
-        -------
-        Playlist
-            A Playlist with its tracks.
-        """
-        if not node:
-            node = cls_.get_connected_node()
-
-        return await node.get_playlist(cls=cls, query=query)
+    async def _fetch_playlist(cls, query: str, /, cls_: type[Playlist]) -> Playlist:
+        ...

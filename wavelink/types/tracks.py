@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2019-Present PythonistaGuild
+Copyright (c) 2019-Current PythonistaGuild, EvieePy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,23 +21,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import discord
-import wavelink
-from discord.ext import commands
+from typing import TYPE_CHECKING, Literal, TypedDict
+
+if TYPE_CHECKING:
+    from typing_extensions import NotRequired
 
 
-class Bot(commands.Bot):
+class TrackInfoPayload(TypedDict):
+    identifier: str
+    isSeekable: bool
+    author: str
+    length: int
+    isStream: bool
+    position: int
+    title: str
+    uri: NotRequired[str]
+    artworkUrl: NotRequired[str]
+    isrc: NotRequired[str]
+    sourceName: str
 
-    def __init__(self) -> None:
-        intents = discord.Intents.default()
-        super().__init__(intents=intents, command_prefix='?')
 
-    async def on_ready(self) -> None:
-        print(f'Logged in {self.user} | {self.user.id}')
+class PlaylistInfoPayload(TypedDict):
+    name: str
+    selectedTrack: int
 
-    async def setup_hook(self) -> None:
-        # Wavelink 2.0 has made connecting Nodes easier... Simply create each Node
-        # and pass it to NodePool.connect with the client/bot.
-        node: wavelink.Node = wavelink.Node(uri='http://localhost:2333', password='youshallnotpass')
-        await wavelink.NodePool.connect(client=self, nodes=[node])
 
+class TrackPayload(TypedDict):
+    encoded: str
+    info: TrackInfoPayload
+
+
+class PlaylistPayload(TypedDict):
+    info: PlaylistInfoPayload
+    tracks: list[TrackPayload]

@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2019-Present PythonistaGuild
+Copyright (c) 2019-Current PythonistaGuild, EvieePy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,74 +21,60 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from __future__ import annotations
 
-from typing import Any
 
 __all__ = (
-    'WavelinkException',
-    'AuthorizationFailed',
-    'InvalidNode',
-    'InvalidLavalinkVersion',
-    'InvalidLavalinkResponse',
-    'NoTracksError',
-    'QueueEmpty',
-    'InvalidChannelStateError',
-    'InvalidChannelPermissions',
+    "WavelinkException",
+    "InvalidClientException",
+    "AuthorizationFailedException",
+    "InvalidNodeException",
+    "LavalinkException",
+    "InvalidChannelStateException",
 )
 
 
 class WavelinkException(Exception):
-    """Base wavelink exception."""
+    """Base wavelink Exception class.
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args)
-
-
-class AuthorizationFailed(WavelinkException):
-    """Exception raised when password authorization failed for this Lavalink node."""
-    pass
+    All wavelink exceptions derive from this exception.
+    """
 
 
-class InvalidNode(WavelinkException):
-    pass
+class InvalidClientException(WavelinkException):
+    """Exception raised when an invalid :class:`discord.Client`
+    is provided while connecting a :class:`wavelink.Node`.
+    """
 
 
-class InvalidLavalinkVersion(WavelinkException):
-    """Exception raised when you try to use wavelink 2 with a Lavalink version under 3.7."""
-    pass
+class AuthorizationFailedException(WavelinkException):
+    """Exception raised when Lavalink fails to authenticate a :class:`~wavelink.Node`, with the provided password."""
 
 
-class InvalidLavalinkResponse(WavelinkException):
-    """Exception raised when wavelink receives an invalid response from Lavalink.
+class InvalidNodeException(WavelinkException):
+    """Exception raised when a :class:`Node` is tried to be retrieved from the
+    :class:`Pool` without existing, or the ``Pool`` is empty.
+    """
+
+
+class LavalinkException(WavelinkException):
+    """Exception raised when Lavalink returns an invalid response.
 
     Attributes
     ----------
-    status: int | None
-        The status code. Could be None.
+    status: int
+        The response status code.
+    reason: str | None
+        The response reason. Could be ``None`` if no reason was provided.
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args)
-        self.status: int | None = kwargs.get('status')
+    def __init__(self, message: str, /, *, status: int, reason: str | None) -> None:
+        self.status = status
+        self.reason = reason
+
+        super().__init__(message)
 
 
-class NoTracksError(WavelinkException):
-    """Exception raised when no tracks could be found."""
-    pass
-
-
-class QueueEmpty(WavelinkException):
-    """Exception raised when you try to retrieve from an empty queue."""
-    pass
-
-
-class InvalidChannelStateError(WavelinkException):
-    """Base exception raised when an error occurs trying to connect to a :class:`discord.VoiceChannel`."""
-
-
-class InvalidChannelPermissions(InvalidChannelStateError):
-    """Exception raised when the client does not have correct permissions to join the channel.
-
-    Could also be raised when there are too many users already in a user limited channel.
+class InvalidChannelStateException(WavelinkException):
+    """Exception raised when a :class:`~wavelink.Player` tries to connect to an invalid channel or
+    has invalid permissions to use this channel.
     """

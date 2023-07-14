@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2019-Present PythonistaGuild
+Copyright (c) 2019-Current PythonistaGuild, EvieePy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,73 +23,101 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from discord.enums import try_enum
-
-from .enums import TrackEventType, DiscordVoiceCloseType
+from .enums import DiscordVoiceCloseType
+from .player import Player
+from .tracks import Playable
 
 if TYPE_CHECKING:
-    from .player import Player
-    from .tracks import Playable
-    from .types.events import EventOp
-
-__all__ = ('TrackEventPayload', 'WebsocketClosedPayload')
+    from .types.state import PlayerState
+    from .types.stats import CPUStats, FrameStats, MemoryStats
+    from .types.websocket import StatsOP, TrackExceptionPayload
 
 
-class TrackEventPayload:
-    """The Wavelink Track Event Payload.
-
-    .. warning::
-
-        This class should not be created manually, instead you will receive it from the
-        various wavelink track events.
-
-    Attributes
-    ----------
-    event: :class:`TrackEventType`
-        An enum of the type of event.
-    track: :class:`Playable`
-        The track associated with this event.
-    original: Optional[:class:`Playable`]
-        The original requested track before conversion. Could be None.
-    player: :class:`player.Player`
-        The player associated with this event.
-    reason: Optional[str]
-        The reason this event was fired.
-    """
-
-    def __init__(self, *, data: EventOp, track: Playable, original: Playable | None, player: Player) -> None:
-        self.event: TrackEventType = try_enum(TrackEventType, data['type'])
-        self.track: Playable = track
-        self.original: Playable | None = original
-        self.player: Player = player
-
-        self.reason: str = data.get('reason')
+__all__ = (
+    "TrackStartEventPayload",
+    "TrackEndEventPayload",
+    "TrackExceptionEventPayload",
+    "TrackStuckEventPayload",
+    "WebsocketClosedEventPayload",
+    "PlayerUpdateEventPayload",
+    "StatsEventPayload",
+)
 
 
-class WebsocketClosedPayload:
-    """The Wavelink WebsocketClosed Event Payload.
+class TrackStartEventPayload:
+    def __init__(self, player: Player | None, track: Playable) -> None:
+        self.player = player
+        self.track = track
 
-    .. warning::
 
-        This class should not be created manually, instead you will receive it from the
-        wavelink `on_wavelink_websocket_closed` event.
+class TrackEndEventPayload:
+    def __init__(self, player: Player | None, track: Playable, reason: str) -> None:
+        self.player = player
+        self.track = track
+        self.reason = reason
 
-    Attributes
-    ----------
-    code: :class:`DiscordVoiceCloseType`
-        An Enum representing the close code from Discord.
-    reason: Optional[str]
-        The reason the Websocket was closed.
-    by_discord: bool
-        Whether the websocket was closed by Discord.
-    player: :class:`player.Player`
-        The player associated with this event.
-    """
 
-    def __init__(self, *, data: dict[str, Any], player: Player) -> None:
-        self.code: DiscordVoiceCloseType = try_enum(DiscordVoiceCloseType, data['code'])
-        self.reason: str = data.get('reason')
-        self.by_discord: bool = data.get('byRemote')
-        self.player: Player = player
+class TrackExceptionEventPayload:
+    def __init__(self, player: Player | None, track: Playable, exception: TrackExceptionPayload) -> None:
+        self.player = player
+        self.track = track
+        self.exception = exception
+
+
+class TrackStuckEventPayload:
+    def __init__(self, player: Player | None, track: Playable, threshold: int) -> None:
+        self.player = player
+        self.track = track
+        self.threshold = threshold
+
+
+class WebsocketClosedEventPayload:
+    def __init__(self, player: Player | None, code: int, reason: str, by_remote: bool) -> None:
+        self.player = player
+        self.code: DiscordVoiceCloseType = DiscordVoiceCloseType(code)
+        self.reason = reason
+        self.by_remote = by_remote
+
+
+class PlayerUpdateEventPayload:
+    def __init__(self, player: Player | None, state: PlayerState) -> None:
+        self.player = player
+        self.time: int = state["time"]
+        self.position: int = state["position"]
+        self.connected: bool = state["connected"]
+        self.ping: int = state["ping"]
+
+
+class StatsEventMemory:
+    def __init__(self, data: MemoryStats) -> None:
+        self.free: int = data["free"]
+        self.used: int = data["used"]
+        self.allocated: int = data["allocated"]
+        self.reservable: int = data["reservable"]
+
+
+class StatsEventCPU:
+    def __init__(self, data: CPUStats) -> None:
+        self.cores: int = data["cores"]
+        self.system_load: float = data["systemLoad"]
+        self.lavalink_load: float = data["lavalinkLoad"]
+
+
+class StatsEventFrames:
+    def __init__(self, data: FrameStats) -> None:
+        self.sent: int = data["sent"]
+        self.nulled: int = data["nulled"]
+        self.deficit: int = data["deficit"]
+
+
+class StatsEventPayload:
+    def __init__(self, data: StatsOP) -> None:
+        self.players: int = data["players"]
+        self.playing: int = data["playingPlayers"]
+        self.uptime: int = data["uptime"]
+
+        self.memory: StatsEventMemory = StatsEventMemory(data=data["memory"])
+        self.cpu: StatsEventCPU = StatsEventCPU(data=data["cpu"])
+        self.frames: StatsEventFrames = StatsEventFrames(data=data["frameStats"])

@@ -21,27 +21,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import TYPE_CHECKING, Optional, TypedDict
-
-if TYPE_CHECKING:
-    from typing_extensions import NotRequired
+from typing import Literal, TypedDict
 
 
-class PlayerState(TypedDict):
-    time: int
-    position: int
-    connected: bool
-    ping: int
+class MemoryStats(TypedDict):
+    free: int
+    used: int
+    allocated: int
+    reservable: int
 
 
-class VoiceState(TypedDict, total=False):
-    token: str
-    endpoint: Optional[str]
-    session_id: str
+class CPUStats(TypedDict):
+    cores: int
+    systemLoad: float
+    lavalinkLoad: float
 
 
-class PlayerVoiceState(TypedDict):
-    voice: VoiceState
-    channel_id: NotRequired[str]
-    track: NotRequired[str]
-    position: NotRequired[int]
+class FrameStats(TypedDict):
+    sent: int
+    nulled: int
+    deficit: int
