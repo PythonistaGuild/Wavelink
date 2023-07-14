@@ -558,18 +558,21 @@ class Player(discord.VoiceProtocol):
         if isinstance(track, YouTubeTrack) and self.autoplay and populate:
             query: str = f'https://www.youtube.com/watch?v={track.identifier}&list=RD{track.identifier}'
 
-            recos: YouTubePlaylist = await self.current_node.get_playlist(query=query, cls=YouTubePlaylist)
-            recos: list[YouTubeTrack] = getattr(recos, 'tracks', [])
+            try:
+                recos: YouTubePlaylist = await self.current_node.get_playlist(query=query, cls=YouTubePlaylist)
+                recos: list[YouTubeTrack] = getattr(recos, 'tracks', [])
 
-            queues = set(self.queue) | set(self.auto_queue) | set(self.auto_queue.history) | {track}
+                queues = set(self.queue) | set(self.auto_queue) | set(self.auto_queue.history) | {track}
 
-            for track_ in recos:
-                if track_ in queues:
-                    continue
+                for track_ in recos:
+                    if track_ in queues:
+                        continue
 
-                await self.auto_queue.put_wait(track_)
+                    await self.auto_queue.put_wait(track_)
 
-            self.auto_queue.shuffle()
+                self.auto_queue.shuffle()
+            except ValueError:
+                pass
 
         elif isinstance(track, spotify.SpotifyTrack):
             original = track
