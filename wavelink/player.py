@@ -281,7 +281,7 @@ class Player(discord.VoiceProtocol):
 
     def is_playing(self) -> bool:
         """Whether the Player is currently playing a track."""
-        return self.current is not None
+        return self.current is not None and not self._paused
 
     def is_paused(self) -> bool:
         """Whether the Player is currently paused."""
