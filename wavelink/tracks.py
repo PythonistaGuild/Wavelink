@@ -23,22 +23,43 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Any, TypeAlias, Union, overload
 
 import yarl
 
+import wavelink
+
 from .enums import TrackSource
-from .node import Node, Pool
 
 if TYPE_CHECKING:
-    from .types.tracks import TrackInfoPayload, TrackPayload
+    from .types.tracks import (
+        PlaylistInfoPayload,
+        PlaylistPayload,
+        TrackInfoPayload,
+        TrackPayload,
+    )
 
 
 _source_mapping: dict[TrackSource | str | None, str] = {
-    TrackSource.YouTube: "ytsearch:",
-    TrackSource.SoundCloud: "scsearch:",
-    TrackSource.YouTubeMusic: "ytmsearch:",
+    TrackSource.YouTube: "ytsearch",
+    TrackSource.SoundCloud: "scsearch",
+    TrackSource.YouTubeMusic: "ytmsearch",
 }
+
+
+Search: TypeAlias = "list[Playable] | list[Playlist]"
+
+
+class Album:
+    def __init__(self, *, data: dict[Any, Any]) -> None:
+        self.name: str | None = data.get("albumName")
+        self.url: str | None = data.get("albumUrl")
+
+
+class Artist:
+    def __init__(self, *, data: dict[Any, Any]) -> None:
+        self.url: str | None = data.get("artistUrl")
+        self.artwork: str | None = data.get("artistArtworkUrl")
 
 
 class Playable:
@@ -58,6 +79,13 @@ class Playable:
         self.isrc: str | None = info.get("isrc")
         self.source: str = info["sourceName"]
 
+        plugin: dict[Any, Any] = data["pluginInfo"]
+        self.album: Album = Album(data=plugin)
+        self.artist: Artist = Artist(data=plugin)
+
+        self.preview_url: str | None = plugin.get("previewUrl")
+        self.is_preview: bool | None = plugin.get("isPreview")
+
     def __hash__(self) -> int:
         return hash(self.encoded)
 
@@ -73,40 +101,38 @@ class Playable:
 
         return self.encoded == other.encoded
 
-    @overload
-    async def search(self, query: str, /, source: TrackSource | str | None) -> list[Playable]:
-        ...
-
-    @overload
-    async def search(self, query: str, /, source: TrackSource | str | None) -> Playlist:
-        ...
-
-    async def search(self, query: str, /, source: TrackSource | str | None):
+    @classmethod
+    async def search(cls, query: str, /, *, source: TrackSource | str | None = TrackSource.YouTube) -> Search:
         prefix: TrackSource | str | None = _source_mapping.get(source, source)
         check = yarl.URL(query)
 
-        if str(check.host) == "youtube.com" or str(check.host) == "www.youtube.com" and check.query.get("list"):
-            ytplay: Playlist = await Pool._fetch_playlist(query, cls_=Playlist)
-            return ytplay
-
-        elif str(check.host) == "soundcloud.com" or str(check.host) == "www.soundcloud.com" and "sets" in check.parts:
-            scplay: Playlist = await Pool._fetch_playlist(query, cls_=Playlist)
-            return scplay
-
-        elif check.host:
-            tracks: list[Playable] = await Pool._fetch_tracks(query, cls_=Playable)
+        if check.host:
+            tracks: Search = await wavelink.Pool.fetch_tracks(query)
             return tracks
 
+        if not prefix:
+            term: str = query
         else:
-            if isinstance(prefix, TrackSource) or not prefix:
-                term: str = query
-            else:
-                term: str = f"{prefix}{query}"
+            assert not isinstance(prefix, TrackSource)
+            term: str = f"{prefix.removesuffix(':')}:{query}"
 
-            tracks: list[Playable] = await Pool._fetch_tracks(term, cls_=Playable)
-
-            return tracks
+        tracks: Search = await wavelink.Pool.fetch_tracks(term)
+        return tracks
 
 
 class Playlist:
-    ...
+    def __init__(self, data: PlaylistPayload) -> None:
+        info: PlaylistInfoPayload = data["info"]
+        self.name: str = info["name"]
+        self.selected: int = info["selectedTrack"]
+
+        self.tracks: list[Playable] = [Playable(data=track) for track in data["tracks"]]
+
+        plugin: dict[Any, Any] = data["pluginInfo"]
+        self.type: str | None = plugin.get("type")
+        self.url: str | None = plugin.get("url")
+        self.artwork: str | None = plugin.get("artworkUrl")
+        self.author: str | None = plugin.get("author")
+
+    def __str__(self) -> str:
+        return self.name
