@@ -49,8 +49,10 @@ class PlaylistInfoPayload(TypedDict):
 class TrackPayload(TypedDict):
     encoded: str
     info: TrackInfoPayload
+    pluginInfo: dict
 
 
 class PlaylistPayload(TypedDict):
     info: PlaylistInfoPayload
     tracks: list[TrackPayload]
+    pluginInfo: dict
