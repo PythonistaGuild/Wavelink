@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import logging
 import secrets
+import urllib
 from typing import TYPE_CHECKING, Iterable, Union
 
 import aiohttp
@@ -33,19 +34,32 @@ from discord.utils import classproperty
 
 from . import __version__
 from .enums import NodeStatus
-from .exceptions import (AuthorizationFailedException, InvalidClientException,
-                         InvalidNodeException, LavalinkException)
+from .exceptions import (
+    AuthorizationFailedException,
+    InvalidClientException,
+    InvalidNodeException,
+    LavalinkException,
+    LavalinkLoadException,
+    WavelinkException,
+)
+from .tracks import Playable, Playlist
 from .websocket import Websocket
 
 if TYPE_CHECKING:
     from .player import Player
-    from .tracks import Playable, Playlist
-    from .types.request import Request
-    from .types.response import (EmptyLoadedResponse, ErrorLoadedResponse,
-                                 ErrorResponse, InfoResponse, PlayerResponse,
-                                 PlaylistLoadedResponse, SearchLoadedResponse,
-                                 StatsResponse, TrackLoadedResponse,
-                                 UpdateResponse)
+    from .types.request import Request, UpdateSessionRequest
+    from .types.response import (
+        EmptyLoadedResponse,
+        ErrorLoadedResponse,
+        ErrorResponse,
+        InfoResponse,
+        PlayerResponse,
+        PlaylistLoadedResponse,
+        SearchLoadedResponse,
+        StatsResponse,
+        TrackLoadedResponse,
+        UpdateResponse,
+    )
     from .types.tracks import PlaylistPayload, TrackPayload
 
     LoadedResponse = Union[
@@ -80,6 +94,8 @@ class Node:
         self._session_id: str | None = None
 
         self._players: dict[int, Player] = {}
+
+        self._spotify_enabled: bool = False
 
     def __repr__(self) -> str:
         return f"Node(identifier={self.identifier}, uri={self.uri}, status={self.status}, players={len(self.players)})"
@@ -177,11 +193,33 @@ class Node:
         websocket: Websocket = Websocket(node=self)
         await websocket.connect()
 
-    async def _fetch_players(self) -> list[PlayerResponse]:
-        ...
+        info: InfoResponse = await self._fetch_info()
+        if "spotify" in info["sourceManagers"]:
+            self._spotify_enabled = True
 
-    async def _fetch_player(self) -> PlayerResponse:
-        ...
+    async def _fetch_players(self) -> list[PlayerResponse]:
+        uri: str = f"{self.uri}/v4/sessions/{self.session_id}/players"
+
+        async with self._session.get(url=uri, headers=self.headers) as resp:
+            if resp.status == 200:
+                resp_data: list[PlayerResponse] = await resp.json()
+                return resp_data
+
+            else:
+                exc_data: ErrorResponse = await resp.json()
+                raise LavalinkException(data=exc_data)
+
+    async def _fetch_player(self, guild_id: int, /) -> PlayerResponse:
+        uri: str = f"{self.uri}/v4/sessions/{self.session_id}/players/{guild_id}"
+
+        async with self._session.get(url=uri, headers=self.headers) as resp:
+            if resp.status == 200:
+                resp_data: PlayerResponse = await resp.json()
+                return resp_data
+
+            else:
+                exc_data: ErrorResponse = await resp.json()
+                raise LavalinkException(data=exc_data)
 
     async def _update_player(self, guild_id: int, /, *, data: Request, replace: bool = False) -> PlayerResponse:
         no_replace: bool = not replace
@@ -193,20 +231,44 @@ class Node:
                 resp_data: PlayerResponse = await resp.json()
                 return resp_data
 
-        raise LavalinkException(
-            f"Failed to fulfill request to Lavalink: status={resp.status}, reason={resp.reason}",
-            status=resp.status,
-            reason=resp.reason,
-        )
+            else:
+                exc_data: ErrorResponse = await resp.json()
+                raise LavalinkException(data=exc_data)
 
-    async def _destroy_player(self) -> None:
-        ...
+    async def _destroy_player(self, guild_id: int, /) -> None:
+        uri: str = f"{self.uri}/v4/sessions/{self.session_id}/players/{guild_id}"
 
-    async def _update_session(self) -> UpdateResponse:
-        ...
+        async with self._session.delete(url=uri, headers=self.headers) as resp:
+            if resp.status == 204:
+                return
 
-    async def _fetch_tracks(self) -> LoadedResponse:
-        ...
+            else:
+                exc_data: ErrorResponse = await resp.json()
+                raise LavalinkException(data=exc_data)
+
+    async def _update_session(self, *, data: UpdateSessionRequest) -> UpdateResponse:
+        uri: str = f"{self.uri}/v4/sessions/{self.session_id}"
+
+        async with self._session.patch(url=uri, data=data) as resp:
+            if resp.status == 200:
+                resp_data: UpdateResponse = await resp.json()
+                return resp_data
+
+            else:
+                exc_data: ErrorResponse = await resp.json()
+                raise LavalinkException(data=exc_data)
+
+    async def _fetch_tracks(self, query: str) -> LoadedResponse:
+        uri: str = f"{self.uri}/v4/loadtracks?identifier={query}"
+
+        async with self._session.get(url=uri, headers=self.headers) as resp:
+            if resp.status == 200:
+                resp_data: LoadedResponse = await resp.json()
+                return resp_data
+
+            else:
+                exc_data: ErrorResponse = await resp.json()
+                raise LavalinkException(data=exc_data)
 
     async def _decode_track(self) -> TrackPayload:
         ...
@@ -215,13 +277,39 @@ class Node:
         ...
 
     async def _fetch_info(self) -> InfoResponse:
-        ...
+        uri: str = f"{self.uri}/v4/info"
+
+        async with self._session.get(url=uri, headers=self.headers) as resp:
+            if resp.status == 200:
+                resp_data: InfoResponse = await resp.json()
+                return resp_data
+
+            else:
+                exc_data: ErrorResponse = await resp.json()
+                raise LavalinkException(data=exc_data)
 
     async def _fetch_stats(self) -> StatsResponse:
-        ...
+        uri: str = f"{self.uri}/v4/stats"
+
+        async with self._session.get(url=uri, headers=self.headers) as resp:
+            if resp.status == 200:
+                resp_data: StatsResponse = await resp.json()
+                return resp_data
+
+            else:
+                exc_data: ErrorResponse = await resp.json()
+                raise LavalinkException(data=exc_data)
 
     async def _fetch_version(self) -> str:
-        ...
+        uri: str = f"{self.uri}/version"
+
+        async with self._session.get(url=uri, headers=self.headers) as resp:
+            if resp.status == 200:
+                return await resp.text()
+
+            else:
+                exc_data: ErrorResponse = await resp.json()
+                raise LavalinkException(data=exc_data)
 
     def get_player(self, guild_id: int, /) -> Player | None:
         return self._players.get(guild_id, None)
@@ -321,9 +409,30 @@ class Pool:
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
     @classmethod
-    async def _fetch_tracks(cls, query: str, /, cls_: type[Playable]) -> list[Playable]:
-        ...
+    async def fetch_tracks(cls, query: str) -> list[Playable] | list[Playlist]:
+        encoded_query = urllib.parse.quote(query)  # type: ignore
 
-    @classmethod
-    async def _fetch_playlist(cls, query: str, /, cls_: type[Playlist]) -> Playlist:
-        ...
+        node: Node = cls.get_node()
+        resp: LoadedResponse = await node._fetch_tracks(encoded_query)
+
+        if resp["loadType"] == "track":
+            track = Playable(data=resp["data"])
+
+            return [track]
+
+        elif resp["loadType"] == "search":
+            tracks = [Playable(data=tdata) for tdata in resp["data"]]
+
+            return tracks
+
+        if resp["loadType"] == "playlist":
+            return [Playlist(data=resp["data"])]
+
+        elif resp["loadType"] == "empty":
+            return []
+
+        elif resp["loadType"] == "error":
+            raise LavalinkLoadException(data=resp["data"])
+
+        else:
+            return []
