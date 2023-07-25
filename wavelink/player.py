@@ -105,8 +105,6 @@ class Player(discord.VoiceProtocol):
 
         self.queue: Queue = Queue()
 
-        super().__init__(client=self.client, channel=self.channel)
-
     @property
     def node(self) -> Node:
         """The :class:`Player`'s currently selected :class:`Node`.
