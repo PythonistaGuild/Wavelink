@@ -21,6 +21,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .types.response import ErrorResponse, LoadedErrorPayload
 
 
 __all__ = (
@@ -29,7 +35,10 @@ __all__ = (
     "AuthorizationFailedException",
     "InvalidNodeException",
     "LavalinkException",
+    "LavalinkLoadException",
     "InvalidChannelStateException",
+    "ChannelTimeoutException",
+    "QueueEmpty",
 )
 
 
@@ -67,14 +76,40 @@ class LavalinkException(WavelinkException):
         The response reason. Could be ``None`` if no reason was provided.
     """
 
-    def __init__(self, message: str, /, *, status: int, reason: str | None) -> None:
-        self.status = status
-        self.reason = reason
+    def __init__(self, msg: str | None = None, /, *, data: ErrorResponse) -> None:
+        self.timestamp: int = data["timestamp"]
+        self.status: int = data["status"]
+        self.error: str = data["error"]
+        self.trace: str | None = data.get("trace")
+        self.path: str = data["path"]
 
-        super().__init__(message)
+        if not msg:
+            msg = f"Failed to fulfill request to Lavalink: status={self.status}, reason={self.error}, path={self.path}"
+
+        super().__init__(msg)
+
+
+class LavalinkLoadException(WavelinkException):
+    def __init__(self, msg: str | None = None, /, *, data: LoadedErrorPayload) -> None:
+        self.error: str = data["message"]
+        self.severity: str = data["severity"]
+        self.cause: str = data["cause"]
+
+        if not msg:
+            msg = f"Failed to Load Tracks: error={self.error}, severity={self.severity}, cause={self.cause}"
+
+        super().__init__(msg)
 
 
 class InvalidChannelStateException(WavelinkException):
     """Exception raised when a :class:`~wavelink.Player` tries to connect to an invalid channel or
     has invalid permissions to use this channel.
     """
+
+
+class ChannelTimeoutException(WavelinkException):
+    """Exception raised when connecting to a voice channel times out."""
+
+
+class QueueEmpty(WavelinkException):
+    """Exception raised when you try to retrieve from an empty queue."""
