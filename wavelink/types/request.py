@@ -51,4 +51,9 @@ class IdentifierRequest(_BaseRequest):
     identifier: str
 
 
+class UpdateSessionRequest(TypedDict):
+    resuming: NotRequired[bool]
+    timeout: NotRequired[int]
+
+
 Request: TypeAlias = "_BaseRequest | EncodedTrackRequest | IdentifierRequest"
