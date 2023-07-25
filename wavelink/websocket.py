@@ -174,6 +174,9 @@ class Websocket:
                     track: Playable = Playable(data["track"])  # Fuck off pycharm...
                     reason: str = data["reason"]
 
+                    if player and reason != "replaced":
+                        player._current = None
+
                     endpayload: TrackEndEventPayload = TrackEndEventPayload(player=player, track=track, reason=reason)
                     self.dispatch("track_end", endpayload)
 
