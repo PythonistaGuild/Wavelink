@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "Wavelink"
+name = "wavelink"
 version = "3.0.0b1"
 authors = [
   { name="PythonistaGuild, EvieePy", email="evieepy@gmail.com" },
@@ -33,3 +33,6 @@ dependencies = {file = ["requirements.txt"]}
 
 [tool.black]
 line-length = 120
+
+[tool.isort]
+profile = "black"

@@ -111,7 +111,6 @@ class DiscordVoiceCloseType(enum.Enum):
 
 
 class AutoPlayMode(enum.Enum):
-
     enabled = 0
     partial = 1
     disabled = 2
