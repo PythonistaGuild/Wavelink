@@ -23,19 +23,27 @@ SOFTWARE.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Union, cast
 
+import async_timeout
 import discord
+from discord.abc import Connectable
 from discord.utils import MISSING
 
-from .exceptions import InvalidChannelStateException
+from .exceptions import (
+    ChannelTimeoutException,
+    InvalidChannelStateException,
+    LavalinkException,
+)
 from .node import Pool
+from .queue import Queue
+from .tracks import Playable
 
 if TYPE_CHECKING:
     from discord.types.voice import GuildVoiceState as GuildVoiceStatePayload
-    from discord.types.voice import \
-        VoiceServerUpdate as VoiceServerUpdatePayload
+    from discord.types.voice import VoiceServerUpdate as VoiceServerUpdatePayload
     from typing_extensions import Self
 
     from .node import Node
@@ -43,11 +51,10 @@ if TYPE_CHECKING:
     from .types.response import PlayerResponse
     from .types.state import PlayerVoiceState, VoiceState
 
+    VocalGuildChannel = Union[discord.VoiceChannel, discord.StageChannel]
+
 
 logger: logging.Logger = logging.getLogger(__name__)
-
-
-VoiceChannel = Union[discord.VoiceChannel, discord.StageChannel]
 
 
 class Player(discord.VoiceProtocol):
@@ -63,18 +70,21 @@ class Player(discord.VoiceProtocol):
 
     """
 
-    def __call__(self, client: discord.Client, channel: VoiceChannel) -> Self:
+    channel: VocalGuildChannel
+
+    def __call__(self, client: discord.Client, channel: VocalGuildChannel) -> Self:
+        super().__init__(client, channel)
+
         self.client = client
-        self.channel = channel
         self._guild = channel.guild
 
         return self
 
     def __init__(
-        self, client: discord.Client = MISSING, channel: VoiceChannel = MISSING, *, nodes: list[Node] | None = None
+        self, client: discord.Client = MISSING, channel: Connectable = MISSING, *, nodes: list[Node] | None = None
     ) -> None:
+        super().__init__(client, channel)
         self.client: discord.Client = client
-        self.channel: VoiceChannel = channel
         self._guild: discord.Guild | None = None
 
         self._voice_state: PlayerVoiceState = {"voice": {}}
@@ -87,6 +97,13 @@ class Player(discord.VoiceProtocol):
 
         if self.client is MISSING and self.node.client:
             self.client = self.node.client
+
+        self._connected: bool = False
+        self._connection_event: asyncio.Event = asyncio.Event()
+
+        self._current: Playable | None = None
+
+        self.queue: Queue = Queue()
 
         super().__init__(client=self.client, channel=self.channel)
 
@@ -108,12 +125,22 @@ class Player(discord.VoiceProtocol):
         """
         return self._guild
 
+    @property
+    def connected(self) -> bool:
+        return self._connected
+
+    @property
+    def playing(self) -> bool:
+        return self._connected and self._current is not None
+
     async def on_voice_state_update(self, data: GuildVoiceStatePayload, /) -> None:
         channel_id = data["channel_id"]
 
         if not channel_id:
             await self._destroy()
             return
+
+        self._connected = True
 
         self._voice_state["voice"]["session_id"] = data["session_id"]
         self.channel = self.client.get_channel(int(channel_id))  # type: ignore
@@ -139,15 +166,18 @@ class Player(discord.VoiceProtocol):
             return
 
         request: RequestPayload = {"voice": {"sessionId": session_id, "token": token, "endpoint": endpoint}}
-        resp: PlayerResponse = await self.node._update_player(self.guild.id, data=request)
 
-        # warning: print
-        print(f"RESPONSE WHEN UPDATING STATE: {resp}")
+        try:
+            await self.node._update_player(self.guild.id, data=request)
+        except LavalinkException:
+            await self.disconnect()
+        else:
+            self._connection_event.set()
 
         logger.debug(f"Player {self.guild.id} is dispatching VOICE_UPDATE.")
 
     async def connect(
-        self, *, timeout: float, reconnect: bool, self_deaf: bool = False, self_mute: bool = False
+        self, *, timeout: float = 5.0, reconnect: bool, self_deaf: bool = False, self_mute: bool = False
     ) -> None:
         if self.channel is None:
             msg: str = 'Please use "discord.VoiceChannel.connect(cls=...)" and pass this Player to cls.'
@@ -160,24 +190,44 @@ class Player(discord.VoiceProtocol):
         assert self.guild is not None
         await self.guild.change_voice_state(channel=self.channel, self_mute=self_mute, self_deaf=self_deaf)
 
-        # warning: print
-        print(f"PLAYER CONNECTED TO GUILD {self.guild.id} ON CHANNEL {self.channel}")
+        try:
+            async with async_timeout.timeout(timeout):
+                await self._connection_event.wait()
+        except (asyncio.TimeoutError, asyncio.CancelledError):
+            msg = f"Unable to connect to {self.channel} as it exceeded the timeout of {timeout} seconds."
+            raise ChannelTimeoutException(msg)
 
-    async def play(self, ytid: str) -> None:
+    async def play(self, track: Playable) -> None:
         """Test play command."""
         assert self.guild is not None
 
-        request: RequestPayload = {"identifier": ytid, "volume": 20}
+        request: RequestPayload = {"encodedTrack": track.encoded, "volume": 20}
         resp: PlayerResponse = await self.node._update_player(self.guild.id, data=request)
 
-        # warning: print
-        print(f"PLAYER STARTED PLAYING: {resp}")
+        self._current = track
+
+    def _invalidate(self) -> None:
+        self._connected = False
+
+        try:
+            self.cleanup()
+        except (AttributeError, KeyError):
+            pass
 
     async def disconnect(self, **kwargs: Any) -> None:
-        ...
+        assert self.guild
+
+        await self._destroy()
+        await self.guild.change_voice_state(channel=None)
 
     async def _destroy(self) -> None:
-        ...
+        assert self.guild
 
-    def cleanup(self) -> None:
-        ...
+        self._invalidate()
+        player: Self | None = self.node._players.pop(self.guild.id, None)
+
+        if player:
+            try:
+                await self.node._destroy_player(self.guild.id)
+            except LavalinkException:
+                pass
