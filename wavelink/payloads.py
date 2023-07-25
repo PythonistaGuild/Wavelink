@@ -26,10 +26,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from .enums import DiscordVoiceCloseType
-from .player import Player
-from .tracks import Playable
 
 if TYPE_CHECKING:
+    from .player import Player
+    from .tracks import Playable
     from .types.state import PlayerState
     from .types.stats import CPUStats, FrameStats, MemoryStats
     from .types.websocket import StatsOP, TrackExceptionPayload
@@ -120,4 +120,7 @@ class StatsEventPayload:
 
         self.memory: StatsEventMemory = StatsEventMemory(data=data["memory"])
         self.cpu: StatsEventCPU = StatsEventCPU(data=data["cpu"])
-        self.frames: StatsEventFrames = StatsEventFrames(data=data["frameStats"])
+        self.frames: StatsEventFrames | None = None
+
+        if data["frameStats"]:
+            self.frames = StatsEventFrames(data=data["frameStats"])
