@@ -23,7 +23,7 @@ SOFTWARE.
 """
 import enum
 
-__all__ = ("NodeStatus", "TrackSource", "DiscordVoiceCloseType")
+__all__ = ("NodeStatus", "TrackSource", "DiscordVoiceCloseType", "AutoPlayMode")
 
 
 class NodeStatus(enum.Enum):
@@ -108,3 +108,10 @@ class DiscordVoiceCloseType(enum.Enum):
     DISCONNECTED = 4014
     VOICE_SERVER_CRASHED = 4015
     UNKNOWN_ENCRYPTION_MODE = 4016
+
+
+class AutoPlayMode(enum.Enum):
+
+    enabled = 0
+    partial = 1
+    disabled = 2
