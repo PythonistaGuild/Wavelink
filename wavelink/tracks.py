@@ -150,7 +150,7 @@ class Playable(metaclass=abc.ABCMeta):
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Playable):
             return self.encoded == other.encoded
-        return NotImplemented
+        raise NotImplementedError
     
     @overload
     @classmethod

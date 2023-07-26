@@ -211,7 +211,10 @@ class SpotifyTrack:
     def __eq__(self, other) -> bool:
         if isinstance(other, SpotifyTrack):
             return self.id == other.id
-        raise NotImplemented
+        raise NotImplementedError
+    
+    def __hash__(self) -> int:
+        return hash(self.id)
 
     @classmethod
     async def search(
