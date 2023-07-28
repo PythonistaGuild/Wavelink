@@ -75,7 +75,6 @@ class Player(discord.VoiceProtocol):
     def __call__(self, client: discord.Client, channel: VocalGuildChannel) -> Self:
         super().__init__(client, channel)
 
-        self.client = client
         self._guild = channel.guild
 
         return self
@@ -84,6 +83,7 @@ class Player(discord.VoiceProtocol):
         self, client: discord.Client = MISSING, channel: Connectable = MISSING, *, nodes: list[Node] | None = None
     ) -> None:
         super().__init__(client, channel)
+
         self.client: discord.Client = client
         self._guild: discord.Guild | None = None
 
@@ -125,7 +125,12 @@ class Player(discord.VoiceProtocol):
 
     @property
     def connected(self) -> bool:
-        return self._connected
+        """Returns a bool indicating if the player is currently connected to a voice channel.
+
+        ..versionchanged:: 3.0.0
+            This property was previously known as ``is_connected``.
+        """
+        return self.channel and self._connected
 
     @property
     def playing(self) -> bool:

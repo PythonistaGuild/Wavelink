@@ -23,12 +23,15 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from .enums import DiscordVoiceCloseType
 
+import wavelink
+
 if TYPE_CHECKING:
     from .player import Player
+
     from .tracks import Playable
     from .types.state import PlayerState
     from .types.stats import CPUStats, FrameStats, MemoryStats
@@ -48,27 +51,27 @@ __all__ = (
 
 class TrackStartEventPayload:
     def __init__(self, player: Player | None, track: Playable) -> None:
-        self.player = player
+        self.player = cast(wavelink.Player, player)
         self.track = track
 
 
 class TrackEndEventPayload:
     def __init__(self, player: Player | None, track: Playable, reason: str) -> None:
-        self.player = player
+        self.player = cast(wavelink.Player, player)
         self.track = track
         self.reason = reason
 
 
 class TrackExceptionEventPayload:
     def __init__(self, player: Player | None, track: Playable, exception: TrackExceptionPayload) -> None:
-        self.player = player
+        self.player = cast(wavelink.Player, player)
         self.track = track
         self.exception = exception
 
 
 class TrackStuckEventPayload:
     def __init__(self, player: Player | None, track: Playable, threshold: int) -> None:
-        self.player = player
+        self.player = cast(wavelink.Player, player)
         self.track = track
         self.threshold = threshold
 
@@ -83,7 +86,7 @@ class WebsocketClosedEventPayload:
 
 class PlayerUpdateEventPayload:
     def __init__(self, player: Player | None, state: PlayerState) -> None:
-        self.player = player
+        self.player = cast(wavelink.Player, player)
         self.time: int = state["time"]
         self.position: int = state["position"]
         self.connected: bool = state["connected"]
