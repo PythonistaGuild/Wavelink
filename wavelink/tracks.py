@@ -23,7 +23,7 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypeAlias, Union, overload
+from typing import TYPE_CHECKING, Any, Iterator, TypeAlias, Union, overload
 
 import yarl
 
@@ -38,6 +38,9 @@ if TYPE_CHECKING:
         TrackInfoPayload,
         TrackPayload,
     )
+
+
+__all__ = ("Search", "Album", "Artist", "Playable", "Playlist")
 
 
 _source_mapping: dict[TrackSource | str | None, str] = {
@@ -97,12 +100,98 @@ class Playable:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Playable):
-            raise NotImplemented
+            raise NotImplementedError
 
         return self.encoded == other.encoded
 
     @classmethod
     async def search(cls, query: str, /, *, source: TrackSource | str | None = TrackSource.YouTube) -> Search:
+        """Search for a list of :class:`~wavelink.Playable` or a list containing a singular :class:`~wavelink.Playlist`,
+        with the given query.
+
+        .. note::
+
+            This method differs from :meth:`wavelink.Pool.fetch_tracks` in that it will apply a relevant search prefix
+            for you when a URL is **not** provided. This prefix can be controlled via the ``source`` keyword argument.
+
+
+        .. note::
+
+            This method of searching is preferred over, :meth:`wavelink.Pool.fetch_tracks`.
+
+
+        Parameters
+        ----------
+        query: str
+            The query to search tracks for. If this is **not** a URL based search this method will provide an
+            appropriate search prefix based on what is provided to the ``source`` keyword only parameter,
+            or it's default.
+
+            If this query **is a URL**, a search prefix will **not** be used.
+
+            .. positional-only::
+        /
+        *
+        source: :class:`TrackSource` | str | None
+            This parameter determines which search prefix to use when searching for tracks.
+            If ``None`` is provided, no prefix will be used, however this behaviour is default regardless of what
+            is provided **when a URL is found**.
+
+            For basic searches, E.g. YouTube, YouTubeMusic and SoundCloud, see: :class:`wavelink.TrackSource`.
+            Otherwise, a ``str`` may be provided for plugin based searches, E.g. "spsearch:" for the
+            LavaSrc Spotify based search.
+
+            Defaults to :attr:`wavelink.TrackSource.YouTube` which is equivalent to "ytsearch:".
+
+
+        Returns
+        -------
+        :class:`wavelink.Search`
+            A union of either list[:class:`Playable`] or list[:class:`Playlist`]. Could return and empty list,
+            if no tracks or playlist were found.
+
+        Raises
+        ------
+        LavalinkLoadException
+            Exception raised when Lavalink fails to load results based on your query.
+
+
+        Examples
+        --------
+
+        .. code:: python3
+
+            # Search for tracks, with the default "ytsearch:" prefix.
+            tracks: wavelink.Search = await wavelink.Playable.search("Ocean Drive")
+            if not tracks:
+                # No tracks were found...
+                ...
+
+            # Search for tracks, with a URL.
+            tracks: wavelink.Search = await wavelink.Playable.search("https://www.youtube.com/watch?v=KDxJlW6cxRk")
+            ...
+
+            # Search for tracks, using Spotify and the LavaSrc Plugin.
+            tracks: wavelink.Search = await wavelink.Playable.search("4b93D55xv3YCH5mT4p6HPn", source="spsearch")
+            ...
+
+            # Search for tracks, using Spotify and the LavaSrc Plugin, with a URL.
+            tracks: wavelink.Search = await wavelink.Playable.search("https://open.spotify.com/track/4b93D55xv3YCH5mT4p6HPn")
+            ...
+
+            # Search for a playlist, using Spotify and the LavaSrc Plugin.
+            # or alternatively any other playlist URL from another source like YouTube.
+            tracks: wavelink.Search = await wavelink.Playable.search("https://open.spotify.com/playlist/37i9dQZF1DWXRqgorJj26U")
+            ...
+
+
+        .. versionchanged:: 3.0.0
+            This method has been changed significantly in version ``3.0.0``. This method has been simplified to provide
+            an easier interface for searching tracks. See the above documentation and examples.
+
+            You can no longer provide a :class:`wavelink.Node` to use for searching as this method will now select the
+            most appropriate node from the :class:`wavelink.Pool`.
+        """
         prefix: TrackSource | str | None = _source_mapping.get(source, source)
         check = yarl.URL(query)
 
@@ -121,6 +210,79 @@ class Playable:
 
 
 class Playlist:
+    """The wavelink Playlist container class.
+
+    This class is created and returned via both :meth:`Playable.search` and :meth:`wavelink.Pool.fetch_tracks`.
+
+    It contains various information about the playlist and a list of :class:`Playable` that can be used directly in
+    :meth:`wavelink.Player.play`. See below for various supported operations.
+
+
+    .. warning::
+
+        You should not instantiate this class manually,
+        use :meth:`Playable.search` or :meth:`wavelink.Pool.fetch_tracks` instead.
+
+
+    .. warning::
+
+        You can not use ``.search`` directly on this class, see: :meth:`Playable.search`.
+
+
+    .. note::
+
+        This class can be directly added to :class:`wavelink.Queue` identical to :class:`Playable`. When added,
+        all tracks contained in this playlist, will be individually added to the :class:`wavelink.Queue`.
+
+
+    .. container:: operations
+
+        .. describe:: str(x)
+            Return the name associated with this playlist.
+
+        .. describe:: repr(x)
+            Return the official string representation of this playlist.
+
+        .. describe:: x == y
+            Compare the equality of playlist.
+
+        .. describe:: len(x)
+            Return an integer representing the amount of tracks contained in this playlist.
+
+        .. describe:: x[0]
+            Return a track contained in this playlist with the given index.
+
+        .. describe:: x[0:2]
+            Return a slice of tracks contained in this playlist.
+
+        .. describe:: for x in y
+            Iterate over the tracks contained in this playlist.
+
+        .. describe:: reversed(x)
+            Reverse the tracks contained in this playlist.
+
+        .. describe:: x in y
+            Check if a :class:`Playable` is contained in this playlist.
+
+
+    Attributes
+    ----------
+    name: str
+        The name of this playlist.
+    selected: int
+        The index of the selected track from Lavalink.
+    tracks: list[:class:`Playable`]
+        A list of :class:`Playable` contained in this playlist.
+    type: str | None
+        An optional ``str`` identifying the type of playlist this is. Only available when a plugin is used.
+    url: str | None
+        An optional ``str`` to the URL of this playlist. Only available when a plugin is used.
+    artwork: str | None
+        An optional ``str`` to the artwork of this playlist. Only available when a plugin is used.
+    author: str | None
+        An optional ``str`` of the author of this playlist. Only available when a plugin is used.
+    """
+
     def __init__(self, data: PlaylistPayload) -> None:
         info: PlaylistInfoPayload = data["info"]
         self.name: str = info["name"]
@@ -136,3 +298,30 @@ class Playlist:
 
     def __str__(self) -> str:
         return self.name
+
+    def __repr__(self) -> str:
+        return f"Playlist(name={self.name}, tracks={len(self.tracks)})"
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Playlist):
+            raise NotImplementedError
+
+        return self.name == other.name and self.tracks == other.tracks
+
+    def __len__(self) -> int:
+        return len(self.tracks)
+
+    def __getitem__(self, index: int | slice) -> Playable | list[Playable]:
+        if not isinstance(index, (int, slice)):
+            raise TypeError(f"Playlist indices must be integers or slices, not {type(index).__name__}")
+
+        return self.tracks[index]
+
+    def __iter__(self) -> Iterator[Playable]:
+        return self.tracks.__iter__()
+
+    def __reversed__(self) -> Iterator[Playable]:
+        return self.tracks.__reversed__()
+
+    def __contains__(self, item: Playable) -> bool:
+        return item in self.tracks
