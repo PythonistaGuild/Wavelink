@@ -25,13 +25,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from .enums import DiscordVoiceCloseType
-
 import wavelink
+
+from .enums import DiscordVoiceCloseType
 
 if TYPE_CHECKING:
     from .player import Player
-
     from .tracks import Playable
     from .types.state import PlayerState
     from .types.stats import CPUStats, FrameStats, MemoryStats

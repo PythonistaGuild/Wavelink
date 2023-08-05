@@ -102,7 +102,7 @@ class Node:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Node):
-            raise NotImplemented
+            raise NotImplementedError
 
         return other.identifier == self.identifier
 
@@ -177,7 +177,6 @@ class Node:
     @property
     def session_id(self) -> str | None:
         """The Lavalink session ID. Could be None if this :class:`Node` has not connected yet.
-
 
         .. versionadded:: 3.0.0
         """
@@ -312,6 +311,22 @@ class Node:
                 raise LavalinkException(data=exc_data)
 
     def get_player(self, guild_id: int, /) -> Player | None:
+        """Return a :class:`~wavelink.Player` associated with the provided :attr:discord.Guild.id`.
+
+        Parameters
+        ----------
+        guild_id: int
+            The :attr:discord.Guild.id` to retrieve a :class:`~wavelink.Player` for.
+
+            .. positional-only::
+        /
+
+        Returns
+        -------
+        Optional[:class:`~wavelink.Player`]
+            The Player associated with this guild ID. Could be None if no :class:`~wavelink.Player` exists
+            for this guild.
+        """
         return self._players.get(guild_id, None)
 
 
@@ -320,17 +335,16 @@ class Pool:
 
     @classmethod
     async def connect(cls, *, nodes: Iterable[Node], client: discord.Client | None = None) -> dict[str, Node]:
-        """|coro|
-
-        Connect the provided Iterable[:class:`Node`] to Lavalink.
+        """Connect the provided Iterable[:class:`Node`] to Lavalink.
 
         Parameters
         ----------
+        *
         nodes: Iterable[:class:`Node`]
             The :class:`Node`'s to connect to Lavalink.
         client: :class:`discord.Client` | None
             The :class:`discord.Client` to use to connect the :class:`Node`. If the Node already has a client
-            set, this method will *not* override it. Defaults to None.
+            set, this method will **not** override it. Defaults to None.
 
         Returns
         -------
@@ -387,6 +401,9 @@ class Pool:
         identifier: str | None
             An optional identifier to retrieve a :class:`Node`.
 
+            .. positional-only::
+        /
+
         Raises
         ------
         InvalidNodeException
@@ -394,7 +411,7 @@ class Pool:
 
 
         .. versionchanged:: 3.0.0
-            The ``id`` parameter was changed to ``identifier``.
+            The ``id`` parameter was changed to ``identifier`` and is positional only.
         """
         if not cls.__nodes:
             raise InvalidNodeException("No nodes are currently assigned to the wavelink.Pool.")
@@ -409,7 +426,39 @@ class Pool:
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
     @classmethod
-    async def fetch_tracks(cls, query: str) -> list[Playable] | list[Playlist]:
+    async def fetch_tracks(cls, query: str, /) -> list[Playable] | list[Playlist]:
+        """Search for a list of :class:`~wavelink.Playable` or a list containing a singular :class:`~wavelink.Playlist`,
+        with the given query.
+
+        Parameters
+        ----------
+        query: str
+            The query to search tracks for. If this is not a URL based search you should provide the appropriate search
+            prefix, E.g. "ytsearch:Rick Roll"
+
+            .. positional-only::
+        /
+
+        Returns
+        -------
+        list[Playable] | list[Playlist]
+            A list of :class:`~wavelink.Playable` or a list containing a singular :class:`~wavelink.Playlist`
+            based on your search ``query``. Could be an empty list, if no tracks were found.
+
+        Raises
+        ------
+        LavalinkLoadException
+            Exception raised when Lavalink fails to load results based on your query.
+
+
+        .. versionchanged:: 3.0.0
+            This method was previously known as both ``.get_tracks`` and ``.get_playlist``. This method now searches
+            for both :class:`~wavelink.Playable` and :class:`~wavelink.Playlist` and returns the appropriate type
+            contained in a list, or an empty list if no results were found.
+
+            This method no longer accepts the ``cls`` parameter.
+        """
+        # TODO: Documentation Extension for `.. positional-only::` marker.
         encoded_query = urllib.parse.quote(query)  # type: ignore
 
         node: Node = cls.get_node()

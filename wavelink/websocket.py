@@ -82,7 +82,7 @@ class Websocket:
                 self.keep_alive_task.cancel()
             except Exception as e:
                 logger.debug(
-                    f"Failed to cancel websocket keep alive while connecting. "
+                    "Failed to cancel websocket keep alive while connecting. "
                     f"This is most likely not a problem and will not affect websocket connection: '{e}'"
                 )
 
@@ -99,7 +99,7 @@ class Websocket:
                 if isinstance(e, aiohttp.WSServerHandshakeError) and e.status == 401:
                     raise AuthorizationFailedException from e
                 else:
-                    logger.info(
+                    logger.warning(
                         f'An unexpected error occurred while connecting {self.node!r} to Lavalink: "{e}"\n'
                         f"If this error persists or wavelink is unable to reconnect, please see: {github}"
                     )
@@ -135,7 +135,7 @@ class Websocket:
                 aiohttp.WSMsgType.CLOSED,
                 aiohttp.WSMsgType.CLOSING,
             ):  # pyright: ignore[reportUnknownMemberType]
-                asyncio.create_task(self.cleanup())
+                asyncio.create_task(self.connect())
                 break
 
             if message.data is None:
@@ -165,13 +165,13 @@ class Websocket:
                 player: Player | None = self.get_player(data["guildId"])
 
                 if data["type"] == "TrackStartEvent":
-                    track: Playable = Playable(data["track"])  # Fuck off pycharm...
+                    track: Playable = Playable(data["track"])
 
                     startpayload: TrackStartEventPayload = TrackStartEventPayload(player=player, track=track)
                     self.dispatch("track_start", startpayload)
 
                 elif data["type"] == "TrackEndEvent":
-                    track: Playable = Playable(data["track"])  # Fuck off pycharm...
+                    track: Playable = Playable(data["track"])
                     reason: str = data["reason"]
 
                     if player and reason != "replaced":
@@ -181,8 +181,8 @@ class Websocket:
                     self.dispatch("track_end", endpayload)
 
                 elif data["type"] == "TrackExceptionEvent":
-                    track: Playable = Playable(data["track"])  # Fuck off pycharm...
-                    exception: TrackExceptionPayload = data["exception"]  # Fuck off pycharm...
+                    track: Playable = Playable(data["track"])
+                    exception: TrackExceptionPayload = data["exception"]
 
                     excpayload: TrackExceptionEventPayload = TrackExceptionEventPayload(
                         player=player, track=track, exception=exception
@@ -190,7 +190,7 @@ class Websocket:
                     self.dispatch("track_exception", excpayload)
 
                 elif data["type"] == "TrackStuckEvent":
-                    track: Playable = Playable(data["track"])  # Fuck off pycharm...
+                    track: Playable = Playable(data["track"])
                     threshold: int = data["thresholdMs"]
 
                     stuckpayload: TrackStuckEventPayload = TrackStuckEventPayload(
@@ -236,4 +236,7 @@ class Websocket:
                 pass
 
         self.node._status = NodeStatus.DISCONNECTED
+        self.node._session_id = None
+        self.node._players = {}
+
         logger.debug(f"Successfully cleaned up the websocket for {self.node!r}")
