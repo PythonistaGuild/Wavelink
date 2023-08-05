@@ -114,7 +114,7 @@ class BaseQueue:
 
     def __repr__(self) -> str:
         """Official representation displaying member count."""
-        return f"BaseQueue(member_count={self.count})"
+        return f"BaseQueue(count={self.count})"
 
     def __bool__(self) -> bool:
         """Treats the queue as a ``bool``, with it evaluating ``True`` when it contains members.
@@ -468,6 +468,9 @@ class Queue(BaseQueue):
         self._finished = asyncio.Event()
         self._finished.set()
 
+    def __repr__(self) -> str:
+        return f'Queue(count={self.count}, history={self.history}, loop={self._loop}, loop_all={self._loop_all})'
+
     async def __aiter__(self) -> AsyncIterator[Playable]:
         """Pops members as it iterates the queue, waiting for new members when exhausted.
 
@@ -475,7 +478,7 @@ class Queue(BaseQueue):
 
         Example
         -------
-
+@
         .. code:: python3
 
             async for track in player.queue:
@@ -559,7 +562,7 @@ class Queue(BaseQueue):
 
         return self.get()
 
-    async def put_wait(self, item: Playable) -> None:
+    async def put_wait(self, item: Playable | Playlist) -> None:
         """|coro|
 
         Put an item into the queue asynchronously using ``await``.
