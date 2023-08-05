@@ -50,7 +50,7 @@ _source_mapping: dict[TrackSource | str | None, str] = {
 }
 
 
-Search: TypeAlias = "list[Playable] | list[Playlist]"
+Search: TypeAlias = "list[Playable] | Playlist"
 
 
 class Album:
@@ -106,8 +106,7 @@ class Playable:
 
     @classmethod
     async def search(cls, query: str, /, *, source: TrackSource | str | None = TrackSource.YouTube) -> Search:
-        """Search for a list of :class:`~wavelink.Playable` or a list containing a singular :class:`~wavelink.Playlist`,
-        with the given query.
+        """Search for a list of :class:`~wavelink.Playable` or a :class:`~wavelink.Playlist`, with the given query.
 
         .. note::
 
@@ -147,7 +146,7 @@ class Playable:
         Returns
         -------
         :class:`wavelink.Search`
-            A union of either list[:class:`Playable`] or list[:class:`Playlist`]. Could return and empty list,
+            A union of either list[:class:`Playable`] or :class:`Playlist`. Could return and empty list,
             if no tracks or playlist were found.
 
         Raises

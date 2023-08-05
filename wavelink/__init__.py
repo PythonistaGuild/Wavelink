@@ -34,4 +34,3 @@ from .node import Node, Pool
 from .payloads import *
 from .player import Player
 from .tracks import *
-from .types.playable import PlayableUnion

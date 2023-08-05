@@ -426,9 +426,8 @@ class Pool:
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
     @classmethod
-    async def fetch_tracks(cls, query: str, /) -> list[Playable] | list[Playlist]:
-        """Search for a list of :class:`~wavelink.Playable` or a list containing a singular :class:`~wavelink.Playlist`,
-        with the given query.
+    async def fetch_tracks(cls, query: str, /) -> list[Playable] | Playlist:
+        """Search for a list of :class:`~wavelink.Playable` or a :class:`~wavelink.Playlist`, with the given query.
 
         Parameters
         ----------
@@ -441,8 +440,8 @@ class Pool:
 
         Returns
         -------
-        list[Playable] | list[Playlist]
-            A list of :class:`~wavelink.Playable` or a list containing a singular :class:`~wavelink.Playlist`
+        list[Playable] | Playlist
+            A list of :class:`~wavelink.Playable` or a :class:`~wavelink.Playlist`
             based on your search ``query``. Could be an empty list, if no tracks were found.
 
         Raises
@@ -453,8 +452,8 @@ class Pool:
 
         .. versionchanged:: 3.0.0
             This method was previously known as both ``.get_tracks`` and ``.get_playlist``. This method now searches
-            for both :class:`~wavelink.Playable` and :class:`~wavelink.Playlist` and returns the appropriate type
-            contained in a list, or an empty list if no results were found.
+            for both :class:`~wavelink.Playable` and :class:`~wavelink.Playlist` and returns the appropriate type,
+            or an empty list if no results were found.
 
             This method no longer accepts the ``cls`` parameter.
         """
@@ -475,7 +474,7 @@ class Pool:
             return tracks
 
         if resp["loadType"] == "playlist":
-            return [Playlist(data=resp["data"])]
+            return Playlist(data=resp["data"])
 
         elif resp["loadType"] == "empty":
             return []
