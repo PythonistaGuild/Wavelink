@@ -496,18 +496,18 @@ class SpotifyClient:
 
         elif data['type'] == 'playlist':
             if not iterator:
-                return [SpotifyTrack(t['track']) for t in data['tracks']['items']]
+                return [SpotifyTrack(t['track']) for t in data['tracks']['items'] if t['track'] is not None]
             if not data['tracks']['next']:
-                return [t['track'] for t in data['tracks']['items']]
+                return [t['track'] for t in data['tracks']['items'] if t['track'] is not None]
 
             url = data['tracks']['next']
 
-            items = [t['track'] for t in data['tracks']['items']]
+            items = [t['track'] for t in data['tracks']['items'] if t['track'] is not None]
             while True:
                 async with self.session.get(url, headers=self.bearer_headers) as resp:
                     data = await resp.json()
 
-                    items.extend([t['track'] for t in data['items']])
+                    items.extend([t['track'] for t in data['items'] if t['track'] is not None])
                     if not data['next']:
                         return items
 
