@@ -369,7 +369,7 @@ class BaseQueue:
 
         .. versionchanged:: 2.6.0
 
-            Added support for directly adding a :class:`~wavelink.YouTubePlaylist` to the queue.
+            Added support for directly adding a :class:`~wavelink.YouTubePlaylist` or :class:`~wavelink.SoundCloudPlaylist` to the queue.
         """
         self._check_playable(item)
 
@@ -585,15 +585,17 @@ class Queue(BaseQueue):
 
         .. versionchanged:: 2.6.0
 
-            Added support for directly adding a :class:`~wavelink.YouTubePlaylist` to the queue.
+            Added support for directly adding a :class:`~wavelink.YouTubePlaylist` or :class:`~wavelink.SoundCloudPlaylist` to the queue.
+        
+            
         """
         await self._put(item)
 
     def put(self, item: Playable | spotify.SpotifyTrack) -> None:
         """Put the given item into the back of the queue.
 
-        If the provided ``item`` is a :class:`~wavelink.YouTubePlaylist`, all tracks from this playlist will be put
-        into the queue.
+        If the provided ``item`` is a :class:`~wavelink.YouTubePlaylist` or :class:`~wavelink.SoundCloudPlaylist`, all
+        tracks from this playlist will be put into the queue.
 
 
         .. note::
@@ -605,11 +607,11 @@ class Queue(BaseQueue):
 
         .. versionchanged:: 2.6.0
 
-            Added support for directly adding a :class:`~wavelink.YouTubePlaylist` to the queue.
+            Added support for directly adding a :class:`~wavelink.YouTubePlaylist` or :class:`~wavelink.SoundCloudPlaylist` to the queue.
         """
         self._check_playable(item)
 
-        if isinstance(item, YouTubePlaylist):
+        if isinstance(item, (YouTubePlaylist, SoundCloudPlaylist)):
             for track in item.tracks:
                 super()._put(track)
         else:
