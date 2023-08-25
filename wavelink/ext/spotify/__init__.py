@@ -79,7 +79,7 @@ class SpotifyAsyncIterator:
         for track in tracks:
             await self._queue.put(track)
 
-    async def __anext__(self):
+    async def __anext__(self) -> SpotifyTrack:
         if self._first:
             await self.fill_queue()
             self._first = False
