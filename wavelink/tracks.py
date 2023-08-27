@@ -23,7 +23,7 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterator, TypeAlias, Union, overload
+from typing import TYPE_CHECKING, Any, Iterator, TypeAlias, overload
 
 import yarl
 
@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     )
 
 
-__all__ = ("Search", "Album", "Artist", "Playable", "Playlist")
+__all__ = ("Search", "Album", "Artist", "Playable", "Playlist", "PlaylistInfo")
 
 
 _source_mapping: dict[TrackSource | str | None, str] = {
@@ -66,28 +66,30 @@ class Artist:
 
 
 class Playable:
-    def __init__(self, data: TrackPayload) -> None:
+    def __init__(self, data: TrackPayload, *, playlist: PlaylistInfo | None = None) -> None:
         info: TrackInfoPayload = data["info"]
 
-        self.encoded: str = data["encoded"]
-        self.identifier: str = info["identifier"]
-        self.is_seekable: bool = info["isSeekable"]
-        self.author: str = info["author"]
-        self.length: int = info["length"]
-        self.is_stream: bool = info["isStream"]
-        self.position: int = info["position"]
-        self.title: str = info["title"]
-        self.uri: str | None = info.get("uri")
-        self.artwork: str | None = info.get("artworkUrl")
-        self.isrc: str | None = info.get("isrc")
-        self.source: str = info["sourceName"]
+        self._encoded: str = data["encoded"]
+        self._identifier: str = info["identifier"]
+        self._is_seekable: bool = info["isSeekable"]
+        self._author: str = info["author"]
+        self._length: int = info["length"]
+        self._is_stream: bool = info["isStream"]
+        self._position: int = info["position"]
+        self._title: str = info["title"]
+        self._uri: str | None = info.get("uri")
+        self._artwork: str | None = info.get("artworkUrl")
+        self._isrc: str | None = info.get("isrc")
+        self._source: str = info["sourceName"]
 
         plugin: dict[Any, Any] = data["pluginInfo"]
-        self.album: Album = Album(data=plugin)
-        self.artist: Artist = Artist(data=plugin)
+        self._album: Album = Album(data=plugin)
+        self._artist: Artist = Artist(data=plugin)
 
-        self.preview_url: str | None = plugin.get("previewUrl")
-        self.is_preview: bool | None = plugin.get("isPreview")
+        self._preview_url: str | None = plugin.get("previewUrl")
+        self._is_preview: bool | None = plugin.get("isPreview")
+
+        self._playlist = playlist
 
     def __hash__(self) -> int:
         return hash(self.encoded)
@@ -103,6 +105,74 @@ class Playable:
             raise NotImplementedError
 
         return self.encoded == other.encoded
+
+    @property
+    def encoded(self) -> str:
+        return self._encoded
+
+    @property
+    def identifier(self) -> str:
+        return self._identifier
+
+    @property
+    def is_seekable(self) -> bool:
+        return self._is_seekable
+
+    @property
+    def author(self) -> str:
+        return self._author
+
+    @property
+    def length(self) -> int:
+        return self._length
+
+    @property
+    def is_stream(self) -> bool:
+        return self._is_stream
+
+    @property
+    def position(self) -> int:
+        return self._position
+
+    @property
+    def title(self) -> str:
+        return self._title
+
+    @property
+    def uri(self) -> str | None:
+        return self._uri
+
+    @property
+    def artwork(self) -> str | None:
+        return self._artwork
+
+    @property
+    def isrc(self) -> str | None:
+        return self._isrc
+
+    @property
+    def source(self) -> str:
+        return self._source
+
+    @property
+    def album(self) -> Album:
+        return self._album
+
+    @property
+    def artist(self) -> Artist:
+        return self._artist
+
+    @property
+    def preview_url(self) -> str | None:
+        return self._preview_url
+
+    @property
+    def is_preview(self) -> bool | None:
+        return self._is_preview
+
+    @property
+    def playlist(self) -> PlaylistInfo | None:
+        return self._playlist
 
     @classmethod
     async def search(cls, query: str, /, *, source: TrackSource | str | None = TrackSource.YouTube) -> Search:
@@ -287,7 +357,8 @@ class Playlist:
         self.name: str = info["name"]
         self.selected: int = info["selectedTrack"]
 
-        self.tracks: list[Playable] = [Playable(data=track) for track in data["tracks"]]
+        playlist_info: PlaylistInfo = PlaylistInfo(data)
+        self.tracks: list[Playable] = [Playable(data=track, playlist=playlist_info) for track in data["tracks"]]
 
         plugin: dict[Any, Any] = data["pluginInfo"]
         self.type: str | None = plugin.get("type")
@@ -310,10 +381,15 @@ class Playlist:
     def __len__(self) -> int:
         return len(self.tracks)
 
-    def __getitem__(self, index: int | slice) -> Playable | list[Playable]:
-        if not isinstance(index, (int, slice)):
-            raise TypeError(f"Playlist indices must be integers or slices, not {type(index).__name__}")
+    @overload
+    def __getitem__(self, index: int) -> Playable:
+        ...
 
+    @overload
+    def __getitem__(self, index: slice) -> list[Playable]:
+        ...
+
+    def __getitem__(self, index: int | slice) -> Playable | list[Playable]:
         return self.tracks[index]
 
     def __iter__(self) -> Iterator[Playable]:
@@ -324,3 +400,58 @@ class Playlist:
 
     def __contains__(self, item: Playable) -> bool:
         return item in self.tracks
+
+    def track_extras(self, **attrs: Any) -> None:
+        """Method which sets attributes to all :class:`Playable` in this playlist, with the provided keyword arguments.
+
+        This is useful when you need to attach state to your :class:`Playable`, E.g. create a requester attribute.
+
+        .. warning::
+
+            If you try to override any existing property of :class:`Playable` this method will fail.
+
+
+        Parameters
+        ----------
+        **attrs
+            The keyword arguments to set as attribute name=value on each :class:`Playable`.
+
+        Examples
+        --------
+
+            .. code:: python3
+
+                playlist.track_extras(requester=ctx.author)
+
+                track: wavelink.Playable = playlist[0]
+                print(track.requester)
+        """
+        for track in self.tracks:
+            for name, value in attrs.items():
+                setattr(track, name, value)
+
+
+class PlaylistInfo:
+    __slots__ = ("name", "selected", "tracks", "type", "url", "artwork", "author")
+
+    def __init__(self, data: PlaylistPayload) -> None:
+        info: PlaylistInfoPayload = data["info"]
+        self.name: str = info["name"]
+        self.selected: int = info["selectedTrack"]
+
+        self.tracks: int = len(data["tracks"])
+
+        plugin: dict[Any, Any] = data["pluginInfo"]
+        self.type: str | None = plugin.get("type")
+        self.url: str | None = plugin.get("url")
+        self.artwork: str | None = plugin.get("artworkUrl")
+        self.author: str | None = plugin.get("author")
+
+    def __str__(self) -> str:
+        return self.name
+
+    def __repr__(self) -> str:
+        return f"PlaylistInfo(name={self.name}, tracks={self.tracks})"
+
+    def __len__(self) -> int:
+        return self.tracks

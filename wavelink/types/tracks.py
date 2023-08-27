@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import TYPE_CHECKING, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 if TYPE_CHECKING:
     from typing_extensions import NotRequired
@@ -49,10 +49,10 @@ class PlaylistInfoPayload(TypedDict):
 class TrackPayload(TypedDict):
     encoded: str
     info: TrackInfoPayload
-    pluginInfo: dict
+    pluginInfo: dict[Any, Any]
 
 
 class PlaylistPayload(TypedDict):
     info: PlaylistInfoPayload
     tracks: list[TrackPayload]
-    pluginInfo: dict
+    pluginInfo: dict[Any, Any]
