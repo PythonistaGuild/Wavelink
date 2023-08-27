@@ -53,7 +53,7 @@ class Websocket:
         self.backoff: Backoff = Backoff()
 
         self.socket: aiohttp.ClientWebSocketResponse | None = None
-        self.keep_alive_task: asyncio.Task | None = None
+        self.keep_alive_task: asyncio.Task[None] | None = None
 
     @property
     def headers(self) -> dict[str, str]:
