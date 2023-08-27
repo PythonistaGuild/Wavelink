@@ -30,7 +30,8 @@ __version__ = "3.0.0b1"
 
 from .enums import *
 from .exceptions import *
-from .node import Node, Pool
+from .node import *
 from .payloads import *
-from .player import Player
+from .player import Player as Player
+from .queue import *
 from .tracks import *

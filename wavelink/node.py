@@ -26,7 +26,7 @@ from __future__ import annotations
 import logging
 import secrets
 import urllib
-from typing import TYPE_CHECKING, Iterable, Union
+from typing import TYPE_CHECKING, Iterable, Union, cast
 
 import aiohttp
 import discord
@@ -40,7 +40,6 @@ from .exceptions import (
     InvalidNodeException,
     LavalinkException,
     LavalinkLoadException,
-    WavelinkException,
 )
 from .tracks import Playable, Playlist
 from .websocket import Websocket
@@ -60,11 +59,14 @@ if TYPE_CHECKING:
         TrackLoadedResponse,
         UpdateResponse,
     )
-    from .types.tracks import PlaylistPayload, TrackPayload
+    from .types.tracks import TrackPayload
 
     LoadedResponse = Union[
         TrackLoadedResponse, SearchLoadedResponse, PlaylistLoadedResponse, EmptyLoadedResponse, ErrorLoadedResponse
     ]
+
+
+__all__ = ("Node", "Pool")
 
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -458,7 +460,7 @@ class Pool:
             This method no longer accepts the ``cls`` parameter.
         """
         # TODO: Documentation Extension for `.. positional-only::` marker.
-        encoded_query = urllib.parse.quote(query)  # type: ignore
+        encoded_query: str = cast(str, urllib.parse.quote(query))  # type: ignore
 
         node: Node = cls.get_node()
         resp: LoadedResponse = await node._fetch_tracks(encoded_query)

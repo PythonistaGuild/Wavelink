@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any, Union, cast
+from typing import TYPE_CHECKING, Any, Union
 
 import async_timeout
 import discord
@@ -48,7 +48,6 @@ if TYPE_CHECKING:
 
     from .node import Node
     from .types.request import Request as RequestPayload
-    from .types.response import PlayerResponse
     from .types.state import PlayerVoiceState, VoiceState
 
     VocalGuildChannel = Union[discord.VoiceChannel, discord.StageChannel]
@@ -182,7 +181,7 @@ class Player(discord.VoiceProtocol):
     async def connect(
         self, *, timeout: float = 5.0, reconnect: bool, self_deaf: bool = False, self_mute: bool = False
     ) -> None:
-        if self.channel is None:
+        if self.channel is MISSING:
             msg: str = 'Please use "discord.VoiceChannel.connect(cls=...)" and pass this Player to cls.'
             raise InvalidChannelStateException(f"Player tried to connect without a valid channel: {msg}")
 
@@ -205,7 +204,7 @@ class Player(discord.VoiceProtocol):
         assert self.guild is not None
 
         request: RequestPayload = {"encodedTrack": track.encoded, "volume": 20}
-        resp: PlayerResponse = await self.node._update_player(self.guild.id, data=request)
+        await self.node._update_player(self.guild.id, data=request)
 
         self._current = track
 

@@ -3,8 +3,6 @@ import platform
 import subprocess
 import sys
 
-import aiohttp
-
 import wavelink
 
 parser = argparse.ArgumentParser(prog="wavelink")
