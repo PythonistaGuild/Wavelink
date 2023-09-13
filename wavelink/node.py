@@ -521,7 +521,7 @@ class Pool:
         if cls.__cache is None and capacity <= 0:
             raise CapacityZero(f"LFU Request cache capacity must be > 0.")
 
-        if cls.__cache is not None:
+        if cls.__cache is None:
             cls.__cache = LFUCache(capacity=capacity)
             logger.info("Experimental request caching has been toggled ON. To disable run Pool.toggle_cache()")
         else:
