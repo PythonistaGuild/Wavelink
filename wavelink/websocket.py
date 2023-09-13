@@ -139,7 +139,7 @@ class Websocket:
                 break
 
             if message.data is None:
-                logger.debug(f"Received an empty message from Lavalink websocket. Disregarding.")
+                logger.debug("Received an empty message from Lavalink websocket. Disregarding.")
                 continue
 
             data: WebsocketOP = message.json()

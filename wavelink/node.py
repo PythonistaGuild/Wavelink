@@ -244,9 +244,8 @@ class Node:
             if resp.status == 204:
                 return
 
-            else:
-                exc_data: ErrorResponse = await resp.json()
-                raise LavalinkException(data=exc_data)
+            exc_data: ErrorResponse = await resp.json()
+            raise LavalinkException(data=exc_data)
 
     async def _update_session(self, *, data: UpdateSessionRequest) -> UpdateResponse:
         uri: str = f"{self.uri}/v4/sessions/{self.session_id}"
@@ -309,9 +308,8 @@ class Node:
             if resp.status == 200:
                 return await resp.text()
 
-            else:
-                exc_data: ErrorResponse = await resp.json()
-                raise LavalinkException(data=exc_data)
+            exc_data: ErrorResponse = await resp.json()
+            raise LavalinkException(data=exc_data)
 
     def get_player(self, guild_id: int, /) -> Player | None:
         """Return a :class:`~wavelink.Player` associated with the provided :attr:discord.Guild.id`.
@@ -385,7 +383,7 @@ class Pool:
 
         if cache_capacity is not None:
             if cache_capacity <= 0:
-                logger.warning(f"LFU Request cache capacity must be > 0. Not enabling cache.")
+                logger.warning("LFU Request cache capacity must be > 0. Not enabling cache.")
 
             else:
                 cls.__cache = LFUCache(capacity=cache_capacity)
@@ -519,7 +517,7 @@ class Pool:
     @classmethod
     def toggle_cache(cls, capacity: int = 100) -> None:
         if cls.__cache is None and capacity <= 0:
-            raise CapacityZero(f"LFU Request cache capacity must be > 0.")
+            raise CapacityZero("LFU Request cache capacity must be > 0.")
 
         if cls.__cache is None:
             cls.__cache = LFUCache(capacity=capacity)
