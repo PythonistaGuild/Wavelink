@@ -41,6 +41,7 @@ from .exceptions import (
     LavalinkException,
     LavalinkLoadException,
 )
+from .lfu import CapacityZero, LFUCache
 from .tracks import Playable, Playlist
 from .websocket import Websocket
 
@@ -334,9 +335,12 @@ class Node:
 
 class Pool:
     __nodes: dict[str, Node] = {}
+    __cache: LFUCache | None = None
 
     @classmethod
-    async def connect(cls, *, nodes: Iterable[Node], client: discord.Client | None = None) -> dict[str, Node]:
+    async def connect(
+        cls, *, nodes: Iterable[Node], client: discord.Client | None = None, cache_capacity: int | None = None
+    ) -> dict[str, Node]:
         """Connect the provided Iterable[:class:`Node`] to Lavalink.
 
         Parameters
@@ -378,6 +382,14 @@ class Pool:
                 logger.error(f"Failed to authenticate {node!r} on Lavalink with the provided password.")
             else:
                 cls.__nodes[node.identifier] = node
+
+        if cache_capacity is not None:
+            if cache_capacity <= 0:
+                logger.warning(f"LFU Request cache capacity must be > 0. Not enabling cache.")
+
+            else:
+                cls.__cache = LFUCache(capacity=cache_capacity)
+                logger.info("Experimental request caching has been toggled ON. To disable run Pool.toggle_cache()")
 
         return cls.nodes
 
@@ -462,21 +474,38 @@ class Pool:
         # TODO: Documentation Extension for `.. positional-only::` marker.
         encoded_query: str = cast(str, urllib.parse.quote(query))  # type: ignore
 
+        if cls.__cache is not None:
+            potential: list[Playable] | Playlist = cls.__cache.get(encoded_query, None)
+
+            if potential:
+                return potential
+
         node: Node = cls.get_node()
         resp: LoadedResponse = await node._fetch_tracks(encoded_query)
 
         if resp["loadType"] == "track":
             track = Playable(data=resp["data"])
 
+            if cls.__cache is not None and not track.is_stream:
+                cls.__cache.put(encoded_query, [track])
+
             return [track]
 
         elif resp["loadType"] == "search":
             tracks = [Playable(data=tdata) for tdata in resp["data"]]
 
+            if cls.__cache is not None:
+                cls.__cache.put(encoded_query, tracks)
+
             return tracks
 
         if resp["loadType"] == "playlist":
-            return Playlist(data=resp["data"])
+            playlist: Playlist = Playlist(data=resp["data"])
+
+            if cls.__cache is not None:
+                cls.__cache.put(encoded_query, playlist)
+
+            return playlist
 
         elif resp["loadType"] == "empty":
             return []
@@ -486,3 +515,19 @@ class Pool:
 
         else:
             return []
+
+    @classmethod
+    def toggle_cache(cls, capacity: int = 100) -> None:
+        if capacity <= 0:
+            raise CapacityZero(f"LFU Request cache capacity must be > 0.")
+
+        if cls.__cache is not None:
+            cls.__cache = LFUCache(capacity=capacity)
+            logger.info("Experimental request caching has been toggled ON. To disable run Pool.toggle_cache()")
+        else:
+            cls.__cache = None
+            logger.info("Experimental request caching has been toggled OFF. To enable run Pool.toggle_cache()")
+
+    @classproperty
+    def cache(cls) -> bool:
+        return cls.__cache is not None

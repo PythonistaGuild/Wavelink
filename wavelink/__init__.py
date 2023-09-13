@@ -25,11 +25,12 @@ __title__ = "WaveLink"
 __author__ = "PythonistaGuild, EvieePy"
 __license__ = "MIT"
 __copyright__ = "Copyright 2019-Present (c) PythonistaGuild, EvieePy"
-__version__ = "3.0.0b1"
+__version__ = "3.0.0b2"
 
 
 from .enums import *
 from .exceptions import *
+from .lfu import CapacityZero as CapacityZero
 from .node import *
 from .payloads import *
 from .player import Player as Player
