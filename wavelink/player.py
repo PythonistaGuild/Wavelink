@@ -101,15 +101,20 @@ class Player(discord.VoiceProtocol):
         self._connection_event: asyncio.Event = asyncio.Event()
 
         self._current: Playable | None = None
+        self._original: Playable | None = None
+        self._previous: Playable | None = None
 
         self.queue: Queue = Queue()
+
+        self._volume: int = 100
+        self._paused: bool = False
 
     @property
     def node(self) -> Node:
         """The :class:`Player`'s currently selected :class:`Node`.
 
 
-        ..versionchanged:: 3.0.0
+        .. versionchanged:: 3.0.0
             This property was previously known as ``current_node``.
         """
         return self._node
@@ -126,10 +131,31 @@ class Player(discord.VoiceProtocol):
     def connected(self) -> bool:
         """Returns a bool indicating if the player is currently connected to a voice channel.
 
-        ..versionchanged:: 3.0.0
+        .. versionchanged:: 3.0.0
             This property was previously known as ``is_connected``.
         """
         return self.channel and self._connected
+
+    @property
+    def current(self) -> Playable | None:
+        """Returns the currently playing :class:`~wavelink.Playable` or None if no track is playing."""
+        return self._current
+
+    @property
+    def volume(self) -> int:
+        """Returns an int representing the currently set volume, as a percentage.
+
+        See: :meth:`set_volume` for setting the volume.
+        """
+        return self._volume
+
+    @property
+    def paused(self) -> bool:
+        """Returns the paused status of the player. A currently paused player will return ``True``.
+
+        See: :meth:`pause` and :meth:`play` for setting the paused status.
+        """
+        return self._paused
 
     @property
     def playing(self) -> bool:
@@ -199,28 +225,223 @@ class Player(discord.VoiceProtocol):
             msg = f"Unable to connect to {self.channel} as it exceeded the timeout of {timeout} seconds."
             raise ChannelTimeoutException(msg)
 
-    async def play(self, track: Playable) -> None:
-        """Test play command."""
+    async def play(
+            self,
+            track: Playable,
+            *,
+            replace: bool = True,
+            start: int = 0,
+            end: int | None = None,
+            volume: int | None = None,
+            paused: bool | None = None
+    ) -> Playable:
+        """Play the provided :class:`~wavelink.Playable`.
+
+        Parameters
+        ----------
+        track: :class:`~wavelink.Playable`
+            The track to being playing.
+        replace: bool
+            Whether this track should replace the currently playing track, if there is one. Defaults to ``True``.
+        start: int
+            The position to start playing the track at in milliseconds.
+            Defaults to ``0`` which will start the track from the beginning.
+        end: Optional[int]
+            The position to end the track at in milliseconds.
+            Defaults to ``None`` which means this track will play until the very end.
+        volume: Optional[int]
+            Sets the volume of the player. Must be between ``0`` and ``1000``.
+            Defaults to ``None`` which will not change the current volume.
+            See Also: :meth:`set_volume`
+        paused: bool | None
+            Whether the player should be paused, resumed or retain current status when playing this track.
+            Setting this parameter to ``True`` will pause the player. Setting this parameter to ``False`` will
+            resume the player if it is currently paused. Setting this parameter to ``None`` will not change the status
+            of the player. Defaults to ``None``.
+
+        Returns
+        -------
+        :class:`~wavelink.Playable`
+            The track that began playing.
+
+
+        .. versionchanged:: 3.0.0
+            Added the ``paused`` parameter. ``replace``, ``start``, ``end``, ``volume`` and ``paused`` are now all
+            keyword-only arguments.
+        """
         assert self.guild is not None
 
-        request: RequestPayload = {"encodedTrack": track.encoded, "volume": 20}
+        original_vol: int = self._volume
+        vol: int = volume or self._volume
+
+        if vol != self._volume:
+            self._volume = vol
+
+        if replace or not self._current:
+            self._current = track
+            self._original = track
+
+        old_previous = self._previous
+        self._previous = self._current
+
+        pause: bool
+        if paused is not None:
+            pause = paused
+        else:
+            pause = self._paused
+
+        request: RequestPayload = {
+            "encodedTrack": track.encoded,
+            "volume": vol,
+            "position": start,
+            "endTime": end,
+            "paused": pause
+        }
+
+        try:
+            await self.node._update_player(self.guild.id, data=request, replace=replace)
+        except LavalinkException as e:
+            self._current = None
+            self._original = None
+            self._previous = old_previous
+            self._volume = original_vol
+            raise e
+
+        self._paused = pause
+
+        return track
+
+    async def pause(self, value: bool, /) -> None:
+        """Set the paused or resume state of the player.
+
+        Parameters
+        ----------
+        value: bool
+            A bool indicating whether the player should be paused or resumed. True indicates that the player should be
+            ``paused``. False will resume the player if it is currently paused.
+
+
+        .. versionchanged:: 3.0.0
+            This method now expects a positional-only bool value. The ``resume`` method has been removed.
+        """
+        assert self.guild is not None
+
+        request: RequestPayload = {"paused": value}
         await self.node._update_player(self.guild.id, data=request)
 
-        self._current = track
+        self._paused = value
+
+    async def seek(self, position: int = 0, /) -> None:
+        """Seek to the provided position in the currently playing track, in milliseconds.
+
+        Parameters
+        ----------
+        position: int
+            The position to seek to in milliseconds. To restart the song from the beginning,
+            you can disregard this parameter or set position to 0.
+
+
+        .. versionchanged:: 3.0.0
+            The ``position`` parameter is now positional-only, and has a default of 0.
+        """
+        assert self.guild is not None
+
+        if not self._current:
+            return
+
+        request: RequestPayload = {"position": position}
+        await self.node._update_player(self.guild.id, data=request)
+
+    async def set_filter(self) -> None:
+        raise NotImplementedError
+
+    async def set_volume(self, value: int = 100, /) -> None:
+        """Set the :class:`Player` volume, as a percentage, between 0 and 1000.
+
+        By default, every player is set to 100 on creation. If a value outside 0 to 1000 is provided it will be
+        clamped.
+
+        Parameters
+        ----------
+        value: int
+            A volume value between 0 and 1000. To reset the player to 100, you can disregard this parameter.
+
+
+        .. versionchanged:: 3.0.0
+            The ``value`` parameter is now positional-only, and has a default of 100.
+        """
+        assert self.guild is not None
+        vol: int = max(min(value, 1000), 0)
+
+        request: RequestPayload = {"volume": vol}
+        await self.node._update_player(self.guild.id, data=request)
+
+        self._volume = vol
+
+    async def disconnect(self, **kwargs: Any) -> None:
+        """Disconnect the player from the current voice channel and remove it from the :class:`~wavelink.Node`.
+
+        This method will cause any playing track to stop and potentially trigger the following events:
+
+            - ``on_wavelink_track_end``
+            - ``on_wavelink_websocket_closed``
+
+
+        .. warning::
+
+            Please do not re-use a :class:`Player` instance that has been disconnected, unwanted side effects are
+            possible.
+        """
+        assert self.guild
+
+        await self._destroy()
+        await self.guild.change_voice_state(channel=None)
+
+    async def stop(self, *, force: bool = True) -> Playable | None:
+        """An alias to :meth:`skip`.
+
+        See Also: :meth:`skip` for more information.
+
+        .. versionchanged:: 3.0.0
+            This method is now known as ``skip``, but the alias ``stop`` has been kept for backwards compatability.
+        """
+        return await self.skip(force=force)
+
+    async def skip(self, *, force: bool = True) -> Playable | None:
+        """Stop playing the currently playing track.
+
+        Parameters
+        ----------
+        force: bool
+            Whether the track should skip looping, if :class:`wavelink.Queue` has been set to loop.
+            Defaults to ``True``.
+
+        Returns
+        -------
+        :class:`~wavelink.Playable` | None
+            The currently playing track that was skipped, or ``None`` if no track was playing.
+
+
+        .. versionchanged:: 3.0.0
+            This method was previously known as ``stop``. To avoid confusion this method is now known as ``skip``.
+            This method now returns the :class:`~wavelink.Playable` that was skipped.
+        """
+        assert self.guild is not None
+        old: Playable | None = self._current
+
+        request: RequestPayload = {"encodedTrack": None}
+        await self.node._update_player(self.guild.id, data=request, replace=True)
+
+        return old
 
     def _invalidate(self) -> None:
         self._connected = False
+        self._connection_event.clear()
 
         try:
             self.cleanup()
         except (AttributeError, KeyError):
             pass
-
-    async def disconnect(self, **kwargs: Any) -> None:
-        assert self.guild
-
-        await self._destroy()
-        await self.guild.change_voice_state(channel=None)
 
     async def _destroy(self) -> None:
         assert self.guild
