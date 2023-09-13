@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2019-Present PythonistaGuild
+Copyright (c) 2019-Current PythonistaGuild, EvieePy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,503 +24,107 @@ SOFTWARE.
 from __future__ import annotations
 
 import asyncio
-import random
 from collections import deque
-from collections.abc import AsyncIterator, Iterable, Iterator
-from copy import copy
+from typing import Any, overload
 
 from .exceptions import QueueEmpty
-from .tracks import Playable, Playlist
+from .tracks import *
 
-__all__ = ("BaseQueue", "Queue")
-
-
-class BaseQueue:
-    """BaseQueue for wavelink.
-
-    All queues inherit from this queue.
-
-    See :class:`Queue` for the default :class:`~wavelink.Player` queue.
-    Internally this queue uses a :class:`collections.deque`.
-
-    .. warning::
-
-        It is not advisable to edit the internal :class:`collections.deque` directly.
+__all__ = ("Queue",)
 
 
-    .. container:: operations
-
-        .. describe:: str(queue)
-
-            Returns a string showing all Playable objects appearing as a list in the queue.
-
-        .. describe:: repr(queue)
-
-            Returns an official string representation of this queue.
-
-        .. describe:: if queue
-
-            Returns True if members are in the queue. False if the queue is empty.
-
-        .. describe:: queue(track)
-
-            Adds a member to the queue.
-
-        .. describe:: len(queue)
-
-            Returns an int with the count of members in this queue.
-
-        .. describe:: queue[2]
-
-            Returns a member at the given position.
-            Does **not** remove the item from queue.
-
-        .. describe:: queue[4] = track
-
-            Inserts an item into the queue at the given position.
-
-        .. describe:: del queue[1]
-
-            Deletes a member from the queue at the given position.
-
-        .. describe:: for track in queue
-
-            Iterates over the queue.
-            Does **not** remove items when iterating.
-
-        .. describe:: reversed(queue)
-
-            Reverse a reversed version of the queue.
-
-        .. describe:: if track in queue
-
-            Checks whether a track is in the queue.
-
-        .. describe:: queue = queue + [track, track1, track2, ...]
-
-            Return a new queue containing all new and old members from the given iterable.
-
-        .. describe:: queue += [track, track1, track2, ...]
-
-            Add items to queue from the given iterable.
-    """
-
+class _Queue:
     def __init__(self) -> None:
         self._queue: deque[Playable] = deque()
 
     def __str__(self) -> str:
-        """String showing all Playable objects appearing as a list."""
-        return str([f"'{t}'" for t in self])
+        return ", ".join([f'"{p}"' for p in self])
 
     def __repr__(self) -> str:
-        """Official representation displaying member count."""
-        return f"BaseQueue(count={self.count})"
+        return f"BaseQueue(items={len(self._queue)})"
 
     def __bool__(self) -> bool:
-        """Treats the queue as a ``bool``, with it evaluating ``True`` when it contains members.
+        return bool(self._queue)
 
-        Example
-        -------
-
-        .. code:: python3
-
-            if player.queue:
-                # queue contains members, do something...
-        """
-        return bool(self.count)
-
-    def __call__(self, item: Playable) -> None:
-        """Allows the queue instance to be called directly in order to add a member.
-
-        Example
-        -------
-
-        .. code:: python3
-
-            player.queue(track)  # adds track to the queue...
-        """
+    def __call__(self, item: Playable | Playlist) -> None:
         self.put(item)
 
     def __len__(self) -> int:
-        """Return the number of members in the queue.
+        return len(self._queue)
 
-        Example
-        -------
-
-        .. code:: python3
-
-            print(len(player.queue))
-        """
-        return self.count
-
+    @overload
     def __getitem__(self, index: int) -> Playable:
-        """Returns a member at the given position.
+        ...
 
-        Does **not** remove the item from queue.
+    @overload
+    def __getitem__(self, index: slice) -> list[Playable]:
+        ...
 
-        Example
-        -------
-
-        .. code:: python3
-
-            track = player.queue[2]
-        """
-        if not isinstance(index, int):
-            raise ValueError("'int' type required.'")
+    def __getitem__(self, index: int | slice) -> Playable | list[Playable]:
+        if isinstance(index, slice):
+            return list(self._queue)[index]
 
         return self._queue[index]
 
-    def __setitem__(self, index: int, item: Playable):
-        """Inserts an item at the given position.
-
-        Example
-        -------
-
-        .. code:: python3
-
-            player.queue[4] = track
-        """
-        if not isinstance(index, int):
-            raise ValueError("'int' type required.'")
-
-        self.put_at_index(index, item)
-
-    def __delitem__(self, index: int) -> None:
-        """Delete item at given position.
-
-        Example
-        -------
-
-        .. code:: python3
-
-            del player.queue[1]
-        """
-        self._queue.__delitem__(index)
-
-    def __iter__(self) -> Iterator[Playable]:
-        """Iterate over members in the queue.
-
-        Does **not** remove items when iterating.
-
-        Example
-        -------
-
-        .. code:: python3
-
-            for track in player.queue:
-                print(track)
-        """
-        return self._queue.__iter__()
-
-    def __reversed__(self) -> Iterator[Playable]:
-        """Iterate over members in a reverse order.
-
-        Example
-        -------
-
-        .. code:: python3
-
-            for track in reversed(player.queue):
-                print(track)
-        """
-        return self._queue.__reversed__()
-
-    def __contains__(self, item: Playable) -> bool:
-        """Check if a track is a member of the queue.
-
-        Example
-        -------
-
-        .. code:: python3
-
-            if track in player.queue:
-                # track is in the queue...
-        """
-        return item in self._queue
-
-    def __add__(self, other: Iterable[Playable]):
-        """Return a new queue containing all members, including old members.
-
-        Example
-        -------
-
-        .. code:: python3
-
-            player.queue = player.queue + [track1, track2, ...]
-        """
-        if not isinstance(other, Iterable):
-            raise TypeError(f"Adding with the '{type(other)}' type is not supported.")
-
-        new_queue = self.copy()
-        new_queue.extend(other)
-        return new_queue
-
-    def __iadd__(self, other: Iterable[Playable] | Playable):
-        """Add items to queue from an iterable.
-
-        Example
-        -------
-
-        .. code:: python3
-
-            player.queue += [track1, track2, ...]
-        """
-        if isinstance(other, Playable):
-            self.put(other)
-
-            return self
-
-        if isinstance(other, Iterable):
-            self.extend(other)
-            return self
-
-        raise TypeError(f"Adding '{type(other)}' type to the queue is not supported.")
+    @staticmethod
+    def _check_compatability(item: Any) -> None:
+        if not isinstance(item, Playable):
+            raise TypeError("This queue is restricted to Playable objects.")
 
     def _get(self) -> Playable:
-        if self.is_empty:
-            raise QueueEmpty("No items currently in the queue.")
+        if not self:
+            raise QueueEmpty("There are no items currently in this queue.")
 
         return self._queue.popleft()
 
-    def _drop(self) -> Playable:
-        return self._queue.pop()
+    def get(self) -> Playable:
+        return self._get()
 
-    def _index(self, item: Playable) -> int:
-        return self._queue.index(item)
+    def _check_atomic(self, item: Playlist) -> None:
+        for track in item:
+            self._check_compatability(track)
 
     def _put(self, item: Playable) -> None:
+        self._check_compatability(item)
         self._queue.append(item)
 
-    def _insert(self, index: int, item: Playable) -> None:
-        self._queue.insert(index, item)
-
-    @staticmethod
-    def _check_playable(item: Playable | Playlist) -> None:
-        if not isinstance(item, (Playable, Playlist)):
-            raise TypeError("Only Playable objects are supported.")
-
-    @classmethod
-    def _check_playable_container(cls, iterable: Iterable) -> None:
-        iterable = list(iterable)
-
-        for item in iterable:
-            cls._check_playable(item)
-
-    @property
-    def count(self) -> int:
-        """Returns queue member count."""
-        return len(self._queue)
-
-    @property
-    def is_empty(self) -> bool:
-        """Returns ``True`` if queue has no members."""
-        return not bool(self.count)
-
-    def get(self) -> Playable:
-        """Return next immediately available item in queue if any.
-
-        Raises :exc:`~wavelink.QueueEmpty` if no items in queue.
-        """
-        if self.is_empty:
-            raise QueueEmpty("No items currently in the queue.")
-
-        return self._get()
-
-    def pop(self) -> Playable:
-        """Return item from the right end side of the queue.
-
-        Raises :exc:`~wavelink.QueueEmpty` if no items in queue.
-        """
-        if self.is_empty:
-            raise QueueEmpty("No items currently in the queue.")
-
-        return self._queue.pop()
-
-    def find_position(self, item: Playable) -> int:
-        """Find the position a given item within the queue.
-
-        Raises :exc:`ValueError` if item is not in the queue.
-        """
-        self._check_playable(item)
-        return self._index(item)
-
-    def put(self, item: Playable | Playlist) -> None:
-        """Put the given item into the back of the queue.
-
-        If the provided ``item`` is a :class:`~wavelink.YouTubePlaylist` or :class:`~wavelink.SoundCloudPlaylist`, all
-        tracks from this playlist will be put into the queue.
-
-
-        .. note::
-
-            Inserting playlists is currently only supported via this method, which means you can only insert them into
-            the back of the queue. Future versions of wavelink may add support for inserting playlists from a specific
-            index, or at the front of the queue.
-
-
-        .. versionchanged:: 2.6.0
-
-            Added support for directly adding a :class:`~wavelink.YouTubePlaylist` to the queue.
-        """
-        self._check_playable(item)
+    def put(self, item: Playable | Playlist, /, *, atomic: bool = True) -> int:
+        added: int = 0
 
         if isinstance(item, Playlist):
-            for track in item.tracks:
-                self._put(track)
+            if atomic:
+                self._check_atomic(item)
+
+            for track in item:
+                try:
+                    self._put(track)
+                    added += 1
+                except TypeError:
+                    pass
+
         else:
             self._put(item)
+            added += 1
 
-    def put_at_index(self, index: int, item: Playable) -> None:
-        """Put the given item into the queue at the specified index."""
-        self._check_playable(item)
-        self._insert(index, item)
-
-    def put_at_front(self, item: Playable) -> None:
-        """Put the given item into the front of the queue."""
-        self.put_at_index(0, item)
-
-    def shuffle(self) -> None:
-        """Shuffles the queue in place. This does **not** return anything.
-
-        Example
-        -------
-
-        .. code:: python3
-
-            player.queue.shuffle()
-            # Your queue has now been shuffled...
+        return added
 
 
-        .. versionadded:: 2.5
-        """
-        random.shuffle(self._queue)
-
-    def extend(self, iterable: Iterable[Playable], *, atomic: bool = True) -> None:
-        """Add the members of the given iterable to the end of the queue.
-
-        If atomic is set to ``True``, no tracks will be added upon any exceptions.
-
-        If atomic is set to ``False``, as many tracks will be added as possible.
-        """
-        if atomic:
-            self._check_playable_container(iterable)
-
-        for item in iterable:
-            self.put(item)
-
-    def copy(self):
-        """Create a copy of the current queue including its members."""
-        new_queue = self.__class__()
-        new_queue._queue = copy(self._queue)
-
-        return new_queue
-
-    def clear(self) -> None:
-        """Remove all items from the queue.
-
-
-        .. note::
-
-            This does not reset the queue. See :meth:`~Queue.reset` for resetting the :class:`Queue` assigned to the
-            player.
-        """
-        self._queue.clear()
-
-
-class Queue(BaseQueue):
-    """Main Queue class.
-
-    **All** :class:`~wavelink.Player` have this queue assigned to them.
-
-    .. note::
-
-        This queue inherits from :class:`BaseQueue` but has access to special async methods and loop logic.
-
-    .. warning::
-
-        The :attr:`.history` queue is a :class:`BaseQueue` and has **no** access to async methods or loop logic.
-
-
-    .. container:: operations
-
-        .. describe:: async for track in queue
-
-            Pops members as it iterates the queue asynchronously, waiting for new members when exhausted.
-            **Does** remove items when iterating.
-
-
-    Attributes
-    ----------
-    history: :class:`BaseQueue`
-        The history queue stores information about all previous played tracks for the :class:`~wavelink.Player`'s
-        session.
-    """
-
-    def __init__(self):
+class Queue(_Queue):
+    def __init__(self) -> None:
         super().__init__()
-        self.history: BaseQueue = BaseQueue()
+        self.history: _Queue = _Queue()
 
-        self._loop: bool = False
-        self._loop_all: bool = False
-
-        self._loaded = None
-        self._waiters = deque()
-        self._finished = asyncio.Event()
+        self._waiters: deque[asyncio.Future[None]] = deque()
+        self._finished: asyncio.Event = asyncio.Event()
         self._finished.set()
 
+        self._lock: asyncio.Lock = asyncio.Lock()
+
+    def __str__(self) -> str:
+        return ", ".join([f'"{p}"' for p in self])
+
     def __repr__(self) -> str:
-        return f'Queue(count={self.count}, history={self.history}, loop={self._loop}, loop_all={self._loop_all})'
-
-    async def __aiter__(self) -> AsyncIterator[Playable]:
-        """Pops members as it iterates the queue, waiting for new members when exhausted.
-
-        **Does** remove items when iterating.
-
-        Example
-        -------
-@
-        .. code:: python3
-
-            async for track in player.queue:
-                # If there is no item in the queue, this will wait for an item to be inserted.
-
-                # Do something with track here...
-        """
-        while True:
-            yield await self.get_wait()
-
-    def get(self) -> Playable:
-        return self._get()
-
-    def _get(self) -> Playable:
-        if self.loop and self._loaded:
-            return self._loaded
-
-        if self.loop_all and self.is_empty:
-            self._queue.extend(self.history._queue)
-            self.history.clear()
-
-        item = super()._get()
-
-        self._loaded = item
-        return item
-
-    async def _put(self, item: Playable | Playlist) -> None:
-        self._check_playable(item)
-
-        if isinstance(item, Playlist):
-            for track in item.tracks:
-                super()._put(track)
-                await asyncio.sleep(0)
-        else:
-            super()._put(item)
-            await asyncio.sleep(0)
-
-        self._wakeup_next()
-
-    def _insert(self, index: int, item: Playable) -> None:
-        super()._insert(index, item)
-        self._wakeup_next()
+        return f"Queue(items={len(self)}, history={self.history!r})"
 
     def _wakeup_next(self) -> None:
         while self._waiters:
@@ -530,18 +134,17 @@ class Queue(BaseQueue):
                 waiter.set_result(None)
                 break
 
+    def _get(self) -> Playable:
+        # TODO ... Looping Logic, history Logic.
+        return super()._get()
+
+    def get(self) -> Playable:
+        return self._get()
+
     async def get_wait(self) -> Playable:
-        """|coro|
-
-        Return the next item in queue once available.
-
-        .. note::
-
-            This will wait until an item is available to be retrieved.
-        """
-        while self.is_empty:
-            loop = asyncio.get_event_loop()
-            waiter = loop.create_future()
+        while not self:
+            loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
+            waiter: asyncio.Future[None] = loop.create_future()
 
             self._waiters.append(waiter)
 
@@ -555,128 +158,40 @@ class Queue(BaseQueue):
                 except ValueError:  # pragma: no branch
                     pass
 
-                if not self.is_empty and not waiter.cancelled():  # pragma: no cover
+                if self and not waiter.cancelled():  # pragma: no cover
                     # something went wrong with this waiter, move on to next
                     self._wakeup_next()
                 raise
 
         return self.get()
 
-    async def put_wait(self, item: Playable | Playlist) -> None:
-        """|coro|
-
-        Put an item into the queue asynchronously using ``await``.
-
-        If the provided ``item`` is a :class:`~wavelink.YouTubePlaylist` or :class:`~wavelink.SoundCloudPlaylist`, all
-        tracks from this playlist will be put into the queue.
-
-
-        .. note::
-
-            Inserting playlists is currently only supported via this method, which means you can only insert them into
-            the back of the queue. Future versions of wavelink may add support for inserting playlists from a specific
-            index, or at the front of the queue.
-
-
-        .. versionchanged:: 2.6.0
-
-            Added support for directly adding a :class:`~wavelink.YouTubePlaylist` to the queue.
-        """
-        await self._put(item)
-
-    def put(self, item: Playable | Playlist) -> None:
-        """Put the given item into the back of the queue.
-
-        If the provided ``item`` is a :class:`~wavelink.YouTubePlaylist`, all tracks from this playlist will be put
-        into the queue.
-
-
-        .. note::
-
-            Inserting playlists is currently only supported via this method, which means you can only insert them into
-            the back of the queue. Future versions of wavelink may add support for inserting playlists from a specific
-            index, or at the front of the queue.
-
-
-        .. versionchanged:: 2.6.0
-
-            Added support for directly adding a :class:`~wavelink.YouTubePlaylist` to the queue.
-        """
-        self._check_playable(item)
-
-        if isinstance(item, Playlist):
-            for track in item.tracks:
-                super()._put(track)
-        else:
-            super()._put(item)
+    def put(self, item: Playable | Playlist, /, *, atomic: bool = True) -> int:
+        added: int = super().put(item, atomic=atomic)
 
         self._wakeup_next()
+        return added
 
-    def reset(self) -> None:
-        """Clears the state of all queues, including the history queue.
+    async def put_wait(self, item: Playable | Playlist, /, *, atomic: bool = True) -> int:
+        added: int = 0
 
-        - sets loop and loop_all to ``False``.
-        - removes all items from the queue and history queue.
-        - cancels any waiting queues.
-        """
-        self.clear()
-        self.history.clear()
+        async with self._lock:
+            if isinstance(item, Playlist):
+                if atomic:
+                    super()._check_atomic(item)
 
-        for waiter in self._waiters:
-            waiter.cancel()
+                for track in item:
+                    try:
+                        super()._put(track)
+                        added += 1
+                    except TypeError:
+                        pass
 
-        self._waiters.clear()
+                    await asyncio.sleep(0)
 
-        self._loaded = None
-        self._loop = False
-        self._loop_all = False
+            else:
+                super()._put(item)
+                added += 1
+                await asyncio.sleep(0)
 
-    @property
-    def loop(self) -> bool:
-        """Whether the queue will loop the currently playing song.
-
-        Can be set to True or False.
-        Defaults to False.
-
-        Returns
-        -------
-        bool
-
-
-        .. versionadded:: 2.0
-        """
-        return self._loop
-
-    @loop.setter
-    def loop(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            raise ValueError('The "loop" property can only be set with a bool.')
-
-        self._loop = value
-
-    @property
-    def loop_all(self) -> bool:
-        """Whether the queue will loop all songs in the history queue.
-
-        Can be set to True or False.
-        Defaults to False.
-
-        .. note::
-
-            If `loop` is set to True, this has no effect until `loop` is set to False.
-
-        Returns
-        -------
-        bool
-
-
-        .. versionadded:: 2.0
-        """
-        return self._loop_all
-
-    @loop_all.setter
-    def loop_all(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            raise ValueError('The "loop_all" property can only be set with a bool.')
-
-        self._loop_all = value
+        self._wakeup_next()
+        return added
