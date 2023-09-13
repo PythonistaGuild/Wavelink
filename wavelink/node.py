@@ -104,7 +104,7 @@ class Node:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Node):
-            raise NotImplementedError
+            return NotImplemented
 
         return other.identifier == self.identifier
 

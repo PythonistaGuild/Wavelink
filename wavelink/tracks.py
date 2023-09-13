@@ -102,7 +102,7 @@ class Playable:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Playable):
-            raise NotImplementedError
+            return NotImplemented
 
         return self.encoded == other.encoded
 
@@ -374,7 +374,7 @@ class Playlist:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Playlist):
-            raise NotImplementedError
+            return NotImplemented
 
         return self.name == other.name and self.tracks == other.tracks
 
