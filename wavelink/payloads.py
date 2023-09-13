@@ -50,15 +50,23 @@ __all__ = (
 
 class TrackStartEventPayload:
     def __init__(self, player: Player | None, track: Playable) -> None:
-        self.player = cast(wavelink.Player, player)
+        self.player = player
         self.track = track
+        self.original: Playable | None = None
+
+        if player:
+            self.original = player._original
 
 
 class TrackEndEventPayload:
     def __init__(self, player: Player | None, track: Playable, reason: str) -> None:
-        self.player = cast(wavelink.Player, player)
+        self.player = player
         self.track = track
         self.reason = reason
+        self.original: Playable | None = None
+
+        if player:
+            self.original = player._previous
 
 
 class TrackExceptionEventPayload:
