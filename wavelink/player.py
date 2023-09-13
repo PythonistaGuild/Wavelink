@@ -226,14 +226,14 @@ class Player(discord.VoiceProtocol):
             raise ChannelTimeoutException(msg)
 
     async def play(
-            self,
-            track: Playable,
-            *,
-            replace: bool = True,
-            start: int = 0,
-            end: int | None = None,
-            volume: int | None = None,
-            paused: bool | None = None
+        self,
+        track: Playable,
+        *,
+        replace: bool = True,
+        start: int = 0,
+        end: int | None = None,
+        volume: int | None = None,
+        paused: bool | None = None,
     ) -> Playable:
         """Play the provided :class:`~wavelink.Playable`.
 
@@ -295,7 +295,7 @@ class Player(discord.VoiceProtocol):
             "volume": vol,
             "position": start,
             "endTime": end,
-            "paused": pause
+            "paused": pause,
         }
 
         try:
