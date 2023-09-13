@@ -518,7 +518,7 @@ class Pool:
 
     @classmethod
     def toggle_cache(cls, capacity: int = 100) -> None:
-        if capacity <= 0:
+        if cls.__cache is None and capacity <= 0:
             raise CapacityZero(f"LFU Request cache capacity must be > 0.")
 
         if cls.__cache is not None:
