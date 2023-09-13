@@ -38,7 +38,7 @@ class VoiceRequest(TypedDict):
 class _BaseRequest(TypedDict, total=False):
     voice: VoiceRequest
     position: int
-    endTime: int
+    endTime: Optional[int]
     volume: int
     paused: bool
 
