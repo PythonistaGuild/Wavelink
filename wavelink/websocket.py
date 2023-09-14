@@ -32,7 +32,7 @@ import aiohttp
 from . import __version__
 from .backoff import Backoff
 from .enums import NodeStatus
-from .exceptions import AuthorizationFailedException
+from .exceptions import AuthorizationFailedException, NodeException
 from .payloads import *
 from .tracks import Playable
 
@@ -97,7 +97,11 @@ class Websocket:
                 self.socket = await session.ws_connect(url=uri, heartbeat=heartbeat, headers=self.headers)  # type: ignore
             except Exception as e:
                 if isinstance(e, aiohttp.WSServerHandshakeError) and e.status == 401:
+                    await self.cleanup()
                     raise AuthorizationFailedException from e
+                elif isinstance(e, aiohttp.WSServerHandshakeError) and (e.status == 404 or e.status >= 500):
+                    await self.cleanup()
+                    raise NodeException from e
                 else:
                     logger.warning(
                         f'An unexpected error occurred while connecting {self.node!r} to Lavalink: "{e}"\n'
@@ -238,5 +242,7 @@ class Websocket:
         self.node._status = NodeStatus.DISCONNECTED
         self.node._session_id = None
         self.node._players = {}
+
+        self.node._websocket = None
 
         logger.debug(f"Successfully cleaned up the websocket for {self.node!r}")
