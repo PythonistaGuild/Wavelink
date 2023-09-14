@@ -37,11 +37,11 @@ from . import __version__
 from .enums import NodeStatus
 from .exceptions import (
     AuthorizationFailedException,
-    NodeException,
     InvalidClientException,
     InvalidNodeException,
     LavalinkException,
     LavalinkLoadException,
+    NodeException,
 )
 from .lfu import CapacityZero, LFUCache
 from .tracks import Playable, Playlist
@@ -403,8 +403,10 @@ class Pool:
             except AuthorizationFailedException:
                 logger.error(f"Failed to authenticate {node!r} on Lavalink with the provided password.")
             except NodeException:
-                logger.error(f"Failed to connect to {node!r}. Check that your Lavalink major version is '4' "
-                             f"and that you are trying to connect to Lavalink on the correct port.")
+                logger.error(
+                    f"Failed to connect to {node!r}. Check that your Lavalink major version is '4' "
+                    f"and that you are trying to connect to Lavalink on the correct port."
+                )
             else:
                 cls.__nodes[node.identifier] = node
 
