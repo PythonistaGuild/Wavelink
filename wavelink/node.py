@@ -114,7 +114,11 @@ class Node:
         return other.identifier == self.identifier
 
     def __del__(self) -> None:
-        asyncio.create_task(self.close())
+        try:
+            asyncio.get_running_loop()
+            asyncio.create_task(self.close())
+        except RuntimeError:
+            pass
 
     @property
     def headers(self) -> dict[str, str]:
