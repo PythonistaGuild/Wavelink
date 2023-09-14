@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 
 __all__ = (
     "WavelinkException",
+    "NodeException",
     "InvalidClientException",
     "AuthorizationFailedException",
     "InvalidNodeException",
@@ -47,6 +48,10 @@ class WavelinkException(Exception):
 
     All wavelink exceptions derive from this exception.
     """
+
+
+class NodeException(WavelinkException):
+    """Error raised when an Unknown or Generic error occurs on a Node."""
 
 
 class InvalidClientException(WavelinkException):
