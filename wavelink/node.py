@@ -23,6 +23,7 @@ SOFTWARE.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import secrets
 import urllib
@@ -36,6 +37,7 @@ from . import __version__
 from .enums import NodeStatus
 from .exceptions import (
     AuthorizationFailedException,
+    NodeException,
     InvalidClientException,
     InvalidNodeException,
     LavalinkException,
@@ -100,6 +102,8 @@ class Node:
 
         self._spotify_enabled: bool = False
 
+        self._websocket: Websocket | None = None
+
     def __repr__(self) -> str:
         return f"Node(identifier={self.identifier}, uri={self.uri}, status={self.status}, players={len(self.players)})"
 
@@ -108,6 +112,9 @@ class Node:
             return NotImplemented
 
         return other.identifier == self.identifier
+
+    def __del__(self) -> None:
+        asyncio.create_task(self.close())
 
     @property
     def headers(self) -> dict[str, str]:
@@ -185,6 +192,21 @@ class Node:
         """
         return self._session_id
 
+    async def close(self) -> None:
+        if self._websocket is not None:
+            await self._websocket.cleanup()
+        else:
+            self._status = NodeStatus.DISCONNECTED
+            self._session_id = None
+            self._players = {}
+
+        try:
+            await self._session.close()
+        except:
+            pass
+
+        Pool._Pool__nodes.pop(self.identifier, None)  # type: ignore
+
     async def _connect(self, *, client: discord.Client | None) -> None:
         client_ = self._client or client
 
@@ -192,7 +214,9 @@ class Node:
             raise InvalidClientException(f"Unable to connect {self!r} as you have not provided a valid discord.Client.")
 
         self._client = client_
+
         websocket: Websocket = Websocket(node=self)
+        self._websocket = websocket
         await websocket.connect()
 
         info: InfoResponse = await self._fetch_info()
@@ -378,10 +402,13 @@ class Pool:
                 logger.error(e)
             except AuthorizationFailedException:
                 logger.error(f"Failed to authenticate {node!r} on Lavalink with the provided password.")
+            except NodeException:
+                logger.error(f"Failed to connect to {node!r}. Check that your Lavalink major version is '4' "
+                             f"and that you are trying to connect to Lavalink on the correct port.")
             else:
                 cls.__nodes[node.identifier] = node
 
-        if cache_capacity is not None:
+        if cache_capacity is not None and cls.nodes:
             if cache_capacity <= 0:
                 logger.warning("LFU Request cache capacity must be > 0. Not enabling cache.")
 
@@ -425,16 +452,16 @@ class Pool:
         .. versionchanged:: 3.0.0
             The ``id`` parameter was changed to ``identifier`` and is positional only.
         """
-        if not cls.__nodes:
-            raise InvalidNodeException("No nodes are currently assigned to the wavelink.Pool.")
-
         if identifier:
             if identifier not in cls.__nodes:
                 raise InvalidNodeException(f'A Node with the identifier "{identifier}" does not exist.')
 
             return cls.__nodes[identifier]
 
-        nodes: list[Node] = list(cls.__nodes.values())
+        nodes: list[Node] = [n for n in cls.__nodes.values() if n.status is NodeStatus.CONNECTED]
+        if nodes:
+            raise InvalidNodeException("No nodes are currently assigned to the wavelink.Pool in a CONNECTED state.")
+
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
     @classmethod
