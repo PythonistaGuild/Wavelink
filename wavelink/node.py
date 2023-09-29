@@ -465,7 +465,7 @@ class Pool:
             return cls.__nodes[identifier]
 
         nodes: list[Node] = [n for n in cls.__nodes.values() if n.status is NodeStatus.CONNECTED]
-        if nodes:
+        if not nodes:
             raise InvalidNodeException("No nodes are currently assigned to the wavelink.Pool in a CONNECTED state.")
 
         return sorted(nodes, key=lambda n: len(n.players))[0]
