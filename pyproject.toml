@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wavelink"
-version = "3.0.0b3"
+version = "3.0.0b4"
 authors = [
   { name="PythonistaGuild, EvieePy", email="evieepy@gmail.com" },
 ]
@@ -38,5 +38,6 @@ line-length = 120
 profile = "black"
 
 [tool.pyright]
+ignore = ["test*.py"]
 typeCheckingMode = "strict"
 reportPrivateUsage = false
