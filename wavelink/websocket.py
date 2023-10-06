@@ -99,7 +99,7 @@ class Websocket:
                 if isinstance(e, aiohttp.WSServerHandshakeError) and e.status == 401:
                     await self.cleanup()
                     raise AuthorizationFailedException from e
-                elif isinstance(e, aiohttp.WSServerHandshakeError) and (e.status == 404 or e.status >= 500):
+                elif isinstance(e, aiohttp.WSServerHandshakeError) and e.status == 404:
                     await self.cleanup()
                     raise NodeException from e
                 else:
@@ -183,6 +183,9 @@ class Websocket:
 
                     endpayload: TrackEndEventPayload = TrackEndEventPayload(player=player, track=track, reason=reason)
                     self.dispatch("track_end", endpayload)
+
+                    if player:
+                        asyncio.create_task(player._auto_play_event(endpayload))
 
                 elif data["type"] == "TrackExceptionEvent":
                     track: Playable = Playable(data["track"])

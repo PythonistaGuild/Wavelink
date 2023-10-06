@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import random
 from typing import TYPE_CHECKING, Any, Union
 
 import async_timeout
@@ -32,14 +33,17 @@ import discord
 from discord.abc import Connectable
 from discord.utils import MISSING
 
+from .enums import AutoPlayMode, NodeStatus
 from .exceptions import (
     ChannelTimeoutException,
     InvalidChannelStateException,
     LavalinkException,
+    QueueEmpty,
 )
 from .node import Pool
+from .payloads import TrackEndEventPayload
 from .queue import Queue
-from .tracks import Playable
+from .tracks import Playable, Playlist
 
 if TYPE_CHECKING:
     from discord.types.voice import GuildVoiceState as GuildVoiceStatePayload
@@ -51,7 +55,6 @@ if TYPE_CHECKING:
     from .types.state import PlayerVoiceState, VoiceState
 
     VocalGuildChannel = Union[discord.VoiceChannel, discord.StageChannel]
-
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -105,9 +108,97 @@ class Player(discord.VoiceProtocol):
         self._previous: Playable | None = None
 
         self.queue: Queue = Queue()
+        self.auto_queue: Queue = Queue()
 
         self._volume: int = 100
         self._paused: bool = False
+
+        self._autoplay: AutoPlayMode = AutoPlayMode.disabled
+
+    async def _auto_play_event(self, payload: TrackEndEventPayload) -> None:
+        if self._autoplay is AutoPlayMode.disabled:
+            return
+
+        if payload.reason == "replaced":
+            return
+
+        if self.node.status is not NodeStatus.CONNECTED:
+            logger.warning(f'"Unable to use AutoPlay on Player for Guild "{self.guild}" due to disconnected Node.')
+            return
+
+        if not isinstance(self.queue, Queue) or not isinstance(self.auto_queue, Queue):  # type: ignore
+            logger.warning(f'"Unable to use AutoPlay on Player for Guild "{self.guild}" due to unsupported Queue.')
+            return
+
+        if self._autoplay is AutoPlayMode.partial or self.queue:
+            await self._do_partial()
+
+        elif self._autoplay is AutoPlayMode.enabled:
+            await self._do_recommendation()
+
+    async def _do_partial(self) -> None:
+        # TODO: This may change in the future depending on queue changes?
+
+        if self._current is None:
+            try:
+                track: Playable = self.queue.get()
+            except QueueEmpty:
+                return
+
+            await self.play(track)
+
+    async def _do_recommendation(self):
+        # TODO: Adjustable trigger?
+        if len(self.auto_queue) > 20:
+            await self.play(self.auto_queue.get())
+            return
+
+        choices: list[Playable | None]
+
+        choices = random.choices(
+            [*self.queue.history[0:10], *self.auto_queue[0:10], self._current, self._previous], k=5
+        )
+        filtered: list[Playable] = [t for t in choices if t is not None]
+
+        spotify: list[str] = [t.identifier for t in filtered if t.source == "spotify"][0:3]
+        if self._node._spotify_enabled:
+            query: str = f'sprec:seed_tracks={",".join(spotify)}'
+
+            search: list[Playable] | Playlist = await Pool.fetch_tracks(query)
+            if not search:
+                return
+
+            tracks: list[Playable]
+            if isinstance(search, Playlist):
+                tracks = search.tracks.copy()
+            else:
+                tracks = search
+
+            random.shuffle(tracks)
+
+            if not self._current:
+                now: Playable = tracks.pop(0)
+                now._recommended = True
+
+                await self.play(now)
+
+            for track in tracks:
+                if track in self.auto_queue or track in self.auto_queue.history:
+                    continue
+
+                track._recommended = True
+                await self.auto_queue.put_wait(track)
+
+    @property
+    def autoplay(self) -> AutoPlayMode:
+        return self._autoplay
+
+    @autoplay.setter
+    def autoplay(self, value: Any) -> None:
+        if not isinstance(value, AutoPlayMode):
+            raise ValueError("Please provide a valid 'wavelink.AutoPlayMode' to set.")
+
+        self._autoplay = value
 
     @property
     def node(self) -> Node:
