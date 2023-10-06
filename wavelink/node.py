@@ -23,7 +23,6 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-import asyncio
 import logging
 import secrets
 import urllib
@@ -43,7 +42,7 @@ from .exceptions import (
     LavalinkLoadException,
     NodeException,
 )
-from .lfu import CapacityZero, LFUCache
+from .lfu import LFUCache
 from .tracks import Playable, Playlist
 from .websocket import Websocket
 
@@ -96,6 +95,7 @@ class Node:
         self._client = client
 
         self._status: NodeStatus = NodeStatus.DISCONNECTED
+        self._has_closed: bool = False
         self._session_id: str | None = None
 
         self._players: dict[int, Player] = {}
@@ -112,13 +112,6 @@ class Node:
             return NotImplemented
 
         return other.identifier == self.identifier
-
-    def __del__(self) -> None:
-        try:
-            asyncio.get_running_loop()
-            asyncio.create_task(self.close())
-        except RuntimeError:
-            pass
 
     @property
     def headers(self) -> dict[str, str]:
@@ -196,20 +189,38 @@ class Node:
         """
         return self._session_id
 
-    async def close(self) -> None:
-        if self._websocket is not None:
-            await self._websocket.cleanup()
-        else:
-            self._status = NodeStatus.DISCONNECTED
-            self._session_id = None
-            self._players = {}
-
+    async def _pool_closer(self) -> None:
         try:
             await self._session.close()
         except:
             pass
 
-        Pool._Pool__nodes.pop(self.identifier, None)  # type: ignore
+        if not self._has_closed:
+            await self.close()
+
+    async def close(self) -> None:
+        disconnected: list[Player] = []
+
+        for player in self._players.values():
+            try:
+                await player._destroy()
+            except LavalinkException:
+                pass
+
+            disconnected.append(player)
+
+        if self._websocket is not None:
+            await self._websocket.cleanup()
+
+        self._status = NodeStatus.DISCONNECTED
+        self._session_id = None
+        self._players = {}
+
+        self._has_closed = True
+
+        # Dispatch Node Closed Event... node, list of disconnected players
+        if self.client is not None:
+            self.client.dispatch("wavelink_node_closed", self, disconnected)
 
     async def _connect(self, *, client: discord.Client | None) -> None:
         client_ = self._client or client
@@ -222,6 +233,10 @@ class Node:
         websocket: Websocket = Websocket(node=self)
         self._websocket = websocket
         await websocket.connect()
+
+        self._has_closed = False
+        if not self._session or self._session.closed:
+            self._session = aiohttp.ClientSession()
 
         info: InfoResponse = await self._fetch_info()
         if "spotify" in info["sourceManagers"]:
@@ -424,6 +439,31 @@ class Pool:
 
         return cls.nodes
 
+    @classmethod
+    async def reconnect(cls) -> dict[str, Node]:
+        for node in cls.__nodes.values():
+            if node.status is not NodeStatus.DISCONNECTED:
+                continue
+
+            try:
+                await node._connect(client=None)
+            except InvalidClientException as e:
+                logger.error(e)
+            except AuthorizationFailedException:
+                logger.error(f"Failed to authenticate {node!r} on Lavalink with the provided password.")
+            except NodeException:
+                logger.error(
+                    f"Failed to connect to {node!r}. Check that your Lavalink major version is '4' "
+                    f"and that you are trying to connect to Lavalink on the correct port."
+                )
+
+        return cls.nodes
+
+    @classmethod
+    async def close(cls) -> None:
+        for node in cls.__nodes.values():
+            await node.close()
+
     @classproperty
     def nodes(cls) -> dict[str, Node]:
         """A mapping of :attr:`Node.identifier` to :class:`Node` that have previously been successfully connected.
@@ -548,17 +588,16 @@ class Pool:
             return []
 
     @classmethod
-    def toggle_cache(cls, capacity: int = 100) -> None:
-        if cls.__cache is None and capacity <= 0:
-            raise CapacityZero("LFU Request cache capacity must be > 0.")
-
-        if cls.__cache is None:
-            cls.__cache = LFUCache(capacity=capacity)
-            logger.info("Experimental request caching has been toggled ON. To disable run Pool.toggle_cache()")
-        else:
+    def cache(cls, capacity: int | None | bool = None) -> None:
+        if capacity in (None, False) or capacity <= 0:
             cls.__cache = None
-            logger.info("Experimental request caching has been toggled OFF. To enable run Pool.toggle_cache()")
+            return
 
-    @classproperty
-    def cache(cls) -> bool:
+        if not isinstance(capacity, int):  # type: ignore
+            raise ValueError("The LFU cache expects an integer, None or bool.")
+
+        cls.__cache = LFUCache(capacity=capacity)
+
+    @classmethod
+    def has_cache(cls) -> bool:
         return cls.__cache is not None
