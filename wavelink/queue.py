@@ -66,6 +66,9 @@ class _Queue:
 
         return self._queue[index]
 
+    def __contains__(self, item: Any) -> bool:
+        return item in self._queue
+
     @staticmethod
     def _check_compatability(item: Any) -> None:
         if not isinstance(item, Playable):
@@ -80,7 +83,7 @@ class _Queue:
     def get(self) -> Playable:
         return self._get()
 
-    def _check_atomic(self, item: Playlist) -> None:
+    def _check_atomic(self, item: list[Playable] | Playlist) -> None:
         for track in item:
             self._check_compatability(track)
 
@@ -171,11 +174,11 @@ class Queue(_Queue):
         self._wakeup_next()
         return added
 
-    async def put_wait(self, item: Playable | Playlist, /, *, atomic: bool = True) -> int:
+    async def put_wait(self, item: list[Playable] | Playable | Playlist, /, *, atomic: bool = True) -> int:
         added: int = 0
 
         async with self._lock:
-            if isinstance(item, Playlist):
+            if isinstance(item, (list, Playlist)):
                 if atomic:
                     super()._check_atomic(item)
 
