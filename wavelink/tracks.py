@@ -90,6 +90,7 @@ class Playable:
         self._is_preview: bool | None = plugin.get("isPreview")
 
         self._playlist = playlist
+        self._recommended: bool = False
 
     def __hash__(self) -> int:
         return hash(self.encoded)
@@ -173,6 +174,10 @@ class Playable:
     @property
     def playlist(self) -> PlaylistInfo | None:
         return self._playlist
+
+    @property
+    def recommended(self) -> bool:
+        return self._recommended
 
     @classmethod
     async def search(cls, query: str, /, *, source: TrackSource | str | None = TrackSource.YouTube) -> Search:
@@ -400,6 +405,9 @@ class Playlist:
 
     def __contains__(self, item: Playable) -> bool:
         return item in self.tracks
+
+    def pop(self, index: int = -1) -> Playable:
+        return self.tracks.pop(index)
 
     def track_extras(self, **attrs: Any) -> None:
         """Method which sets attributes to all :class:`Playable` in this playlist, with the provided keyword arguments.
