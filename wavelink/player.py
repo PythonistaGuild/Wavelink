@@ -27,6 +27,7 @@ import asyncio
 import logging
 import random
 import typing
+from collections import deque
 from typing import TYPE_CHECKING, Any, Union
 
 import async_timeout
@@ -41,6 +42,7 @@ from .exceptions import (
     ChannelTimeoutException,
     InvalidChannelStateException,
     LavalinkException,
+    LavalinkLoadException,
     QueueEmpty,
 )
 from .node import Pool
@@ -120,7 +122,9 @@ class Player(discord.VoiceProtocol):
         self._paused: bool = False
 
         self._auto_cutoff: int = 20
-        self._previous_seeds_cutoff: int = self._auto_cutoff * 3
+        self._auto_weight: int = 3
+        self._previous_seeds_cutoff: int = self._auto_cutoff * self._auto_weight
+        self._history_count: int | None = None
 
         self._autoplay: AutoPlayMode = AutoPlayMode.disabled
         self.__previous_seeds: asyncio.Queue[str] = asyncio.Queue(maxsize=self._previous_seeds_cutoff)
@@ -163,29 +167,21 @@ class Player(discord.VoiceProtocol):
     async def _do_recommendation(self):
         assert self.guild is not None
 
-        if len(self.auto_queue) > self._auto_cutoff:
+        if len(self.auto_queue) > self._auto_cutoff + 1:
             track: Playable = self.auto_queue.get()
             self.auto_queue.history.put(track)
 
-            await self.play(track)
+            await self.play(track, add_history=False)
             return
 
-        choices: list[Playable | None]
-
-        # Up to 32 tracks as sequence, k=16 (choices) which is half...
-        choices = random.choices(
-            [*self.queue.history[0:20], *self.auto_queue[0:10], self._current, self._previous], k=16
-        )
+        weighted_history: list[Playable] = list(reversed(self.queue.history))[:max(5, 5 * self._auto_weight)]
+        weighted_upcoming: list[Playable] = self.auto_queue[:max(3, int((5 * self._auto_weight) / 3))]
+        choices: list[Playable | None] = [*weighted_history, *weighted_upcoming, self._current, self._previous]
 
         # Filter out tracks which are None...
-        filtered: list[Playable] = [t for t in choices if t is not None]
-
-        seeds: list[Playable] = []
-        for seed in filtered:
-            if seed.identifier in self.__previous_seeds._queue:  # type: ignore
-                continue
-
-            seeds.append(seed)
+        _previous: deque[str] = self.__previous_seeds._queue  # type: ignore
+        seeds: list[Playable] = [t for t in choices if t is not None and t.identifier not in _previous]
+        random.shuffle(seeds)
 
         spotify: list[str] = [t.identifier for t in seeds if t.source == "spotify"]
         youtube: list[str] = [t.identifier for t in seeds if t.source == "youtube"]
@@ -193,9 +189,37 @@ class Player(discord.VoiceProtocol):
         spotify_query: str | None = None
         youtube_query: str | None = None
 
+        count: int = len(self.queue.history)
+        changed_by: int
+        if self._history_count is None:
+            changed_by = min(3, count)
+        else:
+            changed_by: int = count - self._history_count
+
+        if changed_by > 0:
+            self._history_count = count
+
+        changed_history: list[Playable] = list(reversed(self.queue.history))
+
+        added: int = 0
+        for i in range(changed_by):
+            if i == 3:
+                break
+
+            track: Playable = changed_history[i]
+            if added == 2 and track.source == "spotify":
+                break
+
+            if track.source == "spotify":
+                spotify.insert(0, track.identifier)
+                added += 1
+
+            elif track.source == "youtube":
+                youtube[0] = track.identifier
+
         if spotify:
             spotify_seeds: list[str] = spotify[:3]
-            spotify_query = f"sprec:seed_tracks={','.join(spotify_seeds)}"
+            spotify_query = f"sprec:seed_tracks={','.join(spotify_seeds)}&limit=10"
 
             for s_seed in spotify_seeds:
                 if self.__previous_seeds.full():
@@ -216,7 +240,11 @@ class Player(discord.VoiceProtocol):
             if query is None:
                 return []
 
-            search: wavelink.Search = await Pool.fetch_tracks(query)
+            try:
+                search: wavelink.Search = await Pool.fetch_tracks(query)
+            except (LavalinkLoadException, LavalinkException):
+                return []
+
             if not search:
                 return []
 
@@ -233,7 +261,6 @@ class Player(discord.VoiceProtocol):
         # track for result in results for track in result...
         # Maybe itertools here tbh...
         filtered_r: list[Playable] = [t for r in results for t in r]
-        random.shuffle(filtered_r)
 
         if not filtered_r:
             logger.debug(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
@@ -244,7 +271,7 @@ class Player(discord.VoiceProtocol):
             now._recommended = True
             self.auto_queue.history.put(now)
 
-            await self.play(now)
+            await self.play(now, add_history=False)
 
         # Possibly adjust these thresholds?
         history: list[Playable] = (
@@ -262,6 +289,7 @@ class Player(discord.VoiceProtocol):
             track._recommended = True
             added += await self.auto_queue.put_wait(track)
 
+        random.shuffle(self.auto_queue._queue)
         logger.debug(f'Player "{self.guild.id}" added "{added}" tracks to the auto_queue via AutoPlay.')
 
     @property
@@ -400,6 +428,7 @@ class Player(discord.VoiceProtocol):
         end: int | None = None,
         volume: int | None = None,
         paused: bool | None = None,
+        add_history: bool = True
     ) -> Playable:
         """Play the provided :class:`~wavelink.Playable`.
 
@@ -474,7 +503,9 @@ class Player(discord.VoiceProtocol):
             raise e
 
         self._paused = pause
-        self.queue.history.put(track)
+
+        if add_history:
+            self.queue.history.put(track)
 
         return track
 
