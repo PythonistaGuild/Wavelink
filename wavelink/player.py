@@ -26,12 +26,15 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
+import typing
 from typing import TYPE_CHECKING, Any, Union
 
 import async_timeout
 import discord
 from discord.abc import Connectable
 from discord.utils import MISSING
+
+import wavelink
 
 from .enums import AutoPlayMode, NodeStatus
 from .exceptions import (
@@ -57,6 +60,9 @@ if TYPE_CHECKING:
     VocalGuildChannel = Union[discord.VoiceChannel, discord.StageChannel]
 
 logger: logging.Logger = logging.getLogger(__name__)
+
+
+T_a: typing.TypeAlias = "list[Playable] | Playlist"
 
 
 class Player(discord.VoiceProtocol):
@@ -113,7 +119,15 @@ class Player(discord.VoiceProtocol):
         self._volume: int = 100
         self._paused: bool = False
 
+        self._auto_cutoff: int = 20
+        self._previous_seeds_cutoff: int = self._auto_cutoff * 3
+
         self._autoplay: AutoPlayMode = AutoPlayMode.disabled
+        self.__previous_seeds: asyncio.Queue[str] = asyncio.Queue(maxsize=self._previous_seeds_cutoff)
+
+        # We need an asyncio lock primitive because if either of the queues are changed during recos..
+        # We are screwed...
+        self._auto_lock: asyncio.Lock = asyncio.Lock()
 
     async def _auto_play_event(self, payload: TrackEndEventPayload) -> None:
         if self._autoplay is AutoPlayMode.disabled:
@@ -134,11 +148,10 @@ class Player(discord.VoiceProtocol):
             await self._do_partial()
 
         elif self._autoplay is AutoPlayMode.enabled:
-            await self._do_recommendation()
+            async with self._auto_lock:
+                await self._do_recommendation()
 
     async def _do_partial(self) -> None:
-        # TODO: This may change in the future depending on queue changes?
-
         if self._current is None:
             try:
                 track: Playable = self.queue.get()
@@ -148,25 +161,64 @@ class Player(discord.VoiceProtocol):
             await self.play(track)
 
     async def _do_recommendation(self):
-        # TODO: Adjustable trigger?
-        if len(self.auto_queue) > 20:
-            await self.play(self.auto_queue.get())
+        assert self.guild is not None
+
+        if len(self.auto_queue) > self._auto_cutoff:
+            track: Playable = self.auto_queue.get()
+            self.auto_queue.history.put(track)
+
+            await self.play(track)
             return
 
         choices: list[Playable | None]
 
+        # Up to 32 tracks as sequence, k=16 (choices) which is half...
         choices = random.choices(
-            [*self.queue.history[0:10], *self.auto_queue[0:10], self._current, self._previous], k=5
+            [*self.queue.history[0:20], *self.auto_queue[0:10], self._current, self._previous], k=16
         )
+
+        # Filter out tracks which are None...
         filtered: list[Playable] = [t for t in choices if t is not None]
 
-        spotify: list[str] = [t.identifier for t in filtered if t.source == "spotify"][0:3]
-        if self._node._spotify_enabled:
-            query: str = f'sprec:seed_tracks={",".join(spotify)}'
+        seeds: list[Playable] = []
+        for seed in filtered:
+            if seed.identifier in self.__previous_seeds._queue:  # type: ignore
+                continue
 
-            search: list[Playable] | Playlist = await Pool.fetch_tracks(query)
+            seeds.append(seed)
+
+        spotify: list[str] = [t.identifier for t in seeds if t.source == "spotify"]
+        youtube: list[str] = [t.identifier for t in seeds if t.source == "youtube"]
+
+        spotify_query: str | None = None
+        youtube_query: str | None = None
+
+        if spotify:
+            spotify_seeds: list[str] = spotify[:3]
+            spotify_query = f"sprec:seed_tracks={','.join(spotify_seeds)}"
+
+            for s_seed in spotify_seeds:
+                if self.__previous_seeds.full():
+                    self.__previous_seeds.get_nowait()
+
+                self.__previous_seeds.put_nowait(s_seed)
+
+        if youtube:
+            ytm_seed: str = youtube[0]
+            youtube_query = f"https://music.youtube.com/watch?v={ytm_seed}8&list=RD{ytm_seed}"
+
+            if self.__previous_seeds.full():
+                self.__previous_seeds.get_nowait()
+
+            self.__previous_seeds.put_nowait(ytm_seed)
+
+        async def _search(query: str | None) -> T_a:
+            if query is None:
+                return []
+
+            search: wavelink.Search = await Pool.fetch_tracks(query)
             if not search:
-                return
+                return []
 
             tracks: list[Playable]
             if isinstance(search, Playlist):
@@ -174,20 +226,43 @@ class Player(discord.VoiceProtocol):
             else:
                 tracks = search
 
-            random.shuffle(tracks)
+            return tracks
 
-            if not self._current:
-                now: Playable = tracks.pop(0)
-                now._recommended = True
+        results: tuple[T_a, T_a] = await asyncio.gather(_search(spotify_query), _search(youtube_query))
 
-                await self.play(now)
+        # track for result in results for track in result...
+        # Maybe itertools here tbh...
+        filtered_r: list[Playable] = [t for r in results for t in r]
+        random.shuffle(filtered_r)
 
-            for track in tracks:
-                if track in self.auto_queue or track in self.auto_queue.history:
-                    continue
+        if not filtered_r:
+            logger.debug(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
+            return
 
-                track._recommended = True
-                await self.auto_queue.put_wait(track)
+        if not self._current:
+            now: Playable = filtered_r.pop(0)
+            now._recommended = True
+            self.auto_queue.history.put(now)
+
+            await self.play(now)
+
+        # Possibly adjust these thresholds?
+        history: list[Playable] = (
+            list(self.auto_queue)[0:40]
+            + list(self.queue)[0:40]
+            + list(reversed(self.queue.history))[0:40]
+            + list(reversed(self.auto_queue.history))[0:60]
+        )
+
+        added: int = 0
+        for track in filtered_r:
+            if track in history:
+                continue
+
+            track._recommended = True
+            added += await self.auto_queue.put_wait(track)
+
+        logger.debug(f'Player "{self.guild.id}" added "{added}" tracks to the auto_queue via AutoPlay.')
 
     @property
     def autoplay(self) -> AutoPlayMode:
@@ -399,6 +474,7 @@ class Player(discord.VoiceProtocol):
             raise e
 
         self._paused = pause
+        self.queue.history.put(track)
 
         return track
 
