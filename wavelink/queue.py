@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import asyncio
 from collections import deque
-from typing import Any, overload
+from typing import Any, Iterator, overload
 
 from .exceptions import QueueEmpty
 from .tracks import *
@@ -65,6 +65,9 @@ class _Queue:
             return list(self._queue)[index]
 
         return self._queue[index]
+
+    def __iter__(self) -> Iterator[Playable]:
+        return self._queue.__iter__()
 
     def __contains__(self, item: Any) -> bool:
         return item in self._queue
