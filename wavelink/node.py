@@ -99,6 +99,7 @@ class Node:
         self._session_id: str | None = None
 
         self._players: dict[int, Player] = {}
+        self._total_player_count: int | None = None
 
         self._spotify_enabled: bool = False
 
@@ -508,7 +509,7 @@ class Pool:
         if not nodes:
             raise InvalidNodeException("No nodes are currently assigned to the wavelink.Pool in a CONNECTED state.")
 
-        return sorted(nodes, key=lambda n: len(n.players))[0]
+        return sorted(nodes, key=lambda n: n._total_player_count or len(n.players))[0]
 
     @classmethod
     async def fetch_tracks(cls, query: str, /) -> list[Playable] | Playlist:
