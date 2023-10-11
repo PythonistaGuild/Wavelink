@@ -256,11 +256,22 @@ class Player(discord.VoiceProtocol):
 
             return tracks
 
+
+        # Possibly adjust these thresholds?
+        # Possibly create a set of history for filtered_r lookup and then reset to empty after?
+        history: list[Playable] = (
+            self.auto_queue[:40]
+            + self.queue[:40]
+            + self.queue.history[:-41:-1]
+            + self.auto_queue.history[:-61:-1]
+        )
+
+
         results: tuple[T_a, T_a] = await asyncio.gather(_search(spotify_query), _search(youtube_query))
 
         # track for result in results for track in result...
         # Maybe itertools here tbh...
-        filtered_r: list[Playable] = [t for r in results for t in r]
+        filtered_r: list[Playable] = [t for r in results for t in r if t not in history]
 
         if not filtered_r:
             logger.debug(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
@@ -273,13 +284,7 @@ class Player(discord.VoiceProtocol):
 
             await self.play(now, add_history=False)
 
-        # Possibly adjust these thresholds?
-        history: list[Playable] = (
-            self.auto_queue[:40]
-            + self.queue[:40]
-            + self.queue.history[:-41:-1]
-            + self.auto_queue.history[:-61:-1]
-        )
+
 
         added: int = 0
         for track in filtered_r:
