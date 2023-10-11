@@ -174,8 +174,8 @@ class Player(discord.VoiceProtocol):
             await self.play(track, add_history=False)
             return
 
-        weighted_history: list[Playable] = self.queue.history[::-1][:max(5, 5 * self._auto_weight)]
-        weighted_upcoming: list[Playable] = self.auto_queue[:max(3, int((5 * self._auto_weight) / 3))]
+        weighted_history: list[Playable] = self.queue.history[::-1][: max(5, 5 * self._auto_weight)]
+        weighted_upcoming: list[Playable] = self.auto_queue[: max(3, int((5 * self._auto_weight) / 3))]
         choices: list[Playable | None] = [*weighted_history, *weighted_upcoming, self._current, self._previous]
 
         # Filter out tracks which are None...
@@ -190,11 +190,7 @@ class Player(discord.VoiceProtocol):
         youtube_query: str | None = None
 
         count: int = len(self.queue.history)
-        changed_by: int
-        if self._history_count is None:
-            changed_by = min(3, count)
-        else:
-            changed_by: int = count - self._history_count
+        changed_by: int = min(3, count) if self._history_count is None else count - self._history_count
 
         if changed_by > 0:
             self._history_count = count
@@ -202,11 +198,9 @@ class Player(discord.VoiceProtocol):
         changed_history: list[Playable] = self.queue.history[::-1]
 
         added: int = 0
-        for i in range(changed_by):
-            if i == 3:
-                break
-
+        for i in range(min(changed_by, 3)):
             track: Playable = changed_history[i]
+
             if added == 2 and track.source == "spotify":
                 break
 
@@ -222,19 +216,12 @@ class Player(discord.VoiceProtocol):
             spotify_query = f"sprec:seed_tracks={','.join(spotify_seeds)}&limit=10"
 
             for s_seed in spotify_seeds:
-                if self.__previous_seeds.full():
-                    self.__previous_seeds.get_nowait()
-
-                self.__previous_seeds.put_nowait(s_seed)
+                self._add_to_previous_seeds(s_seed)
 
         if youtube:
             ytm_seed: str = youtube[0]
             youtube_query = f"https://music.youtube.com/watch?v={ytm_seed}8&list=RD{ytm_seed}"
-
-            if self.__previous_seeds.full():
-                self.__previous_seeds.get_nowait()
-
-            self.__previous_seeds.put_nowait(ytm_seed)
+            self._add_to_previous_seeds(ytm_seed)
 
         async def _search(query: str | None) -> T_a:
             if query is None:
@@ -256,21 +243,15 @@ class Player(discord.VoiceProtocol):
 
             return tracks
 
-
         # Possibly adjust these thresholds?
         # Possibly create a set of history for filtered_r lookup and then reset to empty after?
         history: list[Playable] = (
-            self.auto_queue[:40]
-            + self.queue[:40]
-            + self.queue.history[:-41:-1]
-            + self.auto_queue.history[:-61:-1]
+            self.auto_queue[:40] + self.queue[:40] + self.queue.history[:-41:-1] + self.auto_queue.history[:-61:-1]
         )
-
 
         results: tuple[T_a, T_a] = await asyncio.gather(_search(spotify_query), _search(youtube_query))
 
         # track for result in results for track in result...
-        # Maybe itertools here tbh...
         filtered_r: list[Playable] = [t for r in results for t in r if t not in history]
 
         if not filtered_r:
@@ -283,8 +264,6 @@ class Player(discord.VoiceProtocol):
             self.auto_queue.history.put(now)
 
             await self.play(now, add_history=False)
-
-
 
         added: int = 0
         for track in filtered_r:
@@ -433,7 +412,7 @@ class Player(discord.VoiceProtocol):
         end: int | None = None,
         volume: int | None = None,
         paused: bool | None = None,
-        add_history: bool = True
+        add_history: bool = True,
     ) -> Playable:
         """Play the provided :class:`~wavelink.Playable`.
 
@@ -657,3 +636,9 @@ class Player(discord.VoiceProtocol):
                 await self.node._destroy_player(self.guild.id)
             except LavalinkException:
                 pass
+
+    def _add_to_previous_seeds(self, seed: str) -> None:
+        """Helper method to manage previous seeds."""
+        if self.__previous_seeds.full():
+            self.__previous_seeds.get_nowait()
+        self.__previous_seeds.put_nowait(seed)
