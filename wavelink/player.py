@@ -174,7 +174,7 @@ class Player(discord.VoiceProtocol):
             await self.play(track, add_history=False)
             return
 
-        weighted_history: list[Playable] = list(reversed(self.queue.history))[:max(5, 5 * self._auto_weight)]
+        weighted_history: list[Playable] = self.queue.history[::-1][:max(5, 5 * self._auto_weight)]
         weighted_upcoming: list[Playable] = self.auto_queue[:max(3, int((5 * self._auto_weight) / 3))]
         choices: list[Playable | None] = [*weighted_history, *weighted_upcoming, self._current, self._previous]
 
@@ -199,7 +199,7 @@ class Player(discord.VoiceProtocol):
         if changed_by > 0:
             self._history_count = count
 
-        changed_history: list[Playable] = list(reversed(self.queue.history))
+        changed_history: list[Playable] = self.queue.history[::-1]
 
         added: int = 0
         for i in range(changed_by):
@@ -275,10 +275,10 @@ class Player(discord.VoiceProtocol):
 
         # Possibly adjust these thresholds?
         history: list[Playable] = (
-            list(self.auto_queue)[0:40]
-            + list(self.queue)[0:40]
-            + list(reversed(self.queue.history))[0:40]
-            + list(reversed(self.auto_queue.history))[0:60]
+            self.auto_queue[:40]
+            + self.queue[:40]
+            + self.queue.history[:-41:-1]
+            + self.auto_queue.history[:-61:-1]
         )
 
         added: int = 0
