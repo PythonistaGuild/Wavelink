@@ -105,7 +105,7 @@ class Playable:
         if not isinstance(other, Playable):
             return NotImplemented
 
-        return self.encoded == other.encoded
+        return self.encoded == other.encoded or self.identifier == other.identifier
 
     @property
     def encoded(self) -> str:
