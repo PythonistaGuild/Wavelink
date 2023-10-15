@@ -26,12 +26,12 @@ import logging
 from typing import cast
 
 import discord
-import wavelink
 from discord.ext import commands
+
+import wavelink
 
 
 class Bot(commands.Bot):
-
     def __init__(self) -> None:
         intents: discord.Intents = discord.Intents.default()
         intents.message_content = True
@@ -67,10 +67,10 @@ class Bot(commands.Bot):
             embed.set_image(url=track.artwork)
 
         if original and original.recommended:
-            embed.description += f'\n\n`This track was recommended via {track.source}`'
+            embed.description += f"\n\n`This track was recommended via {track.source}`"
 
         if track.album.name:
-            embed.add_field(name='Album', value=track.album.name)
+            embed.add_field(name="Album", value=track.album.name)
 
         await player.home.send(embed=embed)
 
