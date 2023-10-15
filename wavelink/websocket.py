@@ -161,6 +161,9 @@ class Websocket:
                 updatepayload: PlayerUpdateEventPayload = PlayerUpdateEventPayload(player=playerup, state=state)
                 self.dispatch("player_update", updatepayload)
 
+                if playerup:
+                    asyncio.create_task(playerup._update_event(updatepayload))
+
             elif data["op"] == "stats":
                 statspayload: StatsEventPayload = StatsEventPayload(data=data)
                 self.node._total_player_count = statspayload.players

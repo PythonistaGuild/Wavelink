@@ -26,6 +26,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import random
+import time
 import typing
 from collections import deque
 from typing import TYPE_CHECKING, Any, Union
@@ -46,7 +47,7 @@ from .exceptions import (
     QueueEmpty,
 )
 from .node import Pool
-from .payloads import TrackEndEventPayload
+from .payloads import PlayerUpdateEventPayload, TrackEndEventPayload
 from .queue import Queue
 from .tracks import Playable, Playlist
 
@@ -107,6 +108,10 @@ class Player(discord.VoiceProtocol):
 
         if self.client is MISSING and self.node.client:
             self.client = self.node.client
+
+        self._last_update: int | None = None
+        self._last_position: int = 0
+        self._ping: int = -1
 
         self._connected: bool = False
         self._connection_event: asyncio.Event = asyncio.Event()
@@ -335,8 +340,36 @@ class Player(discord.VoiceProtocol):
         return self._paused
 
     @property
+    def ping(self) -> int:
+        return self._ping
+
+    @property
     def playing(self) -> bool:
         return self._connected and self._current is not None
+
+    @property
+    def position(self) -> int:
+        if self.current is None or not self.playing:
+            return 0
+
+        if not self.connected:
+            return 0
+
+        if self._last_update is None:
+            return 0
+
+        if self.paused:
+            return self._last_position
+
+        position: int = int((time.monotonic_ns() - self._last_update) / 1000000) + self._last_position
+        return min(position, self.current.length)
+
+    async def _update_event(self, payload: PlayerUpdateEventPayload) -> None:
+        # Convert nanoseconds into milliseconds...
+        self._last_update = time.monotonic_ns()
+        self._last_position = payload.position
+
+        self._ping = payload.ping
 
     async def on_voice_state_update(self, data: GuildVoiceStatePayload, /) -> None:
         channel_id = data["channel_id"]
