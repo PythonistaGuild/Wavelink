@@ -30,6 +30,7 @@ import wavelink
 from .enums import DiscordVoiceCloseType
 
 if TYPE_CHECKING:
+    from .node import Node
     from .player import Player
     from .tracks import Playable
     from .types.state import PlayerState
@@ -45,7 +46,15 @@ __all__ = (
     "WebsocketClosedEventPayload",
     "PlayerUpdateEventPayload",
     "StatsEventPayload",
+    "NodeReadyEventPayload",
 )
+
+
+class NodeReadyEventPayload:
+    def __init__(self, node: Node, resumed: bool, session_id: str) -> None:
+        self.node = node
+        self.resumed = resumed
+        self.session_id = session_id
 
 
 class TrackStartEventPayload:
