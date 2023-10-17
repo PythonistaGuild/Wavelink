@@ -341,14 +341,40 @@ class Player(discord.VoiceProtocol):
 
     @property
     def ping(self) -> int:
+        """Returns the ping in milliseconds as int between your connected Lavalink Node and Discord (Players Channel).
+
+        Returns ``-1`` if no player update event has been received or the player is not connected.
+        """
         return self._ping
 
     @property
     def playing(self) -> bool:
+        """Returns whether the :class:`~Player` is currently playing a track and is connected.
+
+        Due to relying on validation from Lavalink, this property may in some cases return ``True`` directly after
+        skipping/stopping a track, although this is not the case when disconnecting the player.
+
+        This property will return ``True`` in cases where the player is paused *and* has a track loaded.
+
+        .. versionchanged:: 3.0.0
+            This property used to be known as the `is_playing()` method.
+        """
         return self._connected and self._current is not None
 
     @property
     def position(self) -> int:
+        """Returns the position of the currently playing :class:`~wavelink.Playable` in milliseconds.
+
+        This property relies on information updates from Lavalink.
+
+        In cases there is no :class:`~wavelink.Playable` loaded or the player is not connected,
+        this property will return ``0``.
+
+        This property will return ``0`` if no update has been received from Lavalink.
+
+        .. versionchanged:: 3.0.0
+            This property now uses a monotonic clock.
+        """
         if self.current is None or not self.playing:
             return 0
 
@@ -469,6 +495,12 @@ class Player(discord.VoiceProtocol):
             Setting this parameter to ``True`` will pause the player. Setting this parameter to ``False`` will
             resume the player if it is currently paused. Setting this parameter to ``None`` will not change the status
             of the player. Defaults to ``None``.
+        add_history: Optional[bool]
+            If this argument is set to ``True``, the :class:`~Player` will add this track into the
+            :class:`wavelink.Queue` history, if loading the track was successful. If ``False`` this track will not be
+            added to your history. This does not directly affect the ``AutoPlay Queue`` but will alter how ``AutoPlay``
+            recommends songs in the future. Defaults to ``True``.
+
 
         Returns
         -------
@@ -477,8 +509,10 @@ class Player(discord.VoiceProtocol):
 
 
         .. versionchanged:: 3.0.0
-            Added the ``paused`` parameter. ``replace``, ``start``, ``end``, ``volume`` and ``paused`` are now all
-            keyword-only arguments.
+            Added the ``paused`` parameter. Parameters ``replace``, ``start``, ``end``, ``volume`` and ``paused``
+            are now all keyword-only arguments.
+
+            Added the ``add_history`` keyword-only argument.
         """
         assert self.guild is not None
 
@@ -670,7 +704,7 @@ class Player(discord.VoiceProtocol):
                 pass
 
     def _add_to_previous_seeds(self, seed: str) -> None:
-        """Helper method to manage previous seeds."""
+        # Helper method to manage previous seeds.
         if self.__previous_seeds.full():
             self.__previous_seeds.get_nowait()
         self.__previous_seeds.put_nowait(seed)
