@@ -26,7 +26,7 @@ from __future__ import annotations
 import logging
 import secrets
 import urllib
-from typing import TYPE_CHECKING, Iterable, Union, cast
+from typing import TYPE_CHECKING, Any, Iterable, Literal, Union, cast
 
 import aiohttp
 import discord
@@ -74,6 +74,9 @@ __all__ = ("Node", "Pool")
 logger: logging.Logger = logging.getLogger(__name__)
 
 
+Method = Literal["GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"]
+
+
 class Node:
     def __init__(
         self,
@@ -85,6 +88,7 @@ class Node:
         heartbeat: float = 15.0,
         retries: int | None = None,
         client: discord.Client | None = None,
+        resume_timeout: int = 60,
     ) -> None:
         self._identifier = identifier or secrets.token_urlsafe(12)
         self._uri = uri.removesuffix("/")
@@ -93,6 +97,7 @@ class Node:
         self._heartbeat = heartbeat
         self._retries = retries
         self._client = client
+        self._resume_timeout = resume_timeout
 
         self._status: NodeStatus = NodeStatus.DISCONNECTED
         self._has_closed: bool = False
@@ -243,6 +248,77 @@ class Node:
         if "spotify" in info["sourceManagers"]:
             self._spotify_enabled = True
 
+        if self._resume_timeout > 0:
+            udata: UpdateSessionRequest = {"resuming": True, "timeout": self._resume_timeout}
+            await self._update_session(data=udata)
+
+    async def send(
+        self, method: Method = "GET", *, path: str, data: Any | None = None, params: dict[str, Any] | None = None
+    ) -> Any:
+        """Method for making requests to the Lavalink node.
+
+        .. warning::
+
+            Usually you wouldn't use this method. Please use the built in methods of :class:`~Node`, :class:`~Pool`
+            and :class:`~wavelink.Player`, unless you need to send specific plugin data to Lavalink.
+
+            Using this method may have unwanted side effects on your players and/or nodes.
+
+        Parameters
+        ----------
+        method: Optional[str]
+            The method to use when making this request. Available methods are
+            "GET", "POST", "PATCH", "PUT", "DELETE" and "OPTIONS". Defaults to "GET".
+        path: str
+            The path to make this request to. E.g. "/v4/stats"
+        data: Any | None
+            The optional JSON data to send along with your request to Lavalink. This should be a dict[str, Any]
+            and able to be converted to JSON.
+        params: Optional[dict[str, Any]]
+            An optional dict of query parameters to send with your request to Lavalink. If you include your query
+            parameters in the ``path`` parameter, do not pass them here as well. E.g. {"thing": 1, "other": 2}
+            would equate to "?thing=1&other=2".
+
+        Returns
+        -------
+        Any
+            The response from Lavalink which will either be None, a str or JSON.
+
+        Raises
+        ------
+        LavalinkException
+            An error occurred while making this request to Lavalink.
+        """
+        clean_path: str = path.removesuffix("/")
+        uri: str = f"{self.uri}/{clean_path}"
+
+        if params is None:
+            params = {}
+
+        async with self._session.request(
+            method=method, url=uri, params=params, json=data, headers=self.headers
+        ) as resp:
+            if resp.status == 204:
+                return
+
+            if resp.status >= 300:
+                exc_data: ErrorResponse = await resp.json()
+                raise LavalinkException(data=exc_data)
+
+            try:
+                rdata: Any = await resp.json()
+            except aiohttp.ContentTypeError:
+                pass
+            else:
+                return rdata
+
+            try:
+                body: str = await resp.text()
+            except aiohttp.ClientError:
+                return
+
+            return body
+
     async def _fetch_players(self) -> list[PlayerResponse]:
         uri: str = f"{self.uri}/v4/sessions/{self.session_id}/players"
 
@@ -294,7 +370,7 @@ class Node:
     async def _update_session(self, *, data: UpdateSessionRequest) -> UpdateResponse:
         uri: str = f"{self.uri}/v4/sessions/{self.session_id}"
 
-        async with self._session.patch(url=uri, data=data) as resp:
+        async with self._session.patch(url=uri, json=data, headers=self.headers) as resp:
             if resp.status == 200:
                 resp_data: UpdateResponse = await resp.json()
                 return resp_data
