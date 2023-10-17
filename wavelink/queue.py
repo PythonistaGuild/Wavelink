@@ -201,3 +201,7 @@ class Queue(_Queue):
 
         self._wakeup_next()
         return added
+
+    async def delete(self, index: int, /) -> None:
+        async with self._lock:
+            self._queue.__delitem__(index)
