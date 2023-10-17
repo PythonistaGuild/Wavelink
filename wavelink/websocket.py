@@ -149,10 +149,16 @@ class Websocket:
             data: WebsocketOP = message.json()
 
             if data["op"] == "ready":
-                self.node._status = NodeStatus.CONNECTED
-                self.node._session_id = data["sessionId"]
+                resumed: bool = data["resumed"]
+                session_id: str = data["sessionId"]
 
-                self.dispatch("node_ready", self.node)
+                self.node._status = NodeStatus.CONNECTED
+                self.node._session_id = session_id
+
+                ready_payload: NodeReadyEventPayload = NodeReadyEventPayload(
+                    node=self.node, resumed=resumed, session_id=session_id
+                )
+                self.dispatch("node_ready", ready_payload)
 
             elif data["op"] == "playerUpdate":
                 playerup: Player | None = self.get_player(data["guildId"])
