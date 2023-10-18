@@ -69,16 +69,16 @@ T_a: typing.TypeAlias = "list[Playable] | Playlist"
 
 
 class Player(discord.VoiceProtocol):
-    """
+    """The Player is a :class:`discord.VoiceProtocol` used to connect your :class:`discord.Client` to a
+    :class:`discord.VoiceChannel`.
 
-    Attributes
-    ----------
-    client: discord.Client
-        The :class:`discord.Client` associated with this :class:`Player`.
-    channel: discord.abc.Connectable | None
-        The currently connected :class:`discord.VoiceChannel`.
-        Could be None if this :class:`Player` has not been connected or has previously been disconnected.
+    The player controls the music elements of the bot including playing tracks, the queue, connecting etc.
+    See Also: The various methods available.
 
+    .. note::
+
+        Since the Player is a :class:`discord.VoiceProtocol`, it is attached to the various ``voice_client`` attributes
+        in discord.py, including ``guild.voice_client``, ``ctx.voice_client`` and ``interaction.voice_client``.
     """
 
     channel: VocalGuildChannel
@@ -282,6 +282,15 @@ class Player(discord.VoiceProtocol):
 
     @property
     def autoplay(self) -> AutoPlayMode:
+        """A property which returns the :class:`wavelink.AutoPlayMode` the player is currently in.
+
+        This property can be set with any :class:`wavelink.AutoPlayMode` enum value.
+
+
+        .. versionchanged:: 3.0.0
+
+            This property now accepts and returns a :class:`wavelink.AutoPlayMode` enum value.
+        """
         return self._autoplay
 
     @autoplay.setter
@@ -297,6 +306,7 @@ class Player(discord.VoiceProtocol):
 
 
         .. versionchanged:: 3.0.0
+
             This property was previously known as ``current_node``.
         """
         return self._node
@@ -314,6 +324,7 @@ class Player(discord.VoiceProtocol):
         """Returns a bool indicating if the player is currently connected to a voice channel.
 
         .. versionchanged:: 3.0.0
+
             This property was previously known as ``is_connected``.
         """
         return self.channel and self._connected
@@ -357,6 +368,7 @@ class Player(discord.VoiceProtocol):
         This property will return ``True`` in cases where the player is paused *and* has a track loaded.
 
         .. versionchanged:: 3.0.0
+
             This property used to be known as the `is_playing()` method.
         """
         return self._connected and self._current is not None
@@ -373,6 +385,7 @@ class Player(discord.VoiceProtocol):
         This property will return ``0`` if no update has been received from Lavalink.
 
         .. versionchanged:: 3.0.0
+
             This property now uses a monotonic clock.
         """
         if self.current is None or not self.playing:
@@ -443,6 +456,23 @@ class Player(discord.VoiceProtocol):
     async def connect(
         self, *, timeout: float = 5.0, reconnect: bool, self_deaf: bool = False, self_mute: bool = False
     ) -> None:
+        """
+
+        .. warning::
+
+            Do not use this method directly on the player. See: :meth:`discord.VoiceChannel.connect` for more details.
+
+
+        Pass the :class:`wavelink.Player` to ``cls=`` in :meth:`discord.VoiceChannel.connect`.
+
+
+        Raises
+        ------
+        ChannelTimeoutException
+            Connecting to the voice channel timed out.
+        InvalidChannelStateException
+            You tried to connect this player without an appropriate voice channel.
+        """
         if self.channel is MISSING:
             msg: str = 'Please use "discord.VoiceChannel.connect(cls=...)" and pass this Player to cls.'
             raise InvalidChannelStateException(f"Player tried to connect without a valid channel: {msg}")
@@ -509,6 +539,7 @@ class Player(discord.VoiceProtocol):
 
 
         .. versionchanged:: 3.0.0
+
             Added the ``paused`` parameter. Parameters ``replace``, ``start``, ``end``, ``volume`` and ``paused``
             are now all keyword-only arguments.
 
@@ -570,6 +601,7 @@ class Player(discord.VoiceProtocol):
 
 
         .. versionchanged:: 3.0.0
+
             This method now expects a positional-only bool value. The ``resume`` method has been removed.
         """
         assert self.guild is not None
@@ -590,6 +622,7 @@ class Player(discord.VoiceProtocol):
 
 
         .. versionchanged:: 3.0.0
+
             The ``position`` parameter is now positional-only, and has a default of 0.
         """
         assert self.guild is not None
@@ -616,6 +649,7 @@ class Player(discord.VoiceProtocol):
 
 
         .. versionchanged:: 3.0.0
+
             The ``value`` parameter is now positional-only, and has a default of 100.
         """
         assert self.guild is not None
@@ -651,6 +685,7 @@ class Player(discord.VoiceProtocol):
         See Also: :meth:`skip` for more information.
 
         .. versionchanged:: 3.0.0
+
             This method is now known as ``skip``, but the alias ``stop`` has been kept for backwards compatability.
         """
         return await self.skip(force=force)
@@ -671,6 +706,7 @@ class Player(discord.VoiceProtocol):
 
 
         .. versionchanged:: 3.0.0
+
             This method was previously known as ``stop``. To avoid confusion this method is now known as ``skip``.
             This method now returns the :class:`~wavelink.Playable` that was skipped.
         """

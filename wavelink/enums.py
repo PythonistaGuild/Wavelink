@@ -111,6 +111,20 @@ class DiscordVoiceCloseType(enum.Enum):
 
 
 class AutoPlayMode(enum.Enum):
+    """Enum representing the various AutoPlay modes.
+
+    Attributes
+    ----------
+    enabled
+        When enabled, AutoPlay will work fully autonomously and fill the auto_queue with recommended tracks.
+        If a song is put into a players standard queue, AutoPlay will use it as a priority.
+    partial
+        When partial, AutoPlay will work fully autonomously but **will not** fill the auto_queue with
+        recommended tracks.
+    disabled
+        When disabled, AutoPlay will not do anything automatically.
+    """
+
     enabled = 0
     partial = 1
     disabled = 2

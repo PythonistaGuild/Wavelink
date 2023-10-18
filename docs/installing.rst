@@ -1,6 +1,6 @@
 Installing
 ============
-WaveLink requires Python 3.10+.
+WaveLink **3** requires Python 3.10+.
 You can download the latest version of Python `here <https://www.python.org/downloads/>`_.
 
 **Windows:**

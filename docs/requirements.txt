@@ -6,6 +6,5 @@ sphinxcontrib-websupport
 Pygments
 furo
 discord.py>=2.0.1
-sphinxext-opengraph
 sphinx-hoverxref
 sphinxcontrib_trio

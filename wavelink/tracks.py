@@ -54,18 +54,59 @@ Search: TypeAlias = "list[Playable] | Playlist"
 
 
 class Album:
+    """Dataclass representing Album data received via Lavalink.
+
+    Attributes
+    ----------
+    name: str | None
+        The album name. Could be ``None``.
+    url: str | None
+        The album url. Could be ``None``.
+    """
+
     def __init__(self, *, data: dict[Any, Any]) -> None:
         self.name: str | None = data.get("albumName")
         self.url: str | None = data.get("albumUrl")
 
 
 class Artist:
+    """Dataclass representing Artist data received via Lavalink.
+
+    Attributes
+    ----------
+    url: str | None
+        The artist url. Could be ``None``.
+    artwork: str | None
+        The artist artwork url. Could be ``None``.
+    """
+
     def __init__(self, *, data: dict[Any, Any]) -> None:
         self.url: str | None = data.get("artistUrl")
         self.artwork: str | None = data.get("artistArtworkUrl")
 
 
 class Playable:
+    """The wavelink playable object which represents all tracks in Wavelink 3.
+
+    .. note::
+
+        You should not construct this class manually.
+
+    .. container:: operations
+
+        .. describe:: str(track)
+
+            The title of this playable.
+
+        .. describe:: repr(track)
+
+            The official string representation of this playable.
+
+        .. describe:: track == other
+
+            Whether this track is equal to another. Checks both the track encoding and identifier.
+    """
+
     def __init__(self, data: TrackPayload, *, playlist: PlaylistInfo | None = None) -> None:
         info: TrackInfoPayload = data["info"]
 
@@ -109,74 +150,100 @@ class Playable:
 
     @property
     def encoded(self) -> str:
+        """Property returning the encoded track string from Lavalink."""
         return self._encoded
 
     @property
     def identifier(self) -> str:
+        """Property returning the identifier of this track from its source.
+
+        E.g. YouTube ID or Spotify ID.
+        """
         return self._identifier
 
     @property
     def is_seekable(self) -> bool:
+        """Property returning a bool whether this track can be used in seeking."""
         return self._is_seekable
 
     @property
     def author(self) -> str:
+        """Property returning the name of the author of this track."""
         return self._author
 
     @property
     def length(self) -> int:
+        """Property returning the tracks duration in milliseconds as an int."""
         return self._length
 
     @property
     def is_stream(self) -> bool:
+        """Property returning a bool indicating whether this track is a stream."""
         return self._is_stream
 
     @property
     def position(self) -> int:
+        """Property returning starting position of this track in milliseconds as an int."""
         return self._position
 
     @property
     def title(self) -> str:
+        """Property returning the title/name of this track."""
         return self._title
 
     @property
     def uri(self) -> str | None:
+        """Property returning the URL to this track. Could be ``None``."""
         return self._uri
 
     @property
     def artwork(self) -> str | None:
+        """Property returning the URL of the artwork of this track. Could be ``None``."""
         return self._artwork
 
     @property
     def isrc(self) -> str | None:
+        """Property returning the ISRC (International Standard Recording Code) of this track. Could be ``None``."""
         return self._isrc
 
     @property
     def source(self) -> str:
+        """Property returning the source of this track as a ``str``.
+
+        E.g. "spotify" or "youtube"
+        """
         return self._source
 
     @property
     def album(self) -> Album:
+        """Property returning album data for this track. See Also: :class:`wavelink.Album`."""
         return self._album
 
     @property
     def artist(self) -> Artist:
+        """Property returning artist data for this track. See Also: :class:`wavelink.Artist`."""
         return self._artist
 
     @property
     def preview_url(self) -> str | None:
+        """Property returning the preview URL for this track. Could be ``None``."""
         return self._preview_url
 
     @property
     def is_preview(self) -> bool | None:
+        """Property returning a bool indicating if this track is a preview. Could be ``None`` if unknown."""
         return self._is_preview
 
     @property
     def playlist(self) -> PlaylistInfo | None:
+        """Property returning a :class:`wavelink.PlaylistInfo`. Could be ``None``
+        if this track is not a part of a playlist.
+        """
         return self._playlist
 
     @property
     def recommended(self) -> bool:
+        """Property returning a bool indicating whether this track was recommended via AutoPlay."""
         return self._recommended
 
     @classmethod
@@ -202,10 +269,6 @@ class Playable:
             or it's default.
 
             If this query **is a URL**, a search prefix will **not** be used.
-
-            .. positional-only::
-        /
-        *
         source: :class:`TrackSource` | str | None
             This parameter determines which search prefix to use when searching for tracks.
             If ``None`` is provided, no prefix will be used, however this behaviour is default regardless of what
@@ -260,6 +323,7 @@ class Playable:
 
 
         .. versionchanged:: 3.0.0
+
             This method has been changed significantly in version ``3.0.0``. This method has been simplified to provide
             an easier interface for searching tracks. See the above documentation and examples.
 
@@ -440,6 +504,31 @@ class Playlist:
 
 
 class PlaylistInfo:
+    """The wavelink PlaylistInfo container class.
+
+    It contains various information about the playlist but **does not** contain the tracks associated with this
+    playlist.
+
+    This class is used to provided information about the original :class:`wavelink.Playlist` on tracks.
+
+    Attributes
+    ----------
+    name: str
+        The name of this playlist.
+    selected: int
+        The index of the selected track from Lavalink.
+    tracks: int
+        The amount of tracks this playlist originally contained.
+    type: str | None
+        An optional ``str`` identifying the type of playlist this is. Only available when a plugin is used.
+    url: str | None
+        An optional ``str`` to the URL of this playlist. Only available when a plugin is used.
+    artwork: str | None
+        An optional ``str`` to the artwork of this playlist. Only available when a plugin is used.
+    author: str | None
+        An optional ``str`` of the author of this playlist. Only available when a plugin is used.
+    """
+
     __slots__ = ("name", "selected", "tracks", "type", "url", "artwork", "author")
 
     def __init__(self, data: PlaylistPayload) -> None:

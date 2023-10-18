@@ -95,6 +95,18 @@ class LavalinkException(WavelinkException):
 
 
 class LavalinkLoadException(WavelinkException):
+    """Exception raised when an error occurred loading tracks via Lavalink.
+
+    Attributes
+    ----------
+    error: str
+        The error message from Lavalink.
+    severity: str
+        The severity of this error sent via Lavalink.
+    cause: str
+        The cause of this error sent via Lavalink.
+    """
+
     def __init__(self, msg: str | None = None, /, *, data: LoadedErrorPayload) -> None:
         self.error: str = data["message"]
         self.severity: str = data["severity"]

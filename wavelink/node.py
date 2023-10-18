@@ -78,6 +78,47 @@ Method = Literal["GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"]
 
 
 class Node:
+    """The Node represents a connection to Lavalink.
+
+    The Node is responsible for keeping the websocket alive, resuming session, sending API requests and keeping track
+    of connected all :class:`~wavelink.Player`.
+
+    .. container:: operations
+
+        .. describe:: node == other
+
+            Equality check to determine whether this Node is equal to another reference of a Node.
+
+        .. describe:: repr(node)
+
+            The official string representation of this Node.
+
+    Parameters
+    ----------
+    identifier: str | None
+        A unique identifier for this Node. Could be ``None`` to generate a random one on creation.
+    uri: str
+        The URL/URI that wavelink will use to connect to Lavalink. Usually this is in the form of something like:
+        ``http://localhost:2333`` which includes the port. But you could also provide a domain which won't require a
+        port like ``https://lavalink.example.com`` or a public IP address and port like ``http://111.333.444.55:2333``.
+    password: str
+        The password used to connect and authorize this Node.
+    session: aiohttp.ClientSession | None
+        An optional :class:`aiohttp.ClientSession` used to connect this Node over websocket and REST.
+        If ``None``, one will be generated for you. Defaults to ``None``.
+    heartbeat: Optional[float]
+        A ``float`` in seconds to ping your websocket keep alive. Usually you would not change this.
+    retries: int | None
+        A ``int`` of retries to attempt when connecting or reconnecting this Node. When the retries are exhausted
+        the Node will be closed and cleaned-up. ``None`` will retry forever. Defaults to ``None``.
+    client: :class:`discord.Client` | None
+        The :class:`discord.Client` or subclasses, E.g. ``commands.Bot`` used to connect this Node. If this is *not*
+        passed you must pass this to :meth:`wavelink.Pool.connect`.
+    resume_timeout: Optional[int]
+        The seconds this Node should configure Lavalink for resuming its current session in case of network issues.
+        If this is ``0`` or below, resuming will be disabled. Defaults to ``60``.
+    """
+
     def __init__(
         self,
         *,
@@ -121,6 +162,12 @@ class Node:
 
     @property
     def headers(self) -> dict[str, str]:
+        """A property that returns the headers configured for sending API and websocket requests.
+
+        .. warning::
+
+            This includes your Node password. Please be vigilant when using this property.
+        """
         assert self.client is not None
         assert self.client.user is not None
 
@@ -138,6 +185,7 @@ class Node:
 
 
         .. versionchanged:: 3.0.0
+
             This property was previously known as ``id``.
         """
         return self._identifier
@@ -162,7 +210,7 @@ class Node:
 
     @property
     def client(self) -> discord.Client | None:
-        """The :class:`discord.Client` associated with this :class:`Node`.
+        """Returns the :class:`discord.Client` associated with this :class:`Node`.
 
         Could be ``None`` if it has not been set yet.
 
@@ -173,7 +221,7 @@ class Node:
 
     @property
     def password(self) -> str:
-        """The password used to connect this :class:`Node` to Lavalink.
+        """Returns the password used to connect this :class:`Node` to Lavalink.
 
         .. versionadded:: 3.0.0
         """
@@ -181,7 +229,7 @@ class Node:
 
     @property
     def heartbeat(self) -> float:
-        """The duration in seconds that the :class:`Node` websocket should send a heartbeat.
+        """Returns the duration in seconds that the :class:`Node` websocket should send a heartbeat.
 
         .. versionadded:: 3.0.0
         """
@@ -189,7 +237,7 @@ class Node:
 
     @property
     def session_id(self) -> str | None:
-        """The Lavalink session ID. Could be None if this :class:`Node` has not connected yet.
+        """Returns the Lavalink session ID. Could be None if this :class:`Node` has not connected yet.
 
         .. versionadded:: 3.0.0
         """
@@ -205,6 +253,12 @@ class Node:
             await self.close()
 
     async def close(self) -> None:
+        """Method to close this Node and cleanup.
+
+        After this method has finished, the event ``on_wavelink_node_closed`` will be fired.
+
+        This method renders the Node websocket disconnected and disconnects all players.
+        """
         disconnected: list[Player] = []
 
         for player in self._players.values():
@@ -439,9 +493,6 @@ class Node:
         guild_id: int
             The :attr:discord.Guild.id` to retrieve a :class:`~wavelink.Player` for.
 
-            .. positional-only::
-        /
-
         Returns
         -------
         Optional[:class:`~wavelink.Player`]
@@ -452,6 +503,15 @@ class Node:
 
 
 class Pool:
+    """The wavelink Pool represents a collection of :class:~wavelink.Node` and helper methods for searching tracks.
+
+    To connect a :class:`~wavelink.Node` please use this Pool.
+
+    .. note::
+
+        All methods and attributes on this class are class level, not instance. Do not create an instance of this class.
+    """
+
     __nodes: dict[str, Node] = {}
     __cache: LFUCache | None = None
 
@@ -463,12 +523,14 @@ class Pool:
 
         Parameters
         ----------
-        *
         nodes: Iterable[:class:`Node`]
             The :class:`Node`'s to connect to Lavalink.
         client: :class:`discord.Client` | None
             The :class:`discord.Client` to use to connect the :class:`Node`. If the Node already has a client
             set, this method will **not** override it. Defaults to None.
+        cache_capacity: int | None
+            An optional integer of the amount of track searches to cache. This is an experimental mode.
+            Passing ``None`` will disable this experiment. Defaults to ``None``.
 
         Returns
         -------
@@ -476,8 +538,20 @@ class Pool:
             A mapping of :attr:`Node.identifier` to :class:`Node` associated with the :class:`Pool`.
 
 
+        Raises
+        ------
+        AuthorizationFailedException
+            The node password was incorrect.
+        InvalidClientException
+            The :class:`discord.Client` passed was not valid.
+        NodeException
+            The node failed to connect properly. Please check that your Lavalink version is version 4.
+
+
         .. versionchanged:: 3.0.0
+
             The ``client`` parameter is no longer required.
+            Added the ``cache_capacity`` parameter.
         """
         for node in nodes:
             client_ = node.client or client
@@ -538,6 +612,13 @@ class Pool:
 
     @classmethod
     async def close(cls) -> None:
+        """Close and clean up all :class:`~wavelink.Node` on this Pool.
+
+        This calls :meth:`wavelink.Node.close` on each node.
+
+
+        .. versionadded:: 3.0.0
+        """
         for node in cls.__nodes.values():
             await node.close()
 
@@ -547,6 +628,7 @@ class Pool:
 
 
         .. versionchanged:: 3.0.0
+
             This property now returns a copy.
         """
         nodes = cls.__nodes.copy()
@@ -563,9 +645,6 @@ class Pool:
         identifier: str | None
             An optional identifier to retrieve a :class:`Node`.
 
-            .. positional-only::
-        /
-
         Raises
         ------
         InvalidNodeException
@@ -573,6 +652,7 @@ class Pool:
 
 
         .. versionchanged:: 3.0.0
+
             The ``id`` parameter was changed to ``identifier`` and is positional only.
         """
         if identifier:
@@ -597,9 +677,6 @@ class Pool:
             The query to search tracks for. If this is not a URL based search you should provide the appropriate search
             prefix, E.g. "ytsearch:Rick Roll"
 
-            .. positional-only::
-        /
-
         Returns
         -------
         list[Playable] | Playlist
@@ -613,6 +690,7 @@ class Pool:
 
 
         .. versionchanged:: 3.0.0
+
             This method was previously known as both ``.get_tracks`` and ``.get_playlist``. This method now searches
             for both :class:`~wavelink.Playable` and :class:`~wavelink.Playlist` and returns the appropriate type,
             or an empty list if no results were found.

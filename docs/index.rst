@@ -1,15 +1,3 @@
-:og:description: Wavelink is a robust and powerful Lavalink wrapper for Discord.py. Featuring, a fully asynchronous API that's intuitive and easy to use with built in Spotify Support, Node Pool Balancing, advanced Queues, autoplay feature and looping features built in.
-:og:title: Wavelink Documentation
-
-
-.. meta::
-   :title: Wavelink Documentation
-   :description: Wavelink is a robust and powerful Lavalink wrapper for Discord.py. Featuring, a fully asynchronous API that's intuitive and easy to use with built in Spotify Support, Node Pool Balancing, advanced Queues, autoplay feature and looping features built in.
-   :language: en-US
-   :keywords: wavelink, lavalink, python api
-   :copyright: PythonistaGuild. 2019 - Present
-
-
 .. raw:: html
 
    <img src="_static/logo.png" class="featuring-logo only-light">
@@ -23,10 +11,16 @@
       <h4>Featuring:</h4>
       <ul class="index-featuring-list">
          <li>Full asynchronous design.</li>
-         <li>Lavalink v3.7+ Supported with REST API.</li>
+         <li>Lavalink v4+ Supported with REST API.</li>
          <li>discord.py v2.0.0+ Support.</li>
-         <li>Spotify and YouTube AutoPlay supported.</li>
-         <li>Object orientated design with stateful objects.</li>
+         <li>Advanced AutoPlay and track recommendations for continuous play.</li>
+         <li>Object orientated design with stateful objects and payloads.</li>
+         <li>Fully annotated and complies with Pyright strict typing.</li>
+      </ul>
+
+      <h4>Migrating from version 2 to 3:</h4>
+      <ul class="index-featuring-list">
+         <li><a href="migrating.html" class="reference internal">Migrating Guide</a></li>
       </ul>
    </p>
 
@@ -51,13 +45,6 @@
             <li><a href="wavelink.html" class="reference internal">API Reference</a></li>
          </ul>
       </div>
-
-      <div class="index-apis-section">
-         <b>Wavelink Extension API's:</b>
-         <ul class="index-featuring-list">
-            <li><a href="ext/spotify.html" class="reference internal">Spotify Extension</a></li>
-         </ul>
-      </div>
    </div>
 
    <h3 class="index-section-header">Getting Help</h3>
@@ -74,6 +61,7 @@
    :caption: Getting Started:
 
    installing
+   migrating
    recipes
 
 
@@ -83,15 +71,6 @@
    :caption: API Reference
 
    wavelink
-
-
-.. rst-class:: index-display-none
-.. toctree::
-   :maxdepth: 1
-   :caption: Spotify Extension
-
-   ext/spotify
-
 
 
 .. raw:: html

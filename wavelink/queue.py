@@ -116,6 +116,49 @@ class _Queue:
 
 
 class Queue(_Queue):
+    """The default custom wavelink Queue designed specifically for :class:`wavelink.Player`.
+
+    .. container:: operations
+
+        .. describe:: str(queue)
+
+            A string representation of this queue.
+
+        .. describe:: repr(queue)
+
+            The official string representation of this queue.
+
+        .. describe:: if queue
+
+            Bool check whether this queue has items or not.
+
+        .. describe:: queue(track)
+
+            Put a track in the queue.
+
+        .. describe:: len(queue)
+
+            The amount of tracks in the queue.
+
+        .. describe:: queue[1]
+
+            Peek at an item in the queue. Does not change the queue.
+
+        .. describe:: for item in queue
+
+            Iterate over the queue.
+
+        .. describe:: if item in queue
+
+            Check whether a specific track is in the queue.
+
+
+    Attributes
+    ----------
+    history: :class:`wavelink.Queue`
+        A queue of tracks that have been added to history.
+    """
+
     def __init__(self) -> None:
         super().__init__()
         self.history: _Queue = _Queue()
@@ -145,9 +188,35 @@ class Queue(_Queue):
         return super()._get()
 
     def get(self) -> Playable:
+        """Retrieve a track from the left side of the queue. E.g. the first.
+
+        This method does not block.
+
+        Returns
+        -------
+        :class:`wavelink.Playable`
+            The track retrieved from the queue.
+
+
+        Raises
+        ------
+        QueueEmpty
+            The queue was empty when retrieving a track.
+        """
         return self._get()
 
     async def get_wait(self) -> Playable:
+        """This method returns the first :class:`wavelink.Playable` if one is present or
+        waits indefinitely until one is.
+
+        This method is asynchronous.
+
+        Returns
+        -------
+        :class:`wavelink.Playable`
+            The track retrieved from the queue.
+
+        """
         while not self:
             loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
             waiter: asyncio.Future[None] = loop.create_future()
@@ -172,12 +241,52 @@ class Queue(_Queue):
         return self.get()
 
     def put(self, item: Playable | Playlist, /, *, atomic: bool = True) -> int:
+        """Put an item into the end of the queue.
+
+        Accepts a :class:`wavelink.Playable` or :class:`wavelink.Playlist`
+
+        Parameters
+        ----------
+        item: :class:`wavelink.Playable` | :class:`wavelink.Playlist`
+            The item to enter into the queue.
+        atomic: bool
+            Whether the items should be inserted atomically. If set to ``True`` this method won't enter any tracks if
+            it encounters an error. Defaults to ``True``
+
+
+        Returns
+        -------
+        int
+            The amount of tracks added to the queue.
+        """
         added: int = super().put(item, atomic=atomic)
 
         self._wakeup_next()
         return added
 
     async def put_wait(self, item: list[Playable] | Playable | Playlist, /, *, atomic: bool = True) -> int:
+        """Put an item or items into the end of the queue asynchronously.
+
+        Accepts a :class:`wavelink.Playable` or :class:`wavelink.Playlist` or list[:class:`wavelink.Playable`]
+
+        .. note::
+
+            This method implements a lock to preserve insert order.
+
+        Parameters
+        ----------
+        item: :class:`wavelink.Playable` | :class:`wavelink.Playlist` | list[:class:`wavelink.Playable`]
+            The item or items to enter into the queue.
+        atomic: bool
+            Whether the items should be inserted atomically. If set to ``True`` this method won't enter any tracks if
+            it encounters an error. Defaults to ``True``
+
+
+        Returns
+        -------
+        int
+            The amount of tracks added to the queue.
+        """
         added: int = 0
 
         async with self._lock:
@@ -203,5 +312,23 @@ class Queue(_Queue):
         return added
 
     async def delete(self, index: int, /) -> None:
+        """Method to delete an item in the queue by index.
+
+        This method is asynchronous an implements/wait for a lock.
+
+        Raises
+        ------
+        IndexError
+            No track exists at this index.
+
+
+        Examples
+        --------
+
+        .. code:: python3
+
+            await queue.delete(1)
+            # Deletes the track at index 1 (The second track).
+        """
         async with self._lock:
             self._queue.__delitem__(index)

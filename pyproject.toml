@@ -38,6 +38,6 @@ line-length = 120
 profile = "black"
 
 [tool.pyright]
-ignore = ["test*.py", "examples/*.py"]
+ignore = ["test*.py", "examples/*.py", "docs/*"]
 typeCheckingMode = "strict"
 reportPrivateUsage = false
