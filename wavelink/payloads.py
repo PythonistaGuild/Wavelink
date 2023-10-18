@@ -105,7 +105,7 @@ class TrackEndEventPayload:
     track: :class:`~wavelink.Playable`
         The track received from Lavalink regarding this event.
     reason: str
-        The reason lavalink ended this track.
+        The reason Lavalink ended this track.
     original: :class:`~wavelink.Playable` | None
         The original track associated this event. E.g. the track that was passed to :meth:`~wavelink.Player.play` or
         inserted into the queue, with all your additional attributes assigned. Could be ``None``.
@@ -218,7 +218,7 @@ class StatsEventMemory:
     allocated: int
         The amount of allocated memory in bytes.
     reservable: int
-        The amount of reservable memory in bytes
+        The amount of reservable memory in bytes.
     """
 
     def __init__(self, data: MemoryStats) -> None:
@@ -234,7 +234,7 @@ class StatsEventCPU:
     Attributes
     ----------
     cores: int
-        The amount of cores the node has.
+        The number of CPU cores available on the node.
     system_load: float
         The system load of the node.
     lavalink_load: float
@@ -253,9 +253,9 @@ class StatsEventFrames:
     Attributes
     ----------
     sent: int
-        The amount of frames sent to Discord
+        The amount of frames sent to .
     nulled: int
-        The amount of frames that were nulled
+        The amount of frames that were nulled.
     deficit: int
         The difference between sent frames and the expected amount of frames.
     """
