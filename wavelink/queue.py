@@ -26,6 +26,7 @@ from __future__ import annotations
 import asyncio
 from collections import deque
 from typing import Any, Iterator, overload
+import random
 
 from .exceptions import QueueEmpty
 from .tracks import *
@@ -332,3 +333,34 @@ class Queue(_Queue):
         """
         async with self._lock:
             self._queue.__delitem__(index)
+
+    def shuffle(self) -> None:
+        """Shuffles the queue in place. This does **not** return anything.
+
+        Example
+        -------
+
+        .. code:: python3
+
+            player.queue.shuffle()
+            # Your queue has now been shuffled...
+        """
+        random.shuffle(self._queue)
+
+    def clear(self) -> None:
+        """Remove all items from the queue.
+
+
+        .. note::
+
+            This does not reset the queue.
+
+        Example
+        -------
+
+        .. code:: python3
+
+            player.queue.clear()
+            # Your queue is now empty...
+        """
+        self._queue.clear()
