@@ -54,7 +54,7 @@ Search: TypeAlias = "list[Playable] | Playlist"
 
 
 class Album:
-    """Data class representing Album data received via Lavalink.
+    """Container class representing Album data received via Lavalink.
 
     Attributes
     ----------
@@ -70,7 +70,7 @@ class Album:
 
 
 class Artist:
-    """Data class representing Artist data received via Lavalink.
+    """Container class representing Artist data received via Lavalink.
 
     Attributes
     ----------
