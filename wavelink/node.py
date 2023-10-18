@@ -324,7 +324,7 @@ class Node:
             The method to use when making this request. Available methods are
             "GET", "POST", "PATCH", "PUT", "DELETE" and "OPTIONS". Defaults to "GET".
         path: str
-            The path to make this request to. E.g. "/v4/stats"
+            The path to make this request to. E.g. "/v4/stats".
         data: Any | None
             The optional JSON data to send along with your request to Lavalink. This should be a dict[str, Any]
             and able to be converted to JSON.
@@ -486,12 +486,12 @@ class Node:
             raise LavalinkException(data=exc_data)
 
     def get_player(self, guild_id: int, /) -> Player | None:
-        """Return a :class:`~wavelink.Player` associated with the provided :attr:discord.Guild.id`.
+        """Return a :class:`~wavelink.Player` associated with the provided :attr:`discord.Guild.id`.
 
         Parameters
         ----------
         guild_id: int
-            The :attr:discord.Guild.id` to retrieve a :class:`~wavelink.Player` for.
+            The :attr:`discord.Guild.id` to retrieve a :class:`~wavelink.Player` for.
 
         Returns
         -------
@@ -503,7 +503,7 @@ class Node:
 
 
 class Pool:
-    """The wavelink Pool represents a collection of :class:~wavelink.Node` and helper methods for searching tracks.
+    """The wavelink Pool represents a collection of :class:`~wavelink.Node` and helper methods for searching tracks.
 
     To connect a :class:`~wavelink.Node` please use this Pool.
 
@@ -675,7 +675,7 @@ class Pool:
         ----------
         query: str
             The query to search tracks for. If this is not a URL based search you should provide the appropriate search
-            prefix, E.g. "ytsearch:Rick Roll"
+            prefix, e.g. "ytsearch:Rick Roll"
 
         Returns
         -------

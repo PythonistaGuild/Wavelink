@@ -62,7 +62,7 @@ An event listener in a cog.
 
 .. function:: on_wavelink_track_exception(payload: wavelink.TrackExceptionEventPayload)
 
-    called when an exception occurs while playing a track.
+    Called when an exception occurs while playing a track.
 
 .. function:: on_wavelink_track_stuck(payload: wavelink.TrackStuckEventPayload)
 
@@ -186,8 +186,8 @@ Node
 Tracks
 ------
 
-Tracks in wavelink 3 have been simplified. Please read the docs for :class:`Playable`
-Additionally the following data classes are provided on every :class:`Playable`
+Tracks in wavelink 3 have been simplified. Please read the docs for :class:`Playable`.
+Additionally the following data classes are provided on every :class:`Playable`.
 
 .. attributetable:: Artist
 
