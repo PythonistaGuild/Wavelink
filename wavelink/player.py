@@ -138,12 +138,25 @@ class Player(discord.VoiceProtocol):
         # We are screwed...
         self._auto_lock: asyncio.Lock = asyncio.Lock()
 
+        self._error_count: int = 0
+
     async def _auto_play_event(self, payload: TrackEndEventPayload) -> None:
         if self._autoplay is AutoPlayMode.disabled:
             return
 
+        if self._error_count >= 3:
+            logger.warning("AutoPlay was unable to continue as you have received too many consecutive errors."
+                           "Please check the error log on Lavalink.")
+
         if payload.reason == "replaced":
+            self._error_count = 0
             return
+
+        elif payload.reason == "loadFailed":
+            self._error_count += 1
+
+        else:
+            self._error_count = 0
 
         if self.node.status is not NodeStatus.CONNECTED:
             logger.warning(f'"Unable to use AutoPlay on Player for Guild "{self.guild}" due to disconnected Node.')
