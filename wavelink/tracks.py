@@ -54,7 +54,7 @@ Search: TypeAlias = "list[Playable] | Playlist"
 
 
 class Album:
-    """Dataclass representing Album data received via Lavalink.
+    """Container class representing Album data received via Lavalink.
 
     Attributes
     ----------
@@ -70,7 +70,7 @@ class Album:
 
 
 class Artist:
-    """Dataclass representing Artist data received via Lavalink.
+    """Container class representing Artist data received via Lavalink.
 
     Attributes
     ----------
@@ -86,7 +86,7 @@ class Artist:
 
 
 class Playable:
-    """The wavelink playable object which represents all tracks in Wavelink 3.
+    """The Wavelink Playable object which represents all tracks in Wavelink 3.
 
     .. note::
 
@@ -210,18 +210,18 @@ class Playable:
     def source(self) -> str:
         """Property returning the source of this track as a ``str``.
 
-        E.g. "spotify" or "youtube"
+        E.g. "spotify" or "youtube".
         """
         return self._source
 
     @property
     def album(self) -> Album:
-        """Property returning album data for this track. See Also: :class:`wavelink.Album`."""
+        """Property returning album data for this track."""
         return self._album
 
     @property
     def artist(self) -> Artist:
-        """Property returning artist data for this track. See Also: :class:`wavelink.Artist`."""
+        """Property returning artist data for this track."""
         return self._artist
 
     @property
