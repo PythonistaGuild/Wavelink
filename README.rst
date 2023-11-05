@@ -44,7 +44,7 @@ Wavelink features a fully asynchronous API that's intuitive and easy to use.
 
 Documentation
 ---------------------------
-`Official Documentation <https://wavelink.dev/feature-v3>`_
+`Official Documentation <https://wavelink.dev/en/feature-v3>`_
 
 Support
 ---------------------------
