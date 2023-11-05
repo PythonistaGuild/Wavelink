@@ -38,6 +38,7 @@ line-length = 120
 profile = "black"
 
 [tool.pyright]
+exclude = ["venv"]
 ignore = ["test*.py", "examples/*.py", "docs/*"]
 typeCheckingMode = "strict"
 reportPrivateUsage = false
