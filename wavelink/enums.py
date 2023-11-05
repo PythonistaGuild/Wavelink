@@ -23,7 +23,7 @@ SOFTWARE.
 """
 import enum
 
-__all__ = ("NodeStatus", "TrackSource", "DiscordVoiceCloseType", "AutoPlayMode")
+__all__ = ("NodeStatus", "TrackSource", "DiscordVoiceCloseType", "AutoPlayMode", "QueueMode")
 
 
 class NodeStatus(enum.Enum):
@@ -32,11 +32,11 @@ class NodeStatus(enum.Enum):
     Attributes
     ----------
     DISCONNECTED
-        0
+        The Node has been disconnected or has never been connected previously.
     CONNECTING
-        1
+        The Node is currently attempting to connect.
     CONNECTED
-        2
+        The Node is currently connected.
     """
 
     DISCONNECTED = 0
@@ -50,11 +50,11 @@ class TrackSource(enum.Enum):
     Attributes
     ----------
     YouTube
-        0
+        A source representing a track that comes from YouTube.
     YouTubeMusic
-        1
+        A source representing a track that comes from YouTube Music.
     SoundCloud
-        2
+        A source representing a track that comes from SoundCloud.
     """
 
     YouTube = 0
@@ -128,3 +128,19 @@ class AutoPlayMode(enum.Enum):
     enabled = 0
     partial = 1
     disabled = 2
+
+class QueueMode(enum.Enum):
+    """Enum representing the various modes on :class:`wavelink.Queue`
+    
+    Attributes
+    ----------
+    normal
+        When set, the queue will not loop either track or history. This is the default.
+    loop
+        When set, the track will continuously loop.
+    loop_all
+        When set, the queue will continuously loop through all tracks.
+    """
+    normal = 0
+    loop = 1
+    loop_all = 2

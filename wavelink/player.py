@@ -38,7 +38,7 @@ from discord.utils import MISSING
 
 import wavelink
 
-from .enums import AutoPlayMode, NodeStatus
+from .enums import AutoPlayMode, NodeStatus, QueueMode
 from .exceptions import (
     ChannelTimeoutException,
     InvalidChannelStateException,
@@ -134,10 +134,7 @@ class Player(discord.VoiceProtocol):
         self._autoplay: AutoPlayMode = AutoPlayMode.disabled
         self.__previous_seeds: asyncio.Queue[str] = asyncio.Queue(maxsize=self._previous_seeds_cutoff)
 
-        # We need an asyncio lock primitive because if either of the queues are changed during recos..
-        # We are screwed...
         self._auto_lock: asyncio.Lock = asyncio.Lock()
-
         self._error_count: int = 0
 
     async def _auto_play_event(self, payload: TrackEndEventPayload) -> None:
@@ -165,22 +162,28 @@ class Player(discord.VoiceProtocol):
         if not isinstance(self.queue, Queue) or not isinstance(self.auto_queue, Queue):  # type: ignore
             logger.warning(f'"Unable to use AutoPlay on Player for Guild "{self.guild}" due to unsupported Queue.')
             return
+        
+        if self.queue.mode is QueueMode.loop:
+            await self._do_partial(history=False)
+        
+        elif self.queue.mode is QueueMode.loop_all:
+            await self._do_partial()
 
-        if self._autoplay is AutoPlayMode.partial or self.queue:
+        elif self._autoplay is AutoPlayMode.partial or self.queue:
             await self._do_partial()
 
         elif self._autoplay is AutoPlayMode.enabled:
             async with self._auto_lock:
                 await self._do_recommendation()
 
-    async def _do_partial(self) -> None:
+    async def _do_partial(self, *, history: bool = True) -> None:
         if self._current is None:
             try:
                 track: Playable = self.queue.get()
             except QueueEmpty:
                 return
 
-            await self.play(track)
+            await self.play(track, add_history=history)
 
     async def _do_recommendation(self):
         assert self.guild is not None
@@ -725,6 +728,9 @@ class Player(discord.VoiceProtocol):
         """
         assert self.guild is not None
         old: Playable | None = self._current
+        
+        if force:
+            self.queue._loaded = None
 
         request: RequestPayload = {"encodedTrack": None}
         await self.node._update_player(self.guild.id, data=request, replace=True)

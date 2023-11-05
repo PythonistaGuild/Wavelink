@@ -86,6 +86,12 @@ Types
 
     A type hint used when searching tracks. Used in :meth:`Playable.search` and :meth:`Pool.fetch_tracks`
 
+    **Example:**
+
+    .. code:: python3
+
+        tracks: wavelink.Search = await wavelink.Playable.search("Ocean Drive")
+
 
 Payloads
 ---------
@@ -165,6 +171,11 @@ Enums
 .. attributetable:: AutoPlayMode
 
 .. autoclass:: AutoPlayMode
+    :members:
+
+.. attributetable:: QueueMode
+
+.. autoclass:: QueueMode
     :members:
 
 
