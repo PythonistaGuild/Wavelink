@@ -376,30 +376,39 @@ class Playlist:
     .. container:: operations
 
         .. describe:: str(x)
+        
             Return the name associated with this playlist.
 
         .. describe:: repr(x)
+        
             Return the official string representation of this playlist.
 
         .. describe:: x == y
+        
             Compare the equality of playlist.
 
         .. describe:: len(x)
+        
             Return an integer representing the amount of tracks contained in this playlist.
 
         .. describe:: x[0]
+        
             Return a track contained in this playlist with the given index.
 
         .. describe:: x[0:2]
+        
             Return a slice of tracks contained in this playlist.
 
         .. describe:: for x in y
+        
             Iterate over the tracks contained in this playlist.
 
         .. describe:: reversed(x)
+        
             Reverse the tracks contained in this playlist.
 
         .. describe:: x in y
+        
             Check if a :class:`Playable` is contained in this playlist.
 
 
