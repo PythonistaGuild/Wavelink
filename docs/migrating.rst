@@ -43,7 +43,7 @@ Changed
 - `wavelink.NodePool` is now `wavelink.Pool`.
 - :meth:`wavelink.Pool.connect` no longer requires the `client` keyword argument.
 - :meth:`wavelink.Pool.get_node` the `id` parameter is now known as `identifier` and is positional-only. This parameter is also optional.
-- :meth:`wavelink.Pool.fetch_tracks` was previously known as both `.get_tracks` and `.get_playlist`. This method now returns either the appropriate :class:`wavelink.Playlist`` or list[:class:`wavelink.Playable`]. If there is an error when searching, this method raises either a `LavalinkException` (The request failed somehow) or `LavalinkLoadException` there was an error loading the search (Request didn't fail).
+- :meth:`wavelink.Pool.fetch_tracks` was previously known as both `.get_tracks` and `.get_playlist`. This method now returns either the appropriate :class:`wavelink.Playlist` or list[:class:`wavelink.Playable`]. If there is an error when searching, this method raises either a `LavalinkException` (The request failed somehow) or `LavalinkLoadException` there was an error loading the search (Request didn't fail).
 - :meth:`wavelink.Queue.put_wait` now has an option to atomically add tracks from a :class:`wavelink.Playlist` or list[:class:`wavelink.Playable`]. This defaults to True. This currently checks if the track in the Playlist is Playable and if any errors occur will not add any tracks from the Playlist to the queue. IF set to `False`, Playable tracks will be added to the Queue up until an error occurs or every track was successfully added.
 - :meth:`wavelink.Queue.put_wait` and :meth:`wavelink.Queue.put` now return an int of the amount of tracks added.
 - :meth:`wavelink.Player.stop` is now known as :meth:`wavelink.Player.skip`, though they both exist as aliases.
