@@ -24,9 +24,9 @@ SOFTWARE.
 from __future__ import annotations
 
 import asyncio
+import random
 from collections import deque
 from typing import Any, Iterator, overload
-import random
 
 from .enums import QueueMode
 from .exceptions import QueueEmpty
@@ -159,14 +159,14 @@ class Queue(_Queue):
     ----------
     history: :class:`wavelink.Queue`
         A queue of tracks that have been added to history.
-        
+
         Even though the history queue is the same class as this Queue some differences apply.
         Mainly you can not set the ``mode``.
     """
 
     def __init__(self, history: bool = True) -> None:
         super().__init__()
-        
+
         if history:
             self._loaded: Playable | None = None
             self._mode: QueueMode = QueueMode.normal
@@ -195,14 +195,14 @@ class Queue(_Queue):
     def _get(self) -> Playable:
         if self.mode is QueueMode.loop and self._loaded:
             return self._loaded
-        
+
         if self.mode is QueueMode.loop_all and not self:
             self._queue.extend(self.history._queue)
             self.history.clear()
 
         track: Playable = super()._get()
         self._loaded = track
-        
+
         return track
 
     def get(self) -> Playable:
@@ -381,21 +381,21 @@ class Queue(_Queue):
             # Your queue is now empty...
         """
         self._queue.clear()
-        
+
     @property
     def mode(self) -> QueueMode:
-        """Property which returns a :class:`~wavelink.QueueMode` indicating which mode the 
+        """Property which returns a :class:`~wavelink.QueueMode` indicating which mode the
         :class:`~wavelink.Queue` is in.
-        
+
         This property can be set with any :class:`~wavelink.QueueMode`.
-        
+
         .. versionadded:: 3.0.0
         """
         return self._mode
-    
+
     @mode.setter
     def mode(self, value: QueueMode):
         if not hasattr(self, "_mode"):
             raise AttributeError("This queues mode can not be set.")
-        
+
         self._mode = value

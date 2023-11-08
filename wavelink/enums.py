@@ -129,9 +129,10 @@ class AutoPlayMode(enum.Enum):
     partial = 1
     disabled = 2
 
+
 class QueueMode(enum.Enum):
     """Enum representing the various modes on :class:`wavelink.Queue`
-    
+
     Attributes
     ----------
     normal
@@ -141,6 +142,7 @@ class QueueMode(enum.Enum):
     loop_all
         When set, the queue will continuously loop through all tracks.
     """
+
     normal = 0
     loop = 1
     loop_all = 2

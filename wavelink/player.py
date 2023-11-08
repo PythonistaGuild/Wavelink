@@ -142,8 +142,10 @@ class Player(discord.VoiceProtocol):
             return
 
         if self._error_count >= 3:
-            logger.warning("AutoPlay was unable to continue as you have received too many consecutive errors."
-                           "Please check the error log on Lavalink.")
+            logger.warning(
+                "AutoPlay was unable to continue as you have received too many consecutive errors."
+                "Please check the error log on Lavalink."
+            )
 
         if payload.reason == "replaced":
             self._error_count = 0
@@ -162,10 +164,10 @@ class Player(discord.VoiceProtocol):
         if not isinstance(self.queue, Queue) or not isinstance(self.auto_queue, Queue):  # type: ignore
             logger.warning(f'"Unable to use AutoPlay on Player for Guild "{self.guild}" due to unsupported Queue.')
             return
-        
+
         if self.queue.mode is QueueMode.loop:
             await self._do_partial(history=False)
-        
+
         elif self.queue.mode is QueueMode.loop_all:
             await self._do_partial()
 
@@ -728,7 +730,7 @@ class Player(discord.VoiceProtocol):
         """
         assert self.guild is not None
         old: Playable | None = self._current
-        
+
         if force:
             self.queue._loaded = None
 
