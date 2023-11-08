@@ -28,8 +28,14 @@ classifiers = [
 [project.urls]
 "Homepage" = "https://github.com/PythonistaGuild/Wavelink"
 
+[tool.setuptools]
+packages = ["wavelink"]
+
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.package-data]
+wavelink = ["py.typed"]
 
 [tool.black]
 line-length = 120
