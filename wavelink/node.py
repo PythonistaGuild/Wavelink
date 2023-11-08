@@ -25,9 +25,9 @@ from __future__ import annotations
 
 import logging
 import secrets
-import urllib
+import urllib.parse
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Literal, Union, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 import aiohttp
 import discord
@@ -64,9 +64,9 @@ if TYPE_CHECKING:
     )
     from .types.tracks import TrackPayload
 
-    LoadedResponse = Union[
-        TrackLoadedResponse, SearchLoadedResponse, PlaylistLoadedResponse, EmptyLoadedResponse, ErrorLoadedResponse
-    ]
+    LoadedResponse = (
+        TrackLoadedResponse | SearchLoadedResponse | PlaylistLoadedResponse | EmptyLoadedResponse | ErrorLoadedResponse
+    )
 
 
 __all__ = ("Node", "Pool")
@@ -699,7 +699,7 @@ class Pool:
             This method no longer accepts the ``cls`` parameter.
         """
         # TODO: Documentation Extension for `.. positional-only::` marker.
-        encoded_query: str = cast(str, urllib.parse.quote(query))  # type: ignore
+        encoded_query: str = urllib.parse.quote(query)
 
         if cls.__cache is not None:
             potential: list[Playable] | Playlist = cls.__cache.get(encoded_query, None)
