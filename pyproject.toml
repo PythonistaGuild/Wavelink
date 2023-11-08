@@ -35,7 +35,7 @@ packages = ["wavelink"]
 dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools.package-data]
-"wavelink" = ["py.typed"]
+wavelink = ["py.typed"]
 
 [tool.black]
 line-length = 120
