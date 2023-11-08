@@ -575,7 +575,7 @@ class Pool:
             except NodeException:
                 logger.error(
                     f"Failed to connect to {node!r}. Check that your Lavalink major version is '4' "
-                    f"and that you are trying to connect to Lavalink on the correct port."
+                    "and that you are trying to connect to Lavalink on the correct port."
                 )
             else:
                 cls.__nodes[node.identifier] = node
@@ -605,7 +605,7 @@ class Pool:
             except NodeException:
                 logger.error(
                     f"Failed to connect to {node!r}. Check that your Lavalink major version is '4' "
-                    f"and that you are trying to connect to Lavalink on the correct port."
+                    "and that you are trying to connect to Lavalink on the correct port."
                 )
 
         return cls.nodes
