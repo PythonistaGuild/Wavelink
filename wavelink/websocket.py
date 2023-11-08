@@ -134,15 +134,15 @@ class Websocket:
 
         while True:
             message: aiohttp.WSMessage = await self.socket.receive()
-
-            if message.type in (
+            
+            if message.type in (  # pyright: ignore[reportUnknownMemberType]
                 aiohttp.WSMsgType.CLOSED,
                 aiohttp.WSMsgType.CLOSING,
-            ):  # pyright: ignore[reportUnknownMemberType]
+            ):
                 asyncio.create_task(self.connect())
                 break
 
-            if message.data is None:
+            if message.data is None:  # pyright: ignore[reportUnknownMemberType]
                 logger.debug("Received an empty message from Lavalink websocket. Disregarding.")
                 continue
 
