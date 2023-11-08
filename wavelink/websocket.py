@@ -39,6 +39,8 @@ from .tracks import Playable
 if TYPE_CHECKING:
     from .node import Node
     from .player import Player
+    from .types.request import UpdateSessionRequest
+    from .types.response import InfoResponse
     from .types.state import PlayerState
     from .types.websocket import TrackExceptionPayload, WebsocketOP
 
@@ -73,6 +75,15 @@ class Websocket:
 
     def is_connected(self) -> bool:
         return self.socket is not None and not self.socket.closed
+
+    async def _update_node(self) -> None:
+        if self.node._resume_timeout > 0:
+            udata: UpdateSessionRequest = {"resuming": True, "timeout": self.node._resume_timeout}
+            await self.node._update_session(data=udata)
+
+        info: InfoResponse = await self.node._fetch_info()
+        if "spotify" in info["sourceManagers"]:
+            self.node._spotify_enabled = True
 
     async def connect(self) -> None:
         self.node._status = NodeStatus.CONNECTING
@@ -154,6 +165,8 @@ class Websocket:
 
                 self.node._status = NodeStatus.CONNECTED
                 self.node._session_id = session_id
+                
+                await self._update_node()
 
                 ready_payload: NodeReadyEventPayload = NodeReadyEventPayload(
                     node=self.node, resumed=resumed, session_id=session_id
