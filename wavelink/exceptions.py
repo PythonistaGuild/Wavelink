@@ -51,7 +51,20 @@ class WavelinkException(Exception):
 
 
 class NodeException(WavelinkException):
-    """Error raised when an Unknown or Generic error occurs on a Node."""
+    """Error raised when an Unknown or Generic error occurs on a Node.
+
+    This exception may be raised when an error occurs reaching your Node.
+
+    Attributes
+    ----------
+    status: int | None
+        The status code received when making a request. Could be None.
+    """
+
+    def __init__(self, msg: str | None = None, status: int | None = None) -> None:
+        super().__init__(msg)
+
+        self.status = status
 
 
 class InvalidClientException(WavelinkException):

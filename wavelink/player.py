@@ -689,10 +689,12 @@ class Player(discord.VoiceProtocol):
             Whether to seek immediately when applying these filters. Seeking uses more resources, but applies the
             filters immediately. Defaults to ``False``.
 
+
         .. versionchanged:: 3.0.0
 
             This method now accepts a positional-only argument of filters, which now defaults to None. Filters
             were redesigned in this version, see: :class:`wavelink.Filters`.
+
 
         .. versionchanged:: 3.0.0
 

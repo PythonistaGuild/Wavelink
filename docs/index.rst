@@ -30,8 +30,6 @@
 
    <ul class="index-featuring-list">
       <li><b>For help with installing visit:</b> <a href="installing.html" class="reference internal">Installing</a>
-      <li><b>Your first steps with the library:</b> <a href="quickstart.html" class="reference internal">Quickstart</a>
-      <li><b>Frequently asked questions:</b> <a href="faq.html" class="reference internal">FAQ</a>
    </ul>
 
    <h3 class="index-section-header">API Reference</h3>
