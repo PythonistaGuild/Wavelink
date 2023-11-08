@@ -83,10 +83,10 @@ async def play(ctx: commands.Context, *, query: str) -> None:
     """Play a song with the given query."""
     if not ctx.guild:
         return
-    
+
     player: wavelink.Player
     player = cast(wavelink.Player, ctx.voice_client)  # type: ignore
-    
+
     if not player:
         try:
             player = await ctx.author.voice.channel.connect(cls=wavelink.Player)  # type: ignore
@@ -160,7 +160,7 @@ async def nightcore(ctx: commands.Context) -> None:
     filters: wavelink.Filters = player.filters
     filters.timescale.set(pitch=1.2, speed=1.2, rate=1)
     await player.set_filters(filters)
-    
+
     await ctx.message.add_reaction("\u2705")
 
 

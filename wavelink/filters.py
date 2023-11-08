@@ -278,10 +278,11 @@ class Timescale:
 
 class Tremolo:
     """The Tremolo Filter class.
-    
-    Uses amplification to create a shuddering effect, where the volume quickly oscillates. 
+
+    Uses amplification to create a shuddering effect, where the volume quickly oscillates.
     Demo: https://en.wikipedia.org/wiki/File:Fuse_Electronics_Tremolo_MK-III_Quick_Demo.ogv
     """
+
     def __init__(self, payload: TremoloPayload) -> None:
         self._payload = payload
 
