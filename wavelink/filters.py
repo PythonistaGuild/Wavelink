@@ -26,18 +26,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
-    from types.filters import ChannelMix as ChannelMixPayload
-    from types.filters import Distortion as DistortionPayload
-    from types.filters import Equalizer as EqualizerPayload
-    from types.filters import FilterPayload
-    from types.filters import Karaoke as KaraokePayload
-    from types.filters import LowPass as LowPassPayload
-    from types.filters import Rotation as RotationPayload
-    from types.filters import Timescale as TimescalePayload
-    from types.filters import Tremolo as TremoloPayload
-    from types.filters import Vibrato as VibratoPayload
-
     from typing_extensions import Self, Unpack
+
+    from .types.filters import ChannelMix as ChannelMixPayload
+    from .types.filters import Distortion as DistortionPayload
+    from .types.filters import Equalizer as EqualizerPayload
+    from .types.filters import FilterPayload
+    from .types.filters import Karaoke as KaraokePayload
+    from .types.filters import LowPass as LowPassPayload
+    from .types.filters import Rotation as RotationPayload
+    from .types.filters import Timescale as TimescalePayload
+    from .types.filters import Tremolo as TremoloPayload
+    from .types.filters import Vibrato as VibratoPayload
 
 
 __all__ = (

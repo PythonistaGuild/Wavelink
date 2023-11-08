@@ -48,5 +48,3 @@ ignore = ["test*.py", "examples/*.py", "docs/*"]
 pythonVersion = "3.10"
 typeCheckingMode = "strict"
 reportPrivateUsage = false
-reportPropertyTypeMismatch = "warning"
-reportUnnecessaryTypeIgnoreComment = "warning"

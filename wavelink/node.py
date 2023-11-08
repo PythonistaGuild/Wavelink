@@ -27,7 +27,7 @@ import logging
 import secrets
 import urllib.parse
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 
 import aiohttp
 import discord
@@ -64,7 +64,7 @@ if TYPE_CHECKING:
     )
     from .types.tracks import TrackPayload
 
-    LoadedResponse = (
+    LoadedResponse: TypeAlias = (
         TrackLoadedResponse | SearchLoadedResponse | PlaylistLoadedResponse | EmptyLoadedResponse | ErrorLoadedResponse
     )
 
