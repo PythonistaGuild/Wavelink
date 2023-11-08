@@ -23,24 +23,24 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, TypedDict
+from typing import TYPE_CHECKING, TypeAlias, TypedDict
 
 if TYPE_CHECKING:
-    from typing_extensions import NotRequired, TypeAlias
+    from typing_extensions import NotRequired
 
     from .filters import FilterPayload
 
 
 class VoiceRequest(TypedDict):
     token: str
-    endpoint: Optional[str]
+    endpoint: str | None
     sessionId: str
 
 
 class _BaseRequest(TypedDict, total=False):
     voice: VoiceRequest
     position: int
-    endTime: Optional[int]
+    endTime: int | None
     volume: int
     paused: bool
     filters: FilterPayload
@@ -59,4 +59,4 @@ class UpdateSessionRequest(TypedDict):
     timeout: NotRequired[int]
 
 
-Request: TypeAlias = "_BaseRequest | EncodedTrackRequest | IdentifierRequest"
+Request: TypeAlias = _BaseRequest | EncodedTrackRequest | IdentifierRequest

@@ -21,10 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import TYPE_CHECKING, Any, Optional, TypedDict
-
-if TYPE_CHECKING:
-    from typing_extensions import NotRequired
+from typing import Any, TypedDict
 
 
 class Equalizer(TypedDict):
@@ -32,64 +29,64 @@ class Equalizer(TypedDict):
     gain: float
 
 
-class Karaoke(TypedDict):
-    level: NotRequired[Optional[float]]
-    monoLevel: NotRequired[Optional[float]]
-    filterBand: NotRequired[Optional[float]]
-    filterWidth: NotRequired[Optional[float]]
+class Karaoke(TypedDict, total=False):
+    level: float | None
+    monoLevel: float | None
+    filterBand: float | None
+    filterWidth: float | None
 
 
-class Timescale(TypedDict):
-    speed: NotRequired[Optional[float]]
-    pitch: NotRequired[Optional[float]]
-    rate: NotRequired[Optional[float]]
+class Timescale(TypedDict, total=False):
+    speed: float | None
+    pitch: float | None
+    rate: float | None
 
 
-class Tremolo(TypedDict):
-    frequency: NotRequired[Optional[float]]
-    depth: NotRequired[Optional[float]]
+class Tremolo(TypedDict, total=False):
+    frequency: float | None
+    depth: float | None
 
 
-class Vibrato(TypedDict):
-    frequency: NotRequired[Optional[float]]
-    depth: NotRequired[Optional[float]]
+class Vibrato(TypedDict, total=False):
+    frequency: float | None
+    depth: float | None
 
 
-class Rotation(TypedDict):
-    rotationHz: NotRequired[Optional[float]]
+class Rotation(TypedDict, total=False):
+    rotationHz: float | None
 
 
-class Distortion(TypedDict):
-    sinOffset: NotRequired[Optional[float]]
-    sinScale: NotRequired[Optional[float]]
-    cosOffset: NotRequired[Optional[float]]
-    cosScale: NotRequired[Optional[float]]
-    tanOffset: NotRequired[Optional[float]]
-    tanScale: NotRequired[Optional[float]]
-    offset: NotRequired[Optional[float]]
-    scale: NotRequired[Optional[float]]
+class Distortion(TypedDict, total=False):
+    sinOffset: float | None
+    sinScale: float | None
+    cosOffset: float | None
+    cosScale: float | None
+    tanOffset: float | None
+    tanScale: float | None
+    offset: float | None
+    scale: float | None
 
 
-class ChannelMix(TypedDict):
-    leftToLeft: NotRequired[Optional[float]]
-    leftToRight: NotRequired[Optional[float]]
-    rightToLeft: NotRequired[Optional[float]]
-    rightToRight: NotRequired[Optional[float]]
+class ChannelMix(TypedDict, total=False):
+    leftToLeft: float | None
+    leftToRight: float | None
+    rightToLeft: float | None
+    rightToRight: float | None
 
 
-class LowPass(TypedDict):
-    smoothing: NotRequired[Optional[float]]
+class LowPass(TypedDict, total=False):
+    smoothing: float | None
 
 
-class FilterPayload(TypedDict):
-    volume: NotRequired[Optional[float]]
-    equalizer: NotRequired[Optional[list[Equalizer]]]
-    karaoke: NotRequired[Karaoke]
-    timescale: NotRequired[Timescale]
-    tremolo: NotRequired[Tremolo]
-    vibrato: NotRequired[Vibrato]
-    rotation: NotRequired[Rotation]
-    distortion: NotRequired[Distortion]
-    channelMix: NotRequired[ChannelMix]
-    lowPass: NotRequired[LowPass]
-    pluginFilters: NotRequired[dict[str, Any]]
+class FilterPayload(TypedDict, total=False):
+    volume: float | None
+    equalizer: list[Equalizer] | None
+    karaoke: Karaoke
+    timescale: Timescale
+    tremolo: Tremolo
+    vibrato: Vibrato
+    rotation: Rotation
+    distortion: Distortion
+    channelMix: ChannelMix
+    lowPass: LowPass
+    pluginFilters: dict[str, Any]

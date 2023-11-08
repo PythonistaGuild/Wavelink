@@ -29,6 +29,7 @@ from collections.abc import Callable
 
 class Backoff:
     """An implementation of an Exponential Backoff.
+
     Parameters
     ----------
     base: int

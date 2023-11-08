@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import TYPE_CHECKING, Optional, TypedDict
+from typing import TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
     from typing_extensions import NotRequired
@@ -36,7 +36,7 @@ class PlayerState(TypedDict):
 
 class VoiceState(TypedDict, total=False):
     token: str
-    endpoint: Optional[str]
+    endpoint: str | None
     session_id: str
 
 

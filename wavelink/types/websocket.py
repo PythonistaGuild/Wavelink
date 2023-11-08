@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import TYPE_CHECKING, Literal, TypedDict, Union
+from typing import TYPE_CHECKING, Literal, TypedDict
 
 if TYPE_CHECKING:
     from typing_extensions import NotRequired
@@ -99,13 +99,13 @@ class WebsocketClosedEvent(TypedDict):
     byRemote: bool
 
 
-WebsocketOP = Union[
-    ReadyOP,
-    PlayerUpdateOP,
-    StatsOP,
-    TrackStartEvent,
-    TrackEndEvent,
-    TrackExceptionEvent,
-    TrackStuckEvent,
-    WebsocketClosedEvent,
-]
+WebsocketOP = (
+    ReadyOP
+    | PlayerUpdateOP
+    | StatsOP
+    | TrackStartEvent
+    | TrackEndEvent
+    | TrackExceptionEvent
+    | TrackStuckEvent
+    | WebsocketClosedEvent
+)

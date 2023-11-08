@@ -43,8 +43,75 @@ line-length = 120
 [tool.isort]
 profile = "black"
 
+[tool.ruff]
+# Credit to @mikeshardmind for most of this setup.
+include = ["wavelink"]
+line-length = 120
+target-version = "py310"
+select = [
+    "F",
+    "E",
+    "I",
+    "UP",
+    "YTT",
+    "ANN",
+    "S",
+    "BLE",
+    "B",
+    "A",
+    "COM",
+    "C4",
+    "DTZ",
+    "EM",
+    "ISC",
+    "G",
+    "INP",
+    "PIE",
+    "T20",
+    "Q003",
+    "RSE",
+    "RET",
+    "SIM",
+    "TID",
+    "PTH",
+    "ERA",
+    "PLC",
+    "PLE",
+    "PLR",
+    "PLW",
+    "TRY",
+    "RUF",
+]
+ignore = [
+    "G002",    # Erroneous issue with %-logging when logging can be configured for % logging.
+    "S101",    # Use of assert here is a known quantity. Blame typing memes.
+    "PLR2004", # Magic value comparison. May remove later.
+    "SIM105",  # Suppressable exception. I'm not paying the overhead of contextlib.suppress for stylistic choices.
+    "C90",     # McCabe complexity memes.
+    "ANN204",  # Special method return types.
+    "S311",    # No need for cryptographically secure random number generation in this use case.
+    "ANN101",  # Type of self is implicit.
+    "ANN102",  # Type of cls is implicit.
+    # "ANN401",  # Not sure how else to type *args and **kwargs when they could be anything.
+    "PLR0913", # Too many parameters in a function definition doesn't matter.
+    "A001",    # Shadowing some builtin names.
+    "A002",    # See above.
+    "A003",    # See above.
+    "NPY",     # Numpy isn't relevant in this project.
+    "PD",      # Pandas isn't relevant in this project
+]
+unfixable = [
+    "ERA", # I don't want anything erroneously detected deleted by this.
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F403", "PLC0414"] # Importing internal modules usually throws these.
+
 [tool.pyright]
-exclude = ["venv"]
 ignore = ["test*.py", "examples/*.py", "docs/*"]
+pythonVersion = "3.10"
 typeCheckingMode = "strict"
 reportPrivateUsage = false
+reportImportCycles = "warning"
+reportPropertyTypeMismatch = "warning"
+reportUnnecessaryTypeIgnoreComment = "warning"

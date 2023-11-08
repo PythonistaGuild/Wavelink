@@ -26,7 +26,8 @@ from __future__ import annotations
 import logging
 import secrets
 import urllib
-from typing import TYPE_CHECKING, Any, Iterable, Literal, Union, cast
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, Literal, Union, cast
 
 import aiohttp
 import discord
