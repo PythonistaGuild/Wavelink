@@ -146,6 +146,7 @@ class Player(discord.VoiceProtocol):
                 "AutoPlay was unable to continue as you have received too many consecutive errors."
                 "Please check the error log on Lavalink."
             )
+            return
 
         if payload.reason == "replaced":
             self._error_count = 0
