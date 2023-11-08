@@ -193,6 +193,7 @@ class Player(discord.VoiceProtocol):
 
     async def _do_recommendation(self):
         assert self.guild is not None
+        assert self.queue.history is not None and self.auto_queue.history is not None
 
         if len(self.auto_queue) > self._auto_cutoff + 1:
             track: Playable = self.auto_queue.get()
@@ -285,7 +286,7 @@ class Player(discord.VoiceProtocol):
             self.auto_queue.history.put(now)
 
             await self.play(now, add_history=False)
-
+            
         # Possibly adjust these thresholds?
         history: list[Playable] = (
             self.auto_queue[:40] + self.queue[:40] + self.queue.history[:-41:-1] + self.auto_queue.history[:-61:-1]
@@ -630,6 +631,7 @@ class Player(discord.VoiceProtocol):
         self._paused = pause
 
         if add_history:
+            assert self.queue.history is not None
             self.queue.history.put(track)
 
         return track

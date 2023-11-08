@@ -166,11 +166,12 @@ class Queue(_Queue):
 
     def __init__(self, history: bool = True) -> None:
         super().__init__()
+        self.history: Queue | None = None
 
         if history:
             self._loaded: Playable | None = None
             self._mode: QueueMode = QueueMode.normal
-            self.history: Queue = Queue(history=False)
+            self.history = Queue(history=False)
 
         self._waiters: deque[asyncio.Future[None]] = deque()
         self._finished: asyncio.Event = asyncio.Event()
@@ -195,8 +196,10 @@ class Queue(_Queue):
     def _get(self) -> Playable:
         if self.mode is QueueMode.loop and self._loaded:
             return self._loaded
-
+        
         if self.mode is QueueMode.loop_all and not self:
+            assert self.history is not None
+            
             self._queue.extend(self.history._queue)
             self.history.clear()
 
