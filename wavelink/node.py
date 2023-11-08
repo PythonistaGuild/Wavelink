@@ -290,21 +290,13 @@ class Node:
 
         self._client = client_
 
-        websocket: Websocket = Websocket(node=self)
-        self._websocket = websocket
-        await websocket.connect()
-
         self._has_closed = False
         if not self._session or self._session.closed:
             self._session = aiohttp.ClientSession()
 
-        info: InfoResponse = await self._fetch_info()
-        if "spotify" in info["sourceManagers"]:
-            self._spotify_enabled = True
-
-        if self._resume_timeout > 0:
-            udata: UpdateSessionRequest = {"resuming": True, "timeout": self._resume_timeout}
-            await self._update_session(data=udata)
+        websocket: Websocket = Websocket(node=self)
+        self._websocket = websocket
+        await websocket.connect()
 
     async def send(
         self, method: Method = "GET", *, path: str, data: Any | None = None, params: dict[str, Any] | None = None
@@ -342,6 +334,9 @@ class Node:
         ------
         LavalinkException
             An error occurred while making this request to Lavalink.
+        NodeException
+            An error occured while making this request to Lavalink,
+            and Lavalink was unable to send any error information.
         """
         clean_path: str = path.removesuffix("/")
         uri: str = f"{self.uri}/{clean_path}"
@@ -356,7 +351,12 @@ class Node:
                 return
 
             if resp.status >= 300:
-                exc_data: ErrorResponse = await resp.json()
+                try:
+                    exc_data: ErrorResponse = await resp.json()
+                except Exception as e:
+                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    raise NodeException(status=resp.status)
+
                 raise LavalinkException(data=exc_data)
 
             try:
@@ -382,7 +382,12 @@ class Node:
                 return resp_data
 
             else:
-                exc_data: ErrorResponse = await resp.json()
+                try:
+                    exc_data: ErrorResponse = await resp.json()
+                except Exception as e:
+                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    raise NodeException(status=resp.status)
+
                 raise LavalinkException(data=exc_data)
 
     async def _fetch_player(self, guild_id: int, /) -> PlayerResponse:
@@ -394,7 +399,12 @@ class Node:
                 return resp_data
 
             else:
-                exc_data: ErrorResponse = await resp.json()
+                try:
+                    exc_data: ErrorResponse = await resp.json()
+                except Exception as e:
+                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    raise NodeException(status=resp.status)
+
                 raise LavalinkException(data=exc_data)
 
     async def _update_player(self, guild_id: int, /, *, data: Request, replace: bool = False) -> PlayerResponse:
@@ -408,7 +418,12 @@ class Node:
                 return resp_data
 
             else:
-                exc_data: ErrorResponse = await resp.json()
+                try:
+                    exc_data: ErrorResponse = await resp.json()
+                except Exception as e:
+                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    raise NodeException(status=resp.status)
+
                 raise LavalinkException(data=exc_data)
 
     async def _destroy_player(self, guild_id: int, /) -> None:
@@ -418,7 +433,12 @@ class Node:
             if resp.status == 204:
                 return
 
-            exc_data: ErrorResponse = await resp.json()
+            try:
+                exc_data: ErrorResponse = await resp.json()
+            except Exception as e:
+                logger.warning(f"An error occured making a request on {self!r}: {e}")
+                raise NodeException(status=resp.status)
+
             raise LavalinkException(data=exc_data)
 
     async def _update_session(self, *, data: UpdateSessionRequest) -> UpdateResponse:
@@ -430,7 +450,12 @@ class Node:
                 return resp_data
 
             else:
-                exc_data: ErrorResponse = await resp.json()
+                try:
+                    exc_data: ErrorResponse = await resp.json()
+                except Exception as e:
+                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    raise NodeException(status=resp.status)
+
                 raise LavalinkException(data=exc_data)
 
     async def _fetch_tracks(self, query: str) -> LoadedResponse:
@@ -442,7 +467,12 @@ class Node:
                 return resp_data
 
             else:
-                exc_data: ErrorResponse = await resp.json()
+                try:
+                    exc_data: ErrorResponse = await resp.json()
+                except Exception as e:
+                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    raise NodeException(status=resp.status)
+
                 raise LavalinkException(data=exc_data)
 
     async def _decode_track(self) -> TrackPayload:
@@ -460,7 +490,12 @@ class Node:
                 return resp_data
 
             else:
-                exc_data: ErrorResponse = await resp.json()
+                try:
+                    exc_data: ErrorResponse = await resp.json()
+                except Exception as e:
+                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    raise NodeException(status=resp.status)
+
                 raise LavalinkException(data=exc_data)
 
     async def _fetch_stats(self) -> StatsResponse:
@@ -472,7 +507,12 @@ class Node:
                 return resp_data
 
             else:
-                exc_data: ErrorResponse = await resp.json()
+                try:
+                    exc_data: ErrorResponse = await resp.json()
+                except Exception as e:
+                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    raise NodeException(status=resp.status)
+
                 raise LavalinkException(data=exc_data)
 
     async def _fetch_version(self) -> str:
@@ -482,7 +522,12 @@ class Node:
             if resp.status == 200:
                 return await resp.text()
 
-            exc_data: ErrorResponse = await resp.json()
+            try:
+                exc_data: ErrorResponse = await resp.json()
+            except Exception as e:
+                logger.warning(f"An error occured making a request on {self!r}: {e}")
+                raise NodeException(status=resp.status)
+
             raise LavalinkException(data=exc_data)
 
     def get_player(self, guild_id: int, /) -> Player | None:
@@ -697,7 +742,6 @@ class Pool:
 
             This method no longer accepts the ``cls`` parameter.
         """
-        # TODO: Documentation Extension for `.. positional-only::` marker.
         encoded_query: str = cast(str, urllib.parse.quote(query))  # type: ignore
 
         if cls.__cache is not None:
