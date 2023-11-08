@@ -46,6 +46,7 @@ from .exceptions import (
     LavalinkLoadException,
     QueueEmpty,
 )
+from .filters import *
 from .node import Pool
 from .payloads import PlayerUpdateEventPayload, TrackEndEventPayload
 from .queue import Queue
@@ -136,6 +137,8 @@ class Player(discord.VoiceProtocol):
 
         self._auto_lock: asyncio.Lock = asyncio.Lock()
         self._error_count: int = 0
+
+        self._filters: Filters = Filters()
 
     async def _auto_play_event(self, payload: TrackEndEventPayload) -> None:
         if self._autoplay is AutoPlayMode.disabled:
@@ -362,6 +365,18 @@ class Player(discord.VoiceProtocol):
         return self._volume
 
     @property
+    def filters(self) -> Filters:
+        """Property which returns the :class:`~wavelink.Filters` currently assigned to the Player.
+
+        See: :meth:`~wavelink.Player.set_filters` for setting the players filters.
+
+        .. versionchanged:: 3.0.0
+
+            This property was previously known as ``filter``.
+        """
+        return self._filters
+
+    @property
     def paused(self) -> bool:
         """Returns the paused status of the player. A currently paused player will return ``True``.
 
@@ -520,6 +535,7 @@ class Player(discord.VoiceProtocol):
         volume: int | None = None,
         paused: bool | None = None,
         add_history: bool = True,
+        filters: Filters | None = None,
     ) -> Playable:
         """Play the provided :class:`~wavelink.Playable`.
 
@@ -549,6 +565,9 @@ class Player(discord.VoiceProtocol):
             :class:`wavelink.Queue` history, if loading the track was successful. If ``False`` this track will not be
             added to your history. This does not directly affect the ``AutoPlay Queue`` but will alter how ``AutoPlay``
             recommends songs in the future. Defaults to ``True``.
+        filters: Optional[:class:`~wavelink.Filters`]
+            An Optional[:class:`~wavelink.Filters`] to apply when playing this track. Defaults to ``None``.
+            If this is ``None`` the currently set filters on the player will be applied.
 
 
         Returns
@@ -563,6 +582,8 @@ class Player(discord.VoiceProtocol):
             are now all keyword-only arguments.
 
             Added the ``add_history`` keyword-only argument.
+
+            Added the ``filters`` keyword-only argument.
         """
         assert self.guild is not None
 
@@ -585,12 +606,16 @@ class Player(discord.VoiceProtocol):
         else:
             pause = self._paused
 
+        if filters:
+            self._filters = filters
+
         request: RequestPayload = {
             "encodedTrack": track.encoded,
             "volume": vol,
             "position": start,
             "endTime": end,
             "paused": pause,
+            "filters": self._filters(),
         }
 
         try:
@@ -652,8 +677,38 @@ class Player(discord.VoiceProtocol):
         request: RequestPayload = {"position": position}
         await self.node._update_player(self.guild.id, data=request)
 
-    async def set_filter(self) -> None:
-        raise NotImplementedError
+    async def set_filters(self, filters: Filters | None = None, /, *, seek: bool = False) -> None:
+        """Set the :class:`wavelink.Filters` on the player.
+
+        Parameters
+        ----------
+        filters: Optional[:class:`~wavelink.Filters`]
+            The filters to set on the player. Could be ```None`` to reset the currently applied filters.
+            Defaults to ``None``.
+        seek: bool
+            Whether to seek immediately when applying these filters. Seeking uses more resources, but applies the
+            filters immediately. Defaults to ``False``.
+
+        .. versionchanged:: 3.0.0
+
+            This method now accepts a positional-only argument of filters, which now defaults to None. Filters
+            were redesigned in this version, see: :class:`wavelink.Filters`.
+
+        .. versionchanged:: 3.0.0
+
+            This method was previously known as ``set_filter``.
+        """
+        assert self.guild is not None
+
+        if filters is None:
+            filters = Filters()
+
+        request: RequestPayload = {"filters": filters()}
+        await self.node._update_player(self.guild.id, data=request)
+        self._filters = filters
+
+        if self.playing and seek:
+            await self.seek(self.position)
 
     async def set_volume(self, value: int = 100, /) -> None:
         """Set the :class:`Player` volume, as a percentage, between 0 and 1000.

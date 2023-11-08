@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Literal, TypedDict
 if TYPE_CHECKING:
     from typing_extensions import Never, NotRequired
 
+    from .filters import FilterPayload
     from .state import PlayerState, VoiceState
     from .stats import CPUStats, FrameStats, MemoryStats
     from .tracks import PlaylistPayload, TrackPayload
@@ -53,6 +54,7 @@ class PlayerResponse(TypedDict):
     paused: bool
     state: PlayerState
     voice: VoiceState
+    filters: FilterPayload
 
 
 class UpdateResponse(TypedDict):

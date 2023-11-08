@@ -28,6 +28,8 @@ from typing import TYPE_CHECKING, Optional, TypedDict
 if TYPE_CHECKING:
     from typing_extensions import NotRequired, TypeAlias
 
+    from .filters import FilterPayload
+
 
 class VoiceRequest(TypedDict):
     token: str
@@ -41,6 +43,7 @@ class _BaseRequest(TypedDict, total=False):
     endTime: Optional[int]
     volume: int
     paused: bool
+    filters: FilterPayload
 
 
 class EncodedTrackRequest(_BaseRequest):
