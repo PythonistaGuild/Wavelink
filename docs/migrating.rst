@@ -29,7 +29,7 @@ Removed
 - Removed all Track Types E.g. (YouTubeTrack, SoundCloudTrack)
     - Wavelink **3** uses one class for all tracks. :class:`wavelink.Playable`.
     - :class:`wavelink.Playable` is a much easier and simple to use track that provides a powerful interface.
-- :class:`wavelink.TrackSource` removed `Local` and `Unknown`
+- :class:`wavelink.TrackSource` removed ``Local`` and ``Unknown``
 
 
 Changed
@@ -39,25 +39,28 @@ Changed
 - Playlists can not be used to search.
 - :class:`wavelink.Playable` was changed significantly. Please see the docs for more info.
 - :meth:`wavelink.Playable.search` was changed significantly. Please see the docs for more info.
-- `Node.id` is now `Node.identifier`.
-- `wavelink.NodePool` is now `wavelink.Pool`.
-- :meth:`wavelink.Pool.connect` no longer requires the `client` keyword argument.
-- :meth:`wavelink.Pool.get_node` the `id` parameter is now known as `identifier` and is positional-only. This parameter is also optional.
-- :meth:`wavelink.Pool.fetch_tracks` was previously known as both `.get_tracks` and `.get_playlist`. This method now returns either the appropriate :class:`wavelink.Playlist` or list[:class:`wavelink.Playable`]. If there is an error when searching, this method raises either a `LavalinkException` (The request failed somehow) or `LavalinkLoadException` there was an error loading the search (Request didn't fail).
-- :meth:`wavelink.Queue.put_wait` now has an option to atomically add tracks from a :class:`wavelink.Playlist` or list[:class:`wavelink.Playable`]. This defaults to True. This currently checks if the track in the Playlist is Playable and if any errors occur will not add any tracks from the Playlist to the queue. IF set to `False`, Playable tracks will be added to the Queue up until an error occurs or every track was successfully added.
+- ``Node.id`` is now ``Node.identifier``.
+- ``wavelink.NodePool`` is now ``wavelink.Pool``.
+- :meth:`wavelink.Pool.connect` no longer requires the ``client`` keyword argument.
+- :meth:`wavelink.Pool.get_node` the ``id`` parameter is now known as ``identifier`` and is positional-only. This parameter is also optional.
+- :meth:`wavelink.Pool.fetch_tracks` was previously known as both ``.get_tracks`` and ``.get_playlist``. This method now returns either the appropriate :class:`wavelink.Playlist` or list[:class:`wavelink.Playable`]. If there is an error when searching, this method raises either a ``LavalinkException`` (The request failed somehow) or ``LavalinkLoadException`` there was an error loading the search (Request didn't fail).
+- :meth:`wavelink.Queue.put_wait` now has an option to atomically add tracks from a :class:`wavelink.Playlist` or list[:class:`wavelink.Playable`]. This defaults to True. This currently checks if the track in the Playlist is Playable and if any errors occur will not add any tracks from the Playlist to the queue. IF set to ``False``, Playable tracks will be added to the Queue up until an error occurs or every track was successfully added.
 - :meth:`wavelink.Queue.put_wait` and :meth:`wavelink.Queue.put` now return an int of the amount of tracks added.
 - :meth:`wavelink.Player.stop` is now known as :meth:`wavelink.Player.skip`, though they both exist as aliases.
-- `Player.current_node` is now known as :attr:`wavelink.Player.node`.
-- `Player.is_connected()` is now known as :attr:`wavelink.Player.connected`.
-- `Player.is_paused()` is now known as :attr:`wavelink.Player.paused`.
-- `Player.is_playing()` is now known as :attr:`wavelink.Player.playing`.
+- ``Player.current_node`` is now known as :attr:`wavelink.Player.node`.
+- ``Player.is_connected()`` is now known as :attr:`wavelink.Player.connected`.
+- ``Player.is_paused()`` is now known as :attr:`wavelink.Player.paused`.
+- ``Player.is_playing()`` is now known as :attr:`wavelink.Player.playing`.
 - :meth:`wavelink.Player.connect` now accepts a timeout argument as a float in seconds.
 - :meth:`wavelink.Player.play` has had additional arguments added. See the docs.
-- `Player.resume()` logic was moved to :meth:`wavelink.Player.pause`.
-- :meth:`wavelink.Player.seek` the `position` parameter is now positional-only, and has a default of 0 which restarts the track from the beginning.
-- :meth:`wavelink.Player.set_volume` the `value` parameter is now positional-only, and has a default of `100`.
+- ``Player.resume()`` logic was moved to :meth:`wavelink.Player.pause`.
+- :meth:`wavelink.Player.seek` the ``position`` parameter is now positional-only, and has a default of ``0`` which restarts the track from the beginning.
+- :meth:`wavelink.Player.set_volume` the ``value`` parameter is now positional-only, and has a default of ``100``.
 - :attr:`wavelink.Player.autoplay` accepts a :class:`wavelink.AutoPlayMode` instead of a bool. AutoPlay has been changed to be more effecient and better with recomendations.
 - :class:`wavelink.Queue` accepts a :class:`wavelink.QueueMode` in :attr:`wavelink.Queue.mode` for looping.
+- Filters have been completely reworked. See: :class:`wavelink.Filters`
+- ``Player.set_filter`` is now known as :meth:`wavelink.Player.set_filters`
+- ``Player.filter`` is now known as :attr:`wavelink.Player.filters`
 
 
 Added
@@ -82,7 +85,7 @@ Added
 Connecting
 ==========
 Connecting in version **3** is similar to version **2**.
-It is recommended to use discord.py `setup_hook` to connect your nodes.
+It is recommended to use discord.py ``setup_hook`` to connect your nodes.
 
 
 .. code:: python3
@@ -126,7 +129,7 @@ Searching and playing tracks in version **3** is different, though should feel q
 
 :class:`wavelink.Search` should be used to annotate your variables.
 `.search` always returns a list[:class:`wavelink.Playable`] or :class:`wavelink.Playlist`, if no tracks were found
-this method will return an empty `list` which should be checked, E.g:
+this method will return an empty ``list`` which should be checked, E.g:
 
 .. code:: python3
 
@@ -154,10 +157,10 @@ when playing a song from a command it is advised to check whether the Player is 
         await player.play(track)
 
 
-You can skip adding any track to your history queue in version **3** by passing `add_history=False` to `.play`.
+You can skip adding any track to your history queue in version **3** by passing ``add_history=False`` to ``.play``.
 
-Wavelink **does not** advise using the `on_wavelink_track_end` event in most cases. Use this event only when you plan to
-not use `AutoPlay` at all. Since version **3** implements `AutPlayMode.partial`, a setting which skips fetching and recommending tracks,
+Wavelink **does not** advise using the ``on_wavelink_track_end`` event in most cases. Use this event only when you plan to
+not use ``AutoPlay`` at all. Since version **3** implements ``AutPlayMode.partial``, a setting which skips fetching and recommending tracks,
 using this event is no longer recommended in most use cases.
 
 To send track updates or do player updates, consider using :func:`wavelink.on_wavelink_track_start` instead.
@@ -218,7 +221,7 @@ Pausing and Resuming
 ====================
 Version **3** slightly changes pausing behaviour.
 
-All logic is done in :meth:`wavelink.Player.pause` and you simply pass a bool (`True` to pause and `False` to resume).
+All logic is done in :meth:`wavelink.Player.pause` and you simply pass a bool (``True`` to pause and ``False`` to resume).
 
 .. code:: python3
 
@@ -234,7 +237,59 @@ The most noticeable is :attr:`wavelink.Queue.mode` which allows you to turn the 
 
 - :attr:`wavelink.QueueMode.normal` means the queue will not loop at all.
 - :attr:`wavelink.QueueMode.loop_all` will loop every song in the history when the queue has been exhausted.
-- :attr:`wavelink.QueueMode.loop` will loop the current track continuously until turned off or skipped via :meth:`wavelink.Player.skip` with `force=True`.
+- :attr:`wavelink.QueueMode.loop` will loop the current track continuously until turned off or skipped via :meth:`wavelink.Player.skip` with ``force=True``.
+
+
+Filters
+=======
+Version **3** has reworked the filters to hopefully be easier to use and feel more intuitive.
+
+See: :class:`~wavelink.Filters`.
+See: :attr:`~wavelink.Player.filters`
+See: :meth:`~wavelink.Player.set_filters`
+See: :meth:`~wavelink.Player.play`
+
+**Some common recipes:**
+
+.. code:: python3
+    
+    # Create a brand new Filters and apply it...
+    # You can use player.set_filters() for an easier way to reset.
+    filters: wavelink.Filters = wavelink.Filters()
+    await player.set_filters(filters)
+
+
+    # Retrieve the payload of any Filters instance...
+    filters: wavelink.Filters = player.filters
+    print(filters())
+
+
+    # Set some filters...
+    # You can set and reset individual filters at the same time...
+    filters: wavelink.Filters = player.filters
+    filters.timescale.set(pitch=1.2, speed=1.1, rate=1)
+    filters.rotation.set(rotation_hz=0.2)
+    filters.equalizer.reset()
+
+    await player.set_filters(filters)
+
+
+    # Reset a filter...
+    filters: wavelink.Filters = player.filters
+    filters.timescale.reset()
+
+    await player.set_filters(filters)
+
+
+    # Reset all filters...
+    filters: wavelink.Filters = player.filters
+    filters.reset()
+
+    await player.set_filters(filters)
+
+
+    # Reset and apply filters easier method...
+    await player.set_filters()
 
 
 Lavalink Plugins

@@ -251,12 +251,59 @@ Queue
     :members:
     :inherited-members:
 
+
 Filters
 -------
 
-.. warning::
+.. attributetable:: Filters
 
-    Filters have not yet been implemented, but are planned in the near future.
+.. autoclass:: Filters
+    :members:
+
+.. attributetable:: Equalizer
+
+.. autoclass:: Equalizer
+    :members:
+
+.. attributetable:: Karaoke
+
+.. autoclass:: Karaoke
+    :members:
+
+.. attributetable:: Timescale
+
+.. autoclass:: Timescale
+    :members:
+
+.. attributetable:: Tremolo
+
+.. autoclass:: Tremolo
+    :members:
+
+.. attributetable:: Vibrato
+
+.. autoclass:: Vibrato
+    :members:
+
+.. attributetable:: Rotation
+
+.. autoclass:: Rotation
+    :members:
+
+.. attributetable:: Distortion
+
+.. autoclass:: Distortion
+    :members:
+
+.. attributetable:: ChannelMix
+
+.. autoclass:: ChannelMix
+    :members:
+
+.. attributetable:: LowPass
+
+.. autoclass:: LowPass
+    :members:
 
 
 Exceptions
