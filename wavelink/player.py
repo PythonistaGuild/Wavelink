@@ -27,9 +27,8 @@ import asyncio
 import logging
 import random
 import time
-import typing
 from collections import deque
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import async_timeout
 import discord
@@ -66,7 +65,7 @@ if TYPE_CHECKING:
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-T_a: typing.TypeAlias = "list[Playable] | Playlist"
+T_a: TypeAlias = list[Playable] | Playlist
 
 
 class Player(discord.VoiceProtocol):
