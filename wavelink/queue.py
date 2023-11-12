@@ -170,10 +170,10 @@ class Queue(_Queue):
         self.history: Queue | None = None
 
         if history:
-            self._loaded: Playable | None = None
-            self._mode: QueueMode = QueueMode.normal
             self.history = Queue(history=False)
-
+        
+        self._loaded: Playable | None = None
+        self._mode: QueueMode = QueueMode.normal
         self._waiters: deque[asyncio.Future[None]] = deque()
         self._finished: asyncio.Event = asyncio.Event()
         self._finished.set()
