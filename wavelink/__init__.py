@@ -31,7 +31,7 @@ __version__ = "3.0.0rc1"
 from .enums import *
 from .exceptions import *
 from .filters import *
-from .lfu import CapacityZero as CapacityZero
+from .lfu import CapacityZero as CapacityZero, LFUCache as LFUCache
 from .node import *
 from .payloads import *
 from .player import Player as Player

@@ -128,7 +128,7 @@ class LFUCache:
             least_freq_key: DLLNode | None = least_freq.popleft()
 
             if least_freq_key:
-                self._cache.pop(least_freq_key)
+                self._cache.pop(least_freq_key.value)
                 self._used -= 1
 
         data: DataNode = DataNode(key=key, value=value, frequency=1, node=DLLNode(key))
