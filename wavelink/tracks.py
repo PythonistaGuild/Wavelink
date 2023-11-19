@@ -247,7 +247,7 @@ class Playable:
         return self._recommended
 
     @classmethod
-    async def search(cls, query: str, /, *, source: TrackSource | str | None = TrackSource.YouTube) -> Search:
+    async def search(cls, query: str, /, *, source: TrackSource | str | None = TrackSource.YouTubeMusic) -> Search:
         """Search for a list of :class:`~wavelink.Playable` or a :class:`~wavelink.Playlist`, with the given query.
 
         .. note::
