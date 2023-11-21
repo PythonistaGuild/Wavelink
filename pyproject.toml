@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wavelink"
-version = "3.0.0rc1"
+version = "3.0.0rc2"
 authors = [
   { name="PythonistaGuild, EvieePy", email="evieepy@gmail.com" },
 ]
@@ -29,7 +29,7 @@ classifiers = [
 "Homepage" = "https://github.com/PythonistaGuild/Wavelink"
 
 [tool.setuptools]
-packages = ["wavelink"]
+packages = ["wavelink", "wavelink.types"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
