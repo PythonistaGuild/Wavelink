@@ -26,11 +26,12 @@ from __future__ import annotations
 import asyncio
 import random
 from collections import deque
-from typing import Any, Iterator, overload
+from collections.abc import Iterator
+from typing import overload
 
 from .enums import QueueMode
 from .exceptions import QueueEmpty
-from .tracks import *
+from .tracks import Playable, Playlist
 
 __all__ = ("Queue",)
 
@@ -71,11 +72,11 @@ class _Queue:
     def __iter__(self) -> Iterator[Playable]:
         return self._queue.__iter__()
 
-    def __contains__(self, item: Any) -> bool:
+    def __contains__(self, item: object) -> bool:
         return item in self._queue
 
     @staticmethod
-    def _check_compatability(item: Any) -> None:
+    def _check_compatability(item: object) -> None:
         if not isinstance(item, Playable):
             raise TypeError("This queue is restricted to Playable objects.")
 
@@ -311,7 +312,7 @@ class Queue(_Queue):
         added: int = 0
 
         async with self._lock:
-            if isinstance(item, (list, Playlist)):
+            if isinstance(item, list | Playlist):
                 if atomic:
                     super()._check_atomic(item)
 
@@ -397,7 +398,7 @@ class Queue(_Queue):
         return self._mode
 
     @mode.setter
-    def mode(self, value: QueueMode):
+    def mode(self, value: QueueMode) -> None:
         if not hasattr(self, "_mode"):
             raise AttributeError("This queues mode can not be set.")
 

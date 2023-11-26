@@ -27,9 +27,8 @@ import asyncio
 import logging
 import random
 import time
-import typing
 from collections import deque
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import async_timeout
 import discord
@@ -46,7 +45,7 @@ from .exceptions import (
     LavalinkLoadException,
     QueueEmpty,
 )
-from .filters import *
+from .filters import Filters
 from .node import Pool
 from .payloads import PlayerUpdateEventPayload, TrackEndEventPayload
 from .queue import Queue
@@ -61,12 +60,12 @@ if TYPE_CHECKING:
     from .types.request import Request as RequestPayload
     from .types.state import PlayerVoiceState, VoiceState
 
-    VocalGuildChannel = Union[discord.VoiceChannel, discord.StageChannel]
+    VocalGuildChannel = discord.VoiceChannel | discord.StageChannel
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-T_a: typing.TypeAlias = "list[Playable] | Playlist"
+T_a: TypeAlias = list[Playable] | Playlist
 
 
 class Player(discord.VoiceProtocol):

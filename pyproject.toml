@@ -44,7 +44,7 @@ line-length = 120
 profile = "black"
 
 [tool.pyright]
-exclude = ["venv"]
 ignore = ["test*.py", "examples/*.py", "docs/*"]
+pythonVersion = "3.10"
 typeCheckingMode = "strict"
 reportPrivateUsage = false

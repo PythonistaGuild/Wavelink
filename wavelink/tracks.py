@@ -23,7 +23,8 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterator, TypeAlias, overload
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, Any, TypeAlias, overload
 
 import yarl
 
@@ -482,7 +483,7 @@ class Playlist:
     def pop(self, index: int = -1) -> Playable:
         return self.tracks.pop(index)
 
-    def track_extras(self, **attrs: Any) -> None:
+    def track_extras(self, **attrs: object) -> None:
         """Method which sets attributes to all :class:`Playable` in this playlist, with the provided keyword arguments.
 
         This is useful when you need to attach state to your :class:`Playable`, E.g. create a requester attribute.

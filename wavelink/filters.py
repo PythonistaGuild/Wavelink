@@ -23,20 +23,21 @@ DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, TypedDict
+from typing import TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
-    from types.filters import ChannelMix as ChannelMixPayload
-    from types.filters import Distortion as DistortionPayload
-    from types.filters import Equalizer as EqualizerPayload
-    from types.filters import FilterPayload
-    from types.filters import Karaoke as KaraokePayload
-    from types.filters import LowPass as LowPassPayload
-    from types.filters import Rotation as RotationPayload
-    from types.filters import Timescale as TimescalePayload
-    from types.filters import Tremolo as TremoloPayload
-    from types.filters import Vibrato as VibratoPayload
-    from typing import Self, Unpack
+    from typing_extensions import Self, Unpack
+
+    from .types.filters import ChannelMix as ChannelMixPayload
+    from .types.filters import Distortion as DistortionPayload
+    from .types.filters import Equalizer as EqualizerPayload
+    from .types.filters import FilterPayload
+    from .types.filters import Karaoke as KaraokePayload
+    from .types.filters import LowPass as LowPassPayload
+    from .types.filters import Rotation as RotationPayload
+    from .types.filters import Timescale as TimescalePayload
+    from .types.filters import Tremolo as TremoloPayload
+    from .types.filters import Vibrato as VibratoPayload
 
 
 __all__ = (
@@ -69,36 +70,36 @@ class FiltersOptions(TypedDict, total=False):
 
 
 class EqualizerOptions(TypedDict):
-    bands: Optional[list[EqualizerPayload]]
+    bands: list[EqualizerPayload] | None
 
 
 class KaraokeOptions(TypedDict):
-    level: Optional[float]
-    mono_level: Optional[float]
-    filter_band: Optional[float]
-    filter_width: Optional[float]
+    level: float | None
+    mono_level: float | None
+    filter_band: float | None
+    filter_width: float | None
 
 
 class RotationOptions(TypedDict):
-    rotation_hz: Optional[float]
+    rotation_hz: float | None
 
 
 class DistortionOptions(TypedDict):
-    sin_offset: Optional[float]
-    sin_scale: Optional[float]
-    cos_offset: Optional[float]
-    cos_scale: Optional[float]
-    tan_offset: Optional[float]
-    tan_scale: Optional[float]
-    offset: Optional[float]
-    scale: Optional[float]
+    sin_offset: float | None
+    sin_scale: float | None
+    cos_offset: float | None
+    cos_scale: float | None
+    tan_offset: float | None
+    tan_scale: float | None
+    offset: float | None
+    scale: float | None
 
 
 class ChannelMixOptions(TypedDict):
-    left_to_left: Optional[float]
-    left_to_right: Optional[float]
-    right_to_left: Optional[float]
-    right_to_right: Optional[float]
+    left_to_left: float | None
+    left_to_right: float | None
+    right_to_left: float | None
+    right_to_right: float | None
 
 
 class Equalizer:

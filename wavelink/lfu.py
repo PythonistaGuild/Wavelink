@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, DefaultDict
+from typing import Any
 
 from .exceptions import WavelinkException
 
@@ -81,7 +81,7 @@ class LFUCache:
         self._capacity = capacity
         self._cache: dict[Any, DataNode] = {}
 
-        self._freq_map: DefaultDict[int, DLL] = defaultdict(DLL)
+        self._freq_map: defaultdict[int, DLL] = defaultdict(DLL)
         self._min: int = 1
         self._used: int = 0
 
