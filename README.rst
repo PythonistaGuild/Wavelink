@@ -92,7 +92,7 @@ Lavalink
 Wavelink **3** requires **Lavalink v4**.
 See: `Lavalink <https://github.com/lavalink-devs/Lavalink/releases>`_
 
-For spotify support, simply install and use `Lavalink <https://github.com/topi314/LavaSrc>`_ with your `wavelink.Playable`
+For spotify support, simply install and use `LavaSrc <https://github.com/topi314/LavaSrc>`_ with your `wavelink.Playable`
 
 
 Notes
