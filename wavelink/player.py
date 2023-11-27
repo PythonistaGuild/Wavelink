@@ -556,7 +556,7 @@ class Player(discord.VoiceProtocol):
             You tried to connect this player without an appropriate guild.
         """
         if not self.guild:
-            raise InvalidChannelStateException(f"Player tried to move without a valid guild.")
+            raise InvalidChannelStateException("Player tried to move without a valid guild.")
 
         self._connection_event.clear()
         voice: discord.VoiceState | None = self.guild.me.voice
