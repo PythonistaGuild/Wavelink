@@ -279,7 +279,7 @@ class Playable:
             Otherwise, a ``str`` may be provided for plugin based searches, E.g. "spsearch:" for the
             LavaSrc Spotify based search.
 
-            Defaults to :attr:`wavelink.TrackSource.YouTube` which is equivalent to "ytsearch:".
+            Defaults to :attr:`wavelink.TrackSource.YouTubeMusic` which is equivalent to "ytmsearch:".
 
 
         Returns
