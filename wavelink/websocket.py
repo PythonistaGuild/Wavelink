@@ -165,7 +165,7 @@ class Websocket:
 
                 self.node._status = NodeStatus.CONNECTED
                 self.node._session_id = session_id
-                
+
                 await self._update_node()
 
                 ready_payload: NodeReadyEventPayload = NodeReadyEventPayload(
