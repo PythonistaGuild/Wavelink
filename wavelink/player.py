@@ -851,7 +851,7 @@ class Player(discord.VoiceProtocol):
         assert self.guild
 
         self._invalidate()
-        player: Self | None = self.node._players.pop(self.guild.id, None)
+        player: Player | None = self.node._players.pop(self.guild.id, None)
 
         if player:
             try:
