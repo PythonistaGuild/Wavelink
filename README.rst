@@ -28,8 +28,10 @@ Wavelink is a robust and powerful Lavalink wrapper for `Discord.py <https://gith
 Wavelink features a fully asynchronous API that's intuitive and easy to use.
 
 
-**Migrating from Version 2 to Version 3:**
-`Migrating Guide <https://wavelink.dev/en/feature-v3/migrating.html>`_
+Migrating from Version 2 to Version 3:
+######################################
+
+`Migrating Guide <https://wavelink.dev/en/latest/migrating.html>`_
 
 
 **Features:**
@@ -43,11 +45,11 @@ Wavelink features a fully asynchronous API that's intuitive and easy to use.
 
 
 Documentation
----------------------------
-`Official Documentation <https://wavelink.dev/en/feature-v3>`_
+-------------
+`Official Documentation <https://wavelink.dev/en/latest>`_
 
 Support
----------------------------
+-------
 For support using WaveLink, please join the official `support server
 <https://discord.gg/RAKc3HF>`_ on `Discord <https://discordapp.com>`_.
 
@@ -56,32 +58,41 @@ For support using WaveLink, please join the official `support server
 
 
 Installation
----------------------------
+------------
 **WaveLink 3 requires Python 3.10+**
 
 **Windows**
 
 .. code:: sh
 
-    py -3.10 -m pip install -U wavelink --pre
+    py -3.10 -m pip install -U wavelink
 
 **Linux**
 
 .. code:: sh
 
-    python3.10 -m pip install -U wavelink --pre
+    python3.10 -m pip install -U wavelink
 
 **Virtual Environments**
 
 .. code:: sh
 
-    pip install -U wavelink --pre
+    pip install -U wavelink
 
 
 Getting Started
-----------------------------
+---------------
 
-**See Examples:** `Examples <https://github.com/PythonistaGuild/Wavelink/tree/feature/v3/examples>`_
+**See Examples:** `Examples <https://github.com/PythonistaGuild/Wavelink/tree/main/examples>`_
+
+
+Lavalink
+--------
+
+Wavelink **3** requires **Lavalink v4**.
+See: `Lavalink <https://github.com/lavalink-devs/Lavalink/releases>`_
+
+For spotify support, simply install and use `Lavalink <https://github.com/topi314/LavaSrc>`_ with your `wavelink.Playable`
 
 
 Notes
