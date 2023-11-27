@@ -3,13 +3,9 @@
 
 API Reference
 -------------
-The wavelink API Reference.
-
+The wavelink 3 API Reference.
 This section outlines the API and all it's components within wavelink.
 
-Wavelink is a robust and powerful Lavalink wrapper for Discord.py. Featuring,
-a fully asynchronous API that's intuitive and easy to use with built in Spotify Support, Node Pool Balancing,
-advanced Queues, autoplay feature and looping features built in.
 
 Event Reference
 ---------------
@@ -17,51 +13,141 @@ Event Reference
 WaveLink Events are events dispatched when certain events happen in Lavalink and Wavelink.
 All events must be coroutines.
 
-Events are dispatched via discord.py and as such can be used with listener syntax.
-All Track Events receive the :class:`payloads.TrackEventPayload` payload.
+Events are dispatched via discord.py and as such can be used with discord.py listener syntax.
+All Track Events receive the appropriate payload.
+
 
 **For example:**
 
-An event listener in a cog...
+An event listener in a cog.
 
 .. code-block:: python3
 
     @commands.Cog.listener()
-    async def on_wavelink_node_ready(node: Node) -> None:
-        print(f"Node {node.id} is ready!")
+    async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload) -> None:
+        print(f"Node {payload.node!r} is ready!")
 
 
-.. function:: on_wavelink_node_ready(node: Node)
+.. function:: on_wavelink_node_ready(payload: wavelink.NodeReadyEventPayload)
 
     Called when the Node you are connecting to has initialised and successfully connected to Lavalink.
+    This event can be called many times throughout your bots lifetime, as it will be called when Wavelink successfully
+    reconnects to your node in the event of a disconnect.
 
-.. function:: on_wavelink_track_event(payload: TrackEventPayload)
+.. function:: on_wavelink_stats_update(payload: wavelink.StatsEventPayload)
 
-    Called when any Track Event occurs.
+    Called when the ``stats`` OP is received by Lavalink.
 
-.. function:: on_wavelink_track_start(payload: TrackEventPayload)
+.. function:: on_wavelink_player_update(payload: wavelink.PlayerUpdateEventPayload)
+
+    Called when the ``playerUpdate`` OP is received from Lavalink.
+    This event contains information about a specific connected player on the node.
+
+.. function:: on_wavelink_track_start(payload: wavelink.TrackStartEventPayload)
 
     Called when a track starts playing.
 
-.. function:: on_wavelink_track_end(payload: TrackEventPayload)
+    .. note::
+
+        It is preferred to use this method when sending feedback about the now playing track etc.
+
+.. function:: on_wavelink_track_end(payload: wavelink.TrackEndEventPayload)
 
     Called when the current track has finished playing.
 
-.. function:: on_wavelink_websocket_closed(payload: WebsocketClosedPayload)
+    .. warning::
+
+        If you are using AutoPlay, please make sure you take this into consideration when using this event.
+        See: :func:`on_wavelink_track_start` for an event for performing logic when a new track starts playing.
+
+.. function:: on_wavelink_track_exception(payload: wavelink.TrackExceptionEventPayload)
+
+    Called when an exception occurs while playing a track.
+
+.. function:: on_wavelink_track_stuck(payload: wavelink.TrackStuckEventPayload)
+
+    Called when a track gets stuck while playing.
+
+.. function:: on_wavelink_websocket_closed(payload: wavelink.WebsocketClosedEventPayload)
 
     Called when the websocket to the voice server is closed.
+
+.. function:: on_wavelink_node_closed(node: wavelink.Node, disconnected: list[wavelink.Player])
+
+    Called when a node has been closed and cleaned-up. The second parameter ``disconnected`` is a list of
+    :class:`wavelink.Player` that were connected on this Node and are now disconnected.
+
+
+Types
+-----
+.. attributetable:: Search
+
+.. py:class:: Search
+
+    A type hint used when searching tracks. Used in :meth:`Playable.search` and :meth:`Pool.fetch_tracks`
+
+    **Example:**
+
+    .. code:: python3
+
+        tracks: wavelink.Search = await wavelink.Playable.search("Ocean Drive")
 
 
 Payloads
 ---------
-.. attributetable:: TrackEventPayload
+.. attributetable:: NodeReadyEventPayload
 
-.. autoclass:: TrackEventPayload
+.. autoclass:: NodeReadyEventPayload
     :members:
 
-.. attributetable:: WebsocketClosedPayload
+.. attributetable:: TrackStartEventPayload
 
-.. autoclass:: WebsocketClosedPayload
+.. autoclass:: TrackStartEventPayload
+    :members:
+
+.. attributetable:: TrackEndEventPayload
+
+.. autoclass:: TrackEndEventPayload
+    :members:
+
+.. attributetable:: TrackExceptionEventPayload
+
+.. autoclass:: TrackExceptionEventPayload
+    :members:
+
+.. attributetable:: TrackStuckEventPayload
+
+.. autoclass:: TrackStuckEventPayload
+    :members:
+
+.. attributetable:: WebsocketClosedEventPayload
+
+.. autoclass:: WebsocketClosedEventPayload
+    :members:
+
+.. attributetable:: PlayerUpdateEventPayload
+
+.. autoclass:: PlayerUpdateEventPayload
+    :members:
+
+.. attributetable:: StatsEventPayload
+
+.. autoclass:: StatsEventPayload
+    :members:
+
+.. attributetable:: StatsEventMemory
+
+.. autoclass:: StatsEventMemory
+    :members:
+
+.. attributetable:: StatsEventCPU
+
+.. autoclass:: StatsEventCPU
+    :members:
+
+.. attributetable:: StatsEventFrames
+
+.. autoclass:: StatsEventFrames
     :members:
 
 
@@ -77,40 +163,27 @@ Enums
 .. autoclass:: TrackSource
     :members:
 
-.. attributetable:: LoadType
-
-.. autoclass:: LoadType
-    :members:
-
-.. attributetable:: TrackEventType
-
-.. autoclass:: TrackEventType
-    :members:
-
 .. attributetable:: DiscordVoiceCloseType
 
 .. autoclass:: DiscordVoiceCloseType
     :members:
 
+.. attributetable:: AutoPlayMode
 
-Abstract Base Classes
----------------------
-.. attributetable:: wavelink.tracks.Playable
-
-.. autoclass:: wavelink.tracks.Playable
+.. autoclass:: AutoPlayMode
     :members:
 
-.. attributetable:: wavelink.tracks.Playlist
+.. attributetable:: QueueMode
 
-.. autoclass:: wavelink.tracks.Playlist
+.. autoclass:: QueueMode
     :members:
 
 
-NodePool
+Pool
 --------
-.. attributetable:: NodePool
+.. attributetable:: Pool
 
-.. autoclass:: NodePool
+.. autoclass:: Pool
     :members:
 
 Node
@@ -124,52 +197,40 @@ Node
 Tracks
 ------
 
-Tracks inherit from :class:`Playable`. Not all fields will be available for each track type.
+Tracks in wavelink 3 have been simplified. Please read the docs for :class:`Playable`.
+Additionally the following data classes are provided on every :class:`Playable`.
 
-GenericTrack
+.. attributetable:: Artist
+
+.. autoclass:: Artist
+    :members:
+
+.. attributetable:: Album
+
+.. autoclass:: Album
+    :members:
+
+
+Playable
 ~~~~~~~~~~~~
 
-.. attributetable:: GenericTrack
+.. attributetable:: Playable
 
-.. autoclass:: GenericTrack
+.. autoclass:: Playable
     :members:
-    :inherited-members:
 
-YouTubeTrack
-~~~~~~~~~~~~
-
-.. attributetable:: YouTubeTrack
-
-.. autoclass:: YouTubeTrack
-    :members:
-    :inherited-members:
-
-YouTubeMusicTrack
-~~~~~~~~~~~~~~~~~
-
-.. attributetable:: YouTubeMusicTrack
-
-.. autoclass:: YouTubeMusicTrack
-    :members:
-    :inherited-members:
-
-SoundCloudTrack
+Playlists
 ~~~~~~~~~~~~~~~
 
-.. attributetable:: SoundCloudTrack
+.. attributetable:: Playlist
 
-.. autoclass:: SoundCloudTrack
+.. autoclass:: Playlist
     :members:
-    :inherited-members:
 
-YouTubePlaylist
-~~~~~~~~~~~~~~~
+.. attributetable:: PlaylistInfo
 
-.. attributetable:: YouTubePlaylist
-
-.. autoclass:: YouTubePlaylist
+.. autoclass:: PlaylistInfo
     :members:
-    :inherited-members:
 
 
 Player
@@ -179,27 +240,25 @@ Player
 
 .. autoclass:: Player
     :members:
+    :exclude-members: on_voice_state_update, on_voice_server_update
 
 
-Queues
+Queue
 ------
-
-.. attributetable:: BaseQueue
-
-.. autoclass:: BaseQueue
-    :members:
 
 .. attributetable:: Queue
 
 .. autoclass:: Queue
     :members:
+    :inherited-members:
+
 
 Filters
 -------
 
-.. attributetable:: Filter
+.. attributetable:: Filters
 
-.. autoclass:: Filter
+.. autoclass:: Filters
     :members:
 
 .. attributetable:: Equalizer
@@ -254,51 +313,64 @@ Exceptions
 .. exception_hierarchy::
 
     - :exc:`~WavelinkException`
-        - :exc:`~AuthorizationFailed`
-        - :exc:`~InvalidNode`
-        - :exc:`~InvalidLavalinkVersion`
-        - :exc:`~InvalidLavalinkResponse`
-        - :exc:`~NoTracksError`
+        - :exc:`~NodeException`
+        - :exc:`~InvalidClientException`
+        - :exc:`~AuthorizationFailedException`
+        - :exc:`~InvalidNodeException`
+        - :exc:`~LavalinkException`
+        - :exc:`~LavalinkLoadException`
+        - :exc:`~InvalidChannelStateException`
+        - :exc:`~ChannelTimeoutException`
         - :exc:`~QueueEmpty`
-        - :exc:`~InvalidChannelStateError`
-            - :exc:`~InvalidChannelPermissions`
 
 
 .. py:exception:: WavelinkException
 
-    Base wavelink exception.
+    Base wavelink Exception class.
+    All wavelink exceptions derive from this exception.
 
-.. py:exception:: AuthorizationFailed
+.. py:exception:: NodeException
 
-    Exception raised when password authorization failed for this Lavalink node.
+    Error raised when an Unknown or Generic error occurs on a Node.
 
-.. py:exception:: InvalidNode
+.. py:exception:: InvalidClientException
 
-.. py:exception:: InvalidLavalinkVersion
+    Exception raised when an invalid :class:`discord.Client`
+    is provided while connecting a :class:`wavelink.Node`.
 
-    Exception raised when you try to use wavelink 2 with a Lavalink version under 3.7.
+.. py:exception:: AuthorizationFailedException
 
-.. py:exception:: InvalidLavalinkResponse
+    Exception raised when Lavalink fails to authenticate a :class:`~wavelink.Node`, with the provided password.
 
-    Exception raised when wavelink receives an invalid response from Lavalink.
+.. py:exception:: InvalidNodeException
 
-    status: :class:`int` | :class:`None`
-        The status code. Could be :class:`None`.
+    Exception raised when a :class:`Node` is tried to be retrieved from the
+    :class:`Pool` without existing, or the ``Pool`` is empty.
 
-.. py:exception:: NoTracksError
+.. py:exception:: LavalinkException
 
-    Exception raised when no tracks could be found.
+    Exception raised when Lavalink returns an invalid response.
+
+    Attributes
+    ----------
+    status: int
+        The response status code.
+    reason: str | None
+        The response reason. Could be ``None`` if no reason was provided.
+
+.. py:exception:: LavalinkLoadException
+
+    Exception raised when loading tracks failed via Lavalink.
+
+.. py:exception:: InvalidChannelStateException
+
+    Exception raised when a :class:`~wavelink.Player` tries to connect to an invalid channel or
+    has invalid permissions to use this channel.
+
+.. py:exception:: ChannelTimeoutException
+
+    Exception raised when connecting to a voice channel times out.
 
 .. py:exception:: QueueEmpty
 
-    Exception raised when you try to retrieve from an empty queue.
-
-.. py:exception:: InvalidChannelStateError
-
-    Base exception raised when an error occurs trying to connect to a :class:`discord.VoiceChannel`.
-
-.. py:exception:: InvalidChannelPermissions
-
-    Exception raised when the client does not have correct permissions to join the channel.
-
-    Could also be raised when there are too many users already in a user limited channel.
+    Exception raised when you try to retrieve from an empty queue via ``.get()``.

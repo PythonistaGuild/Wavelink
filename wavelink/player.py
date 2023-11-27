@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2019-Present PythonistaGuild
+Copyright (c) 2019-Current PythonistaGuild, EvieePy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,806 +23,861 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-import datetime
+import asyncio
 import logging
-from typing import TYPE_CHECKING, Any, Union
+import random
+import time
+from collections import deque
+from typing import TYPE_CHECKING, Any, TypeAlias
 
+import async_timeout
 import discord
+from discord.abc import Connectable
 from discord.utils import MISSING
 
-from .enums import *
-from .exceptions import *
-from .ext import spotify
-from .filters import Filter
-from .node import Node, NodePool
-from .payloads import TrackEventPayload
-from .queue import Queue
-from .tracks import *
+import wavelink
 
+from .enums import AutoPlayMode, NodeStatus, QueueMode
+from .exceptions import (
+    ChannelTimeoutException,
+    InvalidChannelStateException,
+    LavalinkException,
+    LavalinkLoadException,
+    QueueEmpty,
+)
+from .filters import Filters
+from .node import Pool
+from .payloads import PlayerUpdateEventPayload, TrackEndEventPayload
+from .queue import Queue
+from .tracks import Playable, Playlist
 
 if TYPE_CHECKING:
-    from discord.types.voice import GuildVoiceState, VoiceServerUpdate
+    from discord.types.voice import GuildVoiceState as GuildVoiceStatePayload
+    from discord.types.voice import VoiceServerUpdate as VoiceServerUpdatePayload
     from typing_extensions import Self
 
-    from .types.events import PlayerState, PlayerUpdateOp
-    from .types.request import EncodedTrackRequest, Request
-    from .types.state import DiscordVoiceState
+    from .node import Node
+    from .types.request import Request as RequestPayload
+    from .types.state import PlayerVoiceState, VoiceState
 
-__all__ = ("Player",)
-
+    VocalGuildChannel = discord.VoiceChannel | discord.StageChannel
 
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-VoiceChannel = Union[
-    discord.VoiceChannel, discord.StageChannel
-]  # todo: VocalGuildChannel?
+T_a: TypeAlias = list[Playable] | Playlist
 
 
 class Player(discord.VoiceProtocol):
-    """Wavelink Player class.
+    """The Player is a :class:`discord.VoiceProtocol` used to connect your :class:`discord.Client` to a
+    :class:`discord.VoiceChannel`.
 
-    This class is used as a :class:`~discord.VoiceProtocol` and inherits all its members.
-
-    You must pass this class to :meth:`discord.VoiceChannel.connect` with ``cls=...``. This ensures the player is
-    set up correctly and put into the discord.py voice client cache.
-
-    You **can** make an instance of this class *before* passing it to
-    :meth:`discord.VoiceChannel.connect` with ``cls=...``, but you **must** still pass it.
-
-    Once you have connected this class you do not need to store it anywhere as it will be stored on the
-    :class:`~wavelink.Node` and in the discord.py voice client cache. Meaning you can access this player where you
-    have access to a :class:`~wavelink.NodePool`, the specific :class:`~wavelink.Node` or a :class:`~discord.Guild`
-    including in :class:`~discord.ext.commands.Context` and :class:`~discord.Interaction`.
-
-    Examples
-    --------
-
-    .. code:: python3
-
-        # Connect the player...
-        player: wavelink.Player = await ctx.author.voice.channel.connect(cls=wavelink.Player)
-
-        # Retrieve the player later...
-        player: wavelink.Player = ctx.guild.voice_client
-
+    The player controls the music elements of the bot including playing tracks, the queue, connecting etc.
+    See Also: The various methods available.
 
     .. note::
 
-        The Player class comes with an in-built queue. See :class:`queue.Queue` for more information on how this queue
-        works.
-
-    Parameters
-    ----------
-    nodes: Optional[list[:class:`node.Node`]]
-        An optional list of :class:`node.Node` to use with this Player. If no Nodes are provided
-        the best connected Node will be used.
-    swap_node_on_disconnect: bool
-        If a list of :class:`node.Node` is provided the Player will swap Nodes on Node disconnect.
-        Defaults to True.
-
-    Attributes
-    ----------
-    client: :class:`discord.Client`
-        The discord Client or Bot associated with this Player.
-    channel: :class:`discord.VoiceChannel`
-        The channel this player is currently connected to.
-    nodes: list[:class:`node.Node`]
-        The list of Nodes this player is currently using.
-    current_node: :class:`node.Node`
-        The Node this player is currently using.
-    queue: :class:`queue.Queue`
-        The wavelink built in Queue. See :class:`queue.Queue`. This queue always takes precedence over the auto_queue.
-        Meaning any songs in this queue will be played before auto_queue songs.
-    auto_queue: :class:`queue.Queue`
-        The built-in AutoPlay Queue. This queue keeps track of recommended songs only.
-        When a song is retrieved from this queue in the AutoPlay event,
-        it is added to the main :attr:`wavelink.Queue.history` queue.
+        Since the Player is a :class:`discord.VoiceProtocol`, it is attached to the various ``voice_client`` attributes
+        in discord.py, including ``guild.voice_client``, ``ctx.voice_client`` and ``interaction.voice_client``.
     """
 
-    def __call__(self, client: discord.Client, channel: VoiceChannel) -> Self:
-        self.client = client
-        self.channel = channel
+    channel: VocalGuildChannel
+
+    def __call__(self, client: discord.Client, channel: VocalGuildChannel) -> Self:
+        super().__init__(client, channel)
+
+        self._guild = channel.guild
 
         return self
 
     def __init__(
-        self,
-        client: discord.Client = MISSING,
-        channel: VoiceChannel = MISSING,
-        *,
-        nodes: list[Node] | None = None,
-        swap_node_on_disconnect: bool = True
+        self, client: discord.Client = MISSING, channel: Connectable = MISSING, *, nodes: list[Node] | None = None
     ) -> None:
+        super().__init__(client, channel)
+
         self.client: discord.Client = client
-        self.channel: VoiceChannel | None = channel
-
-        self.nodes: list[Node]
-        self.current_node: Node
-
-        if swap_node_on_disconnect and not nodes:
-            nodes = list(NodePool.nodes.values())
-            self.nodes = sorted(nodes, key=lambda n: len(n.players))
-            self.current_node = self.nodes[0]
-        elif nodes:
-            nodes = sorted(nodes, key=lambda n: len(n.players))
-            self.current_node = nodes[0]
-            self.nodes = nodes
-        else:
-            self.current_node = NodePool.get_connected_node()
-            self.nodes = [self.current_node]
-
-        if not self.client:
-            if self.current_node.client is None:
-                raise RuntimeError('')
-            self.client = self.current_node.client
-
         self._guild: discord.Guild | None = None
-        self._voice_state: DiscordVoiceState = {}
-        self._player_state: dict[str, Any] = {}
 
-        self.swap_on_disconnect: bool = swap_node_on_disconnect
+        self._voice_state: PlayerVoiceState = {"voice": {}}
 
-        self.last_update: datetime.datetime | None = None
-        self.last_position: int = 0
+        self._node: Node
+        if not nodes:
+            self._node = Pool.get_node()
+        else:
+            self._node = sorted(nodes, key=lambda n: len(n.players))[0]
 
-        self._ping: int = 0
+        if self.client is MISSING and self.node.client:
+            self.client = self.node.client
 
-        self.queue: Queue = Queue()
+        self._last_update: int | None = None
+        self._last_position: int = 0
+        self._ping: int = -1
+
+        self._connected: bool = False
+        self._connection_event: asyncio.Event = asyncio.Event()
+
         self._current: Playable | None = None
         self._original: Playable | None = None
+        self._previous: Playable | None = None
 
-        self._volume: int = 50
+        self.queue: Queue = Queue()
+        self.auto_queue: Queue = Queue()
+
+        self._volume: int = 100
         self._paused: bool = False
 
-        self._track_seeds: list[str] = []
-        self._autoplay: bool = False
-        self.auto_queue: Queue = Queue()
-        self._auto_threshold: int = 100
-        self._filter: Filter | None = None
+        self._auto_cutoff: int = 20
+        self._auto_weight: int = 3
+        self._previous_seeds_cutoff: int = self._auto_cutoff * self._auto_weight
+        self._history_count: int | None = None
 
-        self._destroyed: bool = False
+        self._autoplay: AutoPlayMode = AutoPlayMode.disabled
+        self.__previous_seeds: asyncio.Queue[str] = asyncio.Queue(maxsize=self._previous_seeds_cutoff)
 
-    async def _auto_play_event(self, payload: TrackEventPayload) -> None:
-        logger.debug(f'Player {self.guild.id} entered autoplay event.')
+        self._auto_lock: asyncio.Lock = asyncio.Lock()
+        self._error_count: int = 0
 
-        if not self.autoplay:
-            logger.debug(f'Player {self.guild.id} autoplay is set to False. Exiting autoplay event.')
+        self._filters: Filters = Filters()
+
+    async def _auto_play_event(self, payload: TrackEndEventPayload) -> None:
+        if self._autoplay is AutoPlayMode.disabled:
             return
 
-        if payload.reason == 'REPLACED':
-            logger.debug(f'Player {self.guild.id} autoplay reason is REPLACED. Exiting autoplay event.')
+        if self._error_count >= 3:
+            logger.warning(
+                "AutoPlay was unable to continue as you have received too many consecutive errors."
+                "Please check the error log on Lavalink."
+            )
             return
 
-        if self.queue.loop:
-            logger.debug(f'Player {self.guild.id} autoplay default queue.loop is set to True.')
+        if payload.reason == "replaced":
+            self._error_count = 0
+            return
 
+        elif payload.reason == "loadFailed":
+            self._error_count += 1
+
+        else:
+            self._error_count = 0
+
+        if self.node.status is not NodeStatus.CONNECTED:
+            logger.warning(f'"Unable to use AutoPlay on Player for Guild "{self.guild}" due to disconnected Node.')
+            return
+
+        if not isinstance(self.queue, Queue) or not isinstance(self.auto_queue, Queue):  # type: ignore
+            logger.warning(f'"Unable to use AutoPlay on Player for Guild "{self.guild}" due to unsupported Queue.')
+            return
+
+        if self.queue.mode is QueueMode.loop:
+            await self._do_partial(history=False)
+
+        elif self.queue.mode is QueueMode.loop_all:
+            await self._do_partial()
+
+        elif self._autoplay is AutoPlayMode.partial or self.queue:
+            await self._do_partial()
+
+        elif self._autoplay is AutoPlayMode.enabled:
+            async with self._auto_lock:
+                await self._do_recommendation()
+
+    async def _do_partial(self, *, history: bool = True) -> None:
+        if self._current is None:
             try:
-                track = self.queue.get()
+                track: Playable = self.queue.get()
             except QueueEmpty:
-                logger.debug(f'Player {self.guild.id} autoplay default queue.loop is set to True '
-                             f'but no track was available. Exiting autoplay event.')
                 return
 
-            logger.debug(f'Player {self.guild.id} autoplay default queue.loop is set to True. Looping track "{track}"')
-            await self.play(track)
+            await self.play(track, add_history=history)
+
+    async def _do_recommendation(self):
+        assert self.guild is not None
+        assert self.queue.history is not None and self.auto_queue.history is not None
+
+        if len(self.auto_queue) > self._auto_cutoff + 1:
+            track: Playable = self.auto_queue.get()
+            self.auto_queue.history.put(track)
+
+            await self.play(track, add_history=False)
             return
 
-        if self.queue:
-            track = self.queue.get()
+        weighted_history: list[Playable] = self.queue.history[::-1][: max(5, 5 * self._auto_weight)]
+        weighted_upcoming: list[Playable] = self.auto_queue[: max(3, int((5 * self._auto_weight) / 3))]
+        choices: list[Playable | None] = [*weighted_history, *weighted_upcoming, self._current, self._previous]
 
-            populate = len(self.auto_queue) < self._auto_threshold
-            await self.play(track, populate=populate)
+        # Filter out tracks which are None...
+        _previous: deque[str] = self.__previous_seeds._queue  # type: ignore
+        seeds: list[Playable] = [t for t in choices if t is not None and t.identifier not in _previous]
+        random.shuffle(seeds)
 
-            logger.debug(f'Player {self.guild.id} autoplay found track in default queue, populate={populate}.')
+        spotify: list[str] = [t.identifier for t in seeds if t.source == "spotify"]
+        youtube: list[str] = [t.identifier for t in seeds if t.source == "youtube"]
+
+        spotify_query: str | None = None
+        youtube_query: str | None = None
+
+        count: int = len(self.queue.history)
+        changed_by: int = min(3, count) if self._history_count is None else count - self._history_count
+
+        if changed_by > 0:
+            self._history_count = count
+
+        changed_history: list[Playable] = self.queue.history[::-1]
+
+        added: int = 0
+        for i in range(min(changed_by, 3)):
+            track: Playable = changed_history[i]
+
+            if added == 2 and track.source == "spotify":
+                break
+
+            if track.source == "spotify":
+                spotify.insert(0, track.identifier)
+                added += 1
+
+            elif track.source == "youtube":
+                youtube[0] = track.identifier
+
+        if spotify:
+            spotify_seeds: list[str] = spotify[:3]
+            spotify_query = f"sprec:seed_tracks={','.join(spotify_seeds)}&limit=10"
+
+            for s_seed in spotify_seeds:
+                self._add_to_previous_seeds(s_seed)
+
+        if youtube:
+            ytm_seed: str = youtube[0]
+            youtube_query = f"https://music.youtube.com/watch?v={ytm_seed}8&list=RD{ytm_seed}"
+            self._add_to_previous_seeds(ytm_seed)
+
+        async def _search(query: str | None) -> T_a:
+            if query is None:
+                return []
+
+            try:
+                search: wavelink.Search = await Pool.fetch_tracks(query)
+            except (LavalinkLoadException, LavalinkException):
+                return []
+
+            if not search:
+                return []
+
+            tracks: list[Playable]
+            if isinstance(search, Playlist):
+                tracks = search.tracks.copy()
+            else:
+                tracks = search
+
+            return tracks
+
+        results: tuple[T_a, T_a] = await asyncio.gather(_search(spotify_query), _search(youtube_query))
+
+        # track for result in results for track in result...
+        filtered_r: list[Playable] = [t for r in results for t in r]
+
+        if not filtered_r:
+            logger.debug(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
             return
 
-        if self.queue.loop_all:
-            await self.play(self.queue.get())
-            return
+        if not self._current:
+            now: Playable = filtered_r.pop(1)
+            now._recommended = True
+            self.auto_queue.history.put(now)
 
-        if not self.auto_queue:
-            logger.debug(f'Player {self.guild.id} has no auto queue. Exiting autoplay event.')
-            return
+            await self.play(now, add_history=False)
 
-        await self.queue.put_wait(await self.auto_queue.get_wait())
-        populate = self.auto_queue.is_empty
+        # Possibly adjust these thresholds?
+        history: list[Playable] = (
+            self.auto_queue[:40] + self.queue[:40] + self.queue.history[:-41:-1] + self.auto_queue.history[:-61:-1]
+        )
 
-        track = await self.queue.get_wait()
-        await self.play(track, populate=populate)
+        added: int = 0
+        for track in filtered_r:
+            if track in history:
+                continue
 
-        logger.debug(f'Player {self.guild.id} playing track "{track}" from autoplay with populate={populate}.')
+            track._recommended = True
+            added += await self.auto_queue.put_wait(track)
+
+        random.shuffle(self.auto_queue._queue)
+        logger.debug(f'Player "{self.guild.id}" added "{added}" tracks to the auto_queue via AutoPlay.')
 
     @property
-    def autoplay(self) -> bool:
-        """Returns a ``bool`` indicating whether the :class:`~Player` is in AutoPlay mode or not.
+    def autoplay(self) -> AutoPlayMode:
+        """A property which returns the :class:`wavelink.AutoPlayMode` the player is currently in.
 
-        This property can be set to ``True`` or ``False``.
-
-        When ``autoplay`` is ``True``, the player will automatically handle fetching and playing the next track from
-        the queue. It also searches tracks in the ``auto_queue``, a special queue populated with recommended tracks,
-        from the Spotify API or YouTube Recommendations.
+        This property can be set with any :class:`wavelink.AutoPlayMode` enum value.
 
 
-        .. note::
+        .. versionchanged:: 3.0.0
 
-            You can still use the :func:`~wavelink.on_wavelink_track_end` event when ``autoplay`` is ``True``,
-            but it is recommended to **not** do any queue logic or invoking play from this event.
-
-            Most users are able to use ``autoplay`` and :func:`~wavelink.on_wavelink_track_start` together to handle
-            their logic. E.g. sending a message when a track starts playing.
-
-
-        .. note::
-
-            The ``auto_queue`` will be populated when you play a :class:`~wavelink.ext.spotify.SpotifyTrack` or
-            :class:`~wavelink.YouTubeTrack`, and have initially set ``populate`` to ``True`` in
-            :meth:`~wavelink.Player.play`. See :meth:`~wavelink.Player.play` for more info.
-
-
-        .. versionadded:: 2.0
-
-
-        .. versionchanged:: 2.6.0
-
-            The autoplay event now populates the ``auto_queue`` when playing :class:`~wavelink.YouTubeTrack` **or**
-            :class:`~wavelink.ext.spotify.SpotifyTrack`.
+            This property now accepts and returns a :class:`wavelink.AutoPlayMode` enum value.
         """
         return self._autoplay
 
     @autoplay.setter
-    def autoplay(self, value: bool) -> None:
-        """Set AutoPlay to True or False."""
+    def autoplay(self, value: Any) -> None:
+        if not isinstance(value, AutoPlayMode):
+            raise ValueError("Please provide a valid 'wavelink.AutoPlayMode' to set.")
+
         self._autoplay = value
 
-    def is_connected(self) -> bool:
-        """Whether the player is connected to a voice channel."""
-        return self.channel is not None and self.channel is not MISSING
-
-    def is_playing(self) -> bool:
-        """Whether the Player is currently playing a track."""
-        return self.current is not None and not self._paused
-
-    def is_paused(self) -> bool:
-        """Whether the Player is currently paused."""
-        return self._paused
-
     @property
-    def volume(self) -> int:
-        """The current volume of the Player."""
-        return self._volume
+    def node(self) -> Node:
+        """The :class:`Player`'s currently selected :class:`Node`.
+
+
+        .. versionchanged:: 3.0.0
+
+            This property was previously known as ``current_node``.
+        """
+        return self._node
 
     @property
     def guild(self) -> discord.Guild | None:
-        """The discord Guild associated with the Player."""
+        """Returns the :class:`Player`'s associated :class:`discord.Guild`.
+
+        Could be None if this :class:`Player` has not been connected.
+        """
         return self._guild
 
     @property
-    def position(self) -> float:
-        """The position of the currently playing track in milliseconds."""
+    def connected(self) -> bool:
+        """Returns a bool indicating if the player is currently connected to a voice channel.
 
-        if not self.is_playing():
-            return 0
+        .. versionchanged:: 3.0.0
 
-        if self.is_paused():
-            return min(self.last_position, self.current.duration)  # type: ignore
+            This property was previously known as ``is_connected``.
+        """
+        return self.channel and self._connected
 
-        delta = (datetime.datetime.now(datetime.timezone.utc) - self.last_update).total_seconds() * 1000
-        position = self.last_position + delta
+    @property
+    def current(self) -> Playable | None:
+        """Returns the currently playing :class:`~wavelink.Playable` or None if no track is playing."""
+        return self._current
 
-        return min(position, self.current.duration)
+    @property
+    def volume(self) -> int:
+        """Returns an int representing the currently set volume, as a percentage.
+
+        See: :meth:`set_volume` for setting the volume.
+        """
+        return self._volume
+
+    @property
+    def filters(self) -> Filters:
+        """Property which returns the :class:`~wavelink.Filters` currently assigned to the Player.
+
+        See: :meth:`~wavelink.Player.set_filters` for setting the players filters.
+
+        .. versionchanged:: 3.0.0
+
+            This property was previously known as ``filter``.
+        """
+        return self._filters
+
+    @property
+    def paused(self) -> bool:
+        """Returns the paused status of the player. A currently paused player will return ``True``.
+
+        See: :meth:`pause` and :meth:`play` for setting the paused status.
+        """
+        return self._paused
 
     @property
     def ping(self) -> int:
-        """The ping to the discord endpoint in milliseconds.
+        """Returns the ping in milliseconds as int between your connected Lavalink Node and Discord (Players Channel).
 
-        .. versionadded:: 2.0
+        Returns ``-1`` if no player update event has been received or the player is not connected.
         """
         return self._ping
 
     @property
-    def current(self) -> Playable | None:
-        """The currently playing Track if there is one.
+    def playing(self) -> bool:
+        """Returns whether the :class:`~Player` is currently playing a track and is connected.
 
-        Could be ``None`` if no Track is playing.
+        Due to relying on validation from Lavalink, this property may in some cases return ``True`` directly after
+        skipping/stopping a track, although this is not the case when disconnecting the player.
+
+        This property will return ``True`` in cases where the player is paused *and* has a track loaded.
+
+        .. versionchanged:: 3.0.0
+
+            This property used to be known as the `is_playing()` method.
         """
-        return self._current
+        return self._connected and self._current is not None
 
     @property
-    def filter(self) -> dict[str, Any]:
-        """The currently applied filter."""
-        return self._filter._payload
+    def position(self) -> int:
+        """Returns the position of the currently playing :class:`~wavelink.Playable` in milliseconds.
 
-    async def _update_event(self, data: PlayerUpdateOp | None) -> None:
-        assert self._guild is not None
+        This property relies on information updates from Lavalink.
 
-        if data is None: 
-            if self.swap_on_disconnect:
+        In cases there is no :class:`~wavelink.Playable` loaded or the player is not connected,
+        this property will return ``0``.
 
-                if len(self.nodes) < 2:
-                    return
+        This property will return ``0`` if no update has been received from Lavalink.
 
-                new: Node = [n for n in self.nodes if n != self.current_node and n.status is NodeStatus.CONNECTED][0]
-                del self.current_node._players[self._guild.id]
+        .. versionchanged:: 3.0.0
 
-                if not new:
-                    return
-
-                self.current_node: Node = new
-                new._players[self._guild.id] = self
-
-                await self._dispatch_voice_update()
-                await self._swap_state()
-            return
-
-        data.pop('op')  # type: ignore
-        self._player_state.update(**data)
-
-        state: PlayerState = data['state']
-        self.last_update = datetime.datetime.fromtimestamp(state.get("time", 0) / 1000, datetime.timezone.utc)
-        self.last_position = state.get('position', 0)
-
-        self._ping = state['ping']
-
-    async def on_voice_server_update(self, data: VoiceServerUpdate) -> None:
-        """|coro|
-
-        An abstract method that is called when initially connecting to voice. This corresponds to VOICE_SERVER_UPDATE.
-
-        .. warning::
-
-            Do not override this method.
+            This property now uses a monotonic clock.
         """
-        self._voice_state['token'] = data['token']
-        self._voice_state['endpoint'] = data['endpoint']
+        if self.current is None or not self.playing:
+            return 0
 
-        await self._dispatch_voice_update()
+        if not self.connected:
+            return 0
 
-    async def on_voice_state_update(self, data: GuildVoiceState) -> None:
-        """|coro|
+        if self._last_update is None:
+            return 0
 
-        An abstract method that is called when the client’s voice state has changed.
-        This corresponds to VOICE_STATE_UPDATE.
+        if self.paused:
+            return self._last_position
 
-        .. warning::
+        position: int = int((time.monotonic_ns() - self._last_update) / 1000000) + self._last_position
+        return min(position, self.current.length)
 
-            Do not override this method.
-        """
-        assert self._guild is not None
+    async def _update_event(self, payload: PlayerUpdateEventPayload) -> None:
+        # Convert nanoseconds into milliseconds...
+        self._last_update = time.monotonic_ns()
+        self._last_position = payload.position
 
+        self._ping = payload.ping
+
+    async def on_voice_state_update(self, data: GuildVoiceStatePayload, /) -> None:
         channel_id = data["channel_id"]
 
         if not channel_id:
             await self._destroy()
             return
 
-        self._voice_state['session_id'] = data['session_id']
+        self._connected = True
+
+        self._voice_state["voice"]["session_id"] = data["session_id"]
         self.channel = self.client.get_channel(int(channel_id))  # type: ignore
 
-        if not self._guild:
-            self._guild = self.channel.guild  # type: ignore
-            assert self._guild is not None
-            self.current_node._players[self._guild.id] = self
+    async def on_voice_server_update(self, data: VoiceServerUpdatePayload, /) -> None:
+        self._voice_state["voice"]["token"] = data["token"]
+        self._voice_state["voice"]["endpoint"] = data["endpoint"]
 
-    async def _dispatch_voice_update(self, data: DiscordVoiceState | None = None) -> None:
-        assert self._guild is not None
+        await self._dispatch_voice_update()
 
-        data = data or self._voice_state
+    async def _dispatch_voice_update(self) -> None:
+        assert self.guild is not None
+        data: VoiceState = self._voice_state["voice"]
 
         try:
-            session_id: str = data['session_id']
-            token: str = data['token']
-            endpoint: str = data['endpoint']
+            session_id: str = data["session_id"]
+            token: str = data["token"]
         except KeyError:
             return
 
-        voice: Request = {'voice': {'sessionId': session_id, 'token': token, 'endpoint': endpoint}}
-        self._player_state.update(**voice)
-
-        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
-                                                             path=f'sessions/{self.current_node._session_id}/players',
-                                                             guild_id=self._guild.id,
-                                                             data=voice)
-
-        logger.debug(f'Player {self.guild.id} is dispatching VOICE_UPDATE: {resp}')
-
-    def _connection_check(self, channel: VoiceChannel) -> None:
-        if channel.permissions_for(channel.guild.me).administrator:
+        endpoint: str | None = data.get("endpoint", None)
+        if not endpoint:
             return
 
-        if not channel.permissions_for(channel.guild.me).connect:
-            logger.debug(f'Player tried connecting to channel "{channel.id}", but does not have correct permissions.')
+        request: RequestPayload = {"voice": {"sessionId": session_id, "token": token, "endpoint": endpoint}}
 
-            raise InvalidChannelPermissions('You do not have connect permissions to join this channel.')
+        try:
+            await self.node._update_player(self.guild.id, data=request)
+        except LavalinkException:
+            await self.disconnect()
+        else:
+            self._connection_event.set()
 
-        limit: int = channel.user_limit
-        total: int = len(channel.members)
+        logger.debug(f"Player {self.guild.id} is dispatching VOICE_UPDATE.")
 
-        if limit == 0:
-            pass
+    async def connect(
+        self, *, timeout: float = 10.0, reconnect: bool, self_deaf: bool = False, self_mute: bool = False
+    ) -> None:
+        """
 
-        elif total >= limit:
-            msg: str = f'There are currently too many users in this channel. <{total}/{limit}>'
-            logger.debug(f'Player tried connecting to channel "{channel.id}", but the it is full. <{total}/{limit}>')
+        .. warning::
 
-            raise InvalidChannelPermissions(msg)
+            Do not use this method directly on the player. See: :meth:`discord.VoiceChannel.connect` for more details.
 
-    async def connect(self, *, timeout: float, reconnect: bool, **kwargs: Any) -> None:
-        if self.channel is None:
-            self._invalidate(before_connect=True)
 
-            msg: str = 'Please use the method "discord.VoiceChannel.connect" and pass this player to cls='
-            logger.debug(f'Player tried connecting without a channel. {msg}')
+        Pass the :class:`wavelink.Player` to ``cls=`` in :meth:`discord.VoiceChannel.connect`.
 
-            raise InvalidChannelStateError(msg)
+
+        Raises
+        ------
+        ChannelTimeoutException
+            Connecting to the voice channel timed out.
+        InvalidChannelStateException
+            You tried to connect this player without an appropriate voice channel.
+        """
+        if self.channel is MISSING:
+            msg: str = 'Please use "discord.VoiceChannel.connect(cls=...)" and pass this Player to cls.'
+            raise InvalidChannelStateException(f"Player tried to connect without a valid channel: {msg}")
 
         if not self._guild:
             self._guild = self.channel.guild
-            self.current_node._players[self._guild.id] = self
+            self.node._players[self._guild.id] = self
+
+        assert self.guild is not None
+        await self.guild.change_voice_state(channel=self.channel, self_mute=self_mute, self_deaf=self_deaf)
 
         try:
-            self._connection_check(self.channel)
-        except InvalidChannelPermissions as e:
-            self._invalidate(before_connect=True)
-            raise e
+            async with async_timeout.timeout(timeout):
+                await self._connection_event.wait()
+        except (asyncio.TimeoutError, asyncio.CancelledError):
+            msg = f"Unable to connect to {self.channel} as it exceeded the timeout of {timeout} seconds."
+            raise ChannelTimeoutException(msg)
 
-        await self.channel.guild.change_voice_state(channel=self.channel, **kwargs)
-        logger.info(f'Player {self.guild.id} connected to channel: {self.channel}')
-
-    async def move_to(self, channel: discord.VoiceChannel) -> None:
-        """|coro|
-
-        Moves the player to a different voice channel.
-
-        Parameters
-        -----------
-        channel: :class:`discord.VoiceChannel`
-            The channel to move to. Must be a voice channel.
-        """
-        self._connection_check(channel)
-
-        await self.guild.change_voice_state(channel=channel)
-        logger.info(f'Player {self.guild.id} moved to channel: {channel}')
-
-    async def play(self,
-                   track: Playable | spotify.SpotifyTrack,
-                   replace: bool = True,
-                   start: int | None = None,
-                   end: int | None = None,
-                   volume: int | None = None,
-                   *,
-                   populate: bool = False
-                   ) -> Playable:
-        """|coro|
-
-        Play a WaveLink Track.
+    async def move_to(
+        self,
+        channel: VocalGuildChannel | None,
+        *,
+        timeout: float = 10.0,
+        self_deaf: bool | None = None,
+        self_mute: bool | None = None,
+    ) -> None:
+        """Method to move the player to another channel.
 
         Parameters
         ----------
-        track: :class:`tracks.Playable`
-            The :class:`tracks.Playable` or :class:`~wavelink.ext.spotify.SpotifyTrack` track to start playing.
+        channel: :class:`discord.VoiceChannel` | :class:`discord.StageChannel`
+            The new channel to move to.
+        timeout: float
+            The timeout in ``seconds`` before raising. Defaults to 10.0.
+        self_deaf: bool | None
+            Whether to deafen when moving. Defaults to ``None`` which keeps the current setting or ``False``
+            if they can not be determined.
+        self_mute: bool | None
+            Whether to self mute when moving. Defaults to ``None`` which keeps the current setting or ``False``
+            if they can not be determined.
+
+        Raises
+        ------
+        ChannelTimeoutException
+            Connecting to the voice channel timed out.
+        InvalidChannelStateException
+            You tried to connect this player without an appropriate guild.
+        """
+        if not self.guild:
+            raise InvalidChannelStateException("Player tried to move without a valid guild.")
+
+        self._connection_event.clear()
+        voice: discord.VoiceState | None = self.guild.me.voice
+
+        if self_deaf is None and voice:
+            self_deaf = voice.self_deaf
+
+        if self_mute is None and voice:
+            self_mute = voice.self_mute
+
+        self_deaf = bool(self_deaf)
+        self_mute = bool(self_mute)
+
+        await self.guild.change_voice_state(channel=channel, self_mute=self_mute, self_deaf=self_deaf)
+
+        if channel is None:
+            return
+
+        try:
+            async with async_timeout.timeout(timeout):
+                await self._connection_event.wait()
+        except (asyncio.TimeoutError, asyncio.CancelledError):
+            msg = f"Unable to connect to {channel} as it exceeded the timeout of {timeout} seconds."
+            raise ChannelTimeoutException(msg)
+
+    async def play(
+        self,
+        track: Playable,
+        *,
+        replace: bool = True,
+        start: int = 0,
+        end: int | None = None,
+        volume: int | None = None,
+        paused: bool | None = None,
+        add_history: bool = True,
+        filters: Filters | None = None,
+    ) -> Playable:
+        """Play the provided :class:`~wavelink.Playable`.
+
+        Parameters
+        ----------
+        track: :class:`~wavelink.Playable`
+            The track to being playing.
         replace: bool
-            Whether this track should replace the current track. Defaults to ``True``.
-        start: Optional[int]
-            The position to start the track at in milliseconds.
-            Defaults to ``None`` which will start the track at the beginning.
+            Whether this track should replace the currently playing track, if there is one. Defaults to ``True``.
+        start: int
+            The position to start playing the track at in milliseconds.
+            Defaults to ``0`` which will start the track from the beginning.
         end: Optional[int]
             The position to end the track at in milliseconds.
-            Defaults to ``None`` which means it will play until the end.
+            Defaults to ``None`` which means this track will play until the very end.
         volume: Optional[int]
             Sets the volume of the player. Must be between ``0`` and ``1000``.
-            Defaults to ``None`` which will not change the volume.
-        populate: bool
-            Whether to populate the AutoPlay queue. Defaults to ``False``.
+            Defaults to ``None`` which will not change the current volume.
+            See Also: :meth:`set_volume`
+        paused: bool | None
+            Whether the player should be paused, resumed or retain current status when playing this track.
+            Setting this parameter to ``True`` will pause the player. Setting this parameter to ``False`` will
+            resume the player if it is currently paused. Setting this parameter to ``None`` will not change the status
+            of the player. Defaults to ``None``.
+        add_history: Optional[bool]
+            If this argument is set to ``True``, the :class:`~Player` will add this track into the
+            :class:`wavelink.Queue` history, if loading the track was successful. If ``False`` this track will not be
+            added to your history. This does not directly affect the ``AutoPlay Queue`` but will alter how ``AutoPlay``
+            recommends songs in the future. Defaults to ``True``.
+        filters: Optional[:class:`~wavelink.Filters`]
+            An Optional[:class:`~wavelink.Filters`] to apply when playing this track. Defaults to ``None``.
+            If this is ``None`` the currently set filters on the player will be applied.
 
-            .. versionadded:: 2.0
 
         Returns
         -------
-        :class:`~tracks.Playable`
-            The track that is now playing.
+        :class:`~wavelink.Playable`
+            The track that began playing.
 
 
-        .. note::
+        .. versionchanged:: 3.0.0
 
-            If you pass a :class:`~wavelink.YouTubeTrack` **or** :class:`~wavelink.ext.spotify.SpotifyTrack` and set
-            ``populate=True``, **while** :attr:`~wavelink.Player.autoplay` is set to ``True``, this method will populate
-            the ``auto_queue`` with recommended songs. When the ``auto_queue`` is low on tracks this method will
-            automatically populate the ``auto_queue`` with more tracks, and continue this cycle until either the
-            player has been disconnected or :attr:`~wavelink.Player.autoplay` is set to ``False``.
+            Added the ``paused`` parameter. Parameters ``replace``, ``start``, ``end``, ``volume`` and ``paused``
+            are now all keyword-only arguments.
 
+            Added the ``add_history`` keyword-only argument.
 
-        Example
-        -------
-
-        .. code:: python3
-
-            tracks: list[wavelink.YouTubeTrack] = await wavelink.YouTubeTrack.search(...)
-            if not tracks:
-                # Do something as no tracks were found...
-                return
-
-            await player.queue.put_wait(tracks[0])
-
-            if not player.is_playing():
-                await player.play(player.queue.get(), populate=True)
-
-
-        .. versionchanged:: 2.6.0
-
-            This method now accepts :class:`~wavelink.YouTubeTrack` or :class:`~wavelink.ext.spotify.SpotifyTrack`
-            when populating the ``auto_queue``.
+            Added the ``filters`` keyword-only argument.
         """
-        assert self._guild is not None
+        assert self.guild is not None
 
-        if isinstance(track, YouTubeTrack) and self.autoplay and populate:
-            query: str = f'https://www.youtube.com/watch?v={track.identifier}&list=RD{track.identifier}'
+        original_vol: int = self._volume
+        vol: int = volume or self._volume
 
-            try:
-                recos: YouTubePlaylist = await self.current_node.get_playlist(query=query, cls=YouTubePlaylist)
-                recos: list[YouTubeTrack] = getattr(recos, 'tracks', [])
+        if vol != self._volume:
+            self._volume = vol
 
-                queues = set(self.queue) | set(self.auto_queue) | set(self.auto_queue.history) | {track}
+        if replace or not self._current:
+            self._current = track
+            self._original = track
 
-                for track_ in recos:
-                    if track_ in queues:
-                        continue
+        old_previous = self._previous
+        self._previous = self._current
 
-                    await self.auto_queue.put_wait(track_)
+        pause: bool
+        if paused is not None:
+            pause = paused
+        else:
+            pause = self._paused
 
-                self.auto_queue.shuffle()
-            except ValueError:
-                pass
+        if filters:
+            self._filters = filters
 
-        elif isinstance(track, spotify.SpotifyTrack):
-            original = track
-            track = await track.fulfill(player=self, cls=YouTubeTrack, populate=populate)
-
-            if populate:
-                self.auto_queue.shuffle()
-
-            for attr, value in original.__dict__.items():
-                if hasattr(track, attr):
-                    logger.warning(f'Player {self.guild.id} was unable to set attribute "{attr}" '
-                                   f'when converting a SpotifyTrack as it conflicts with the new track type.')
-                    continue
-
-                setattr(track, attr, value)
-
-        data = {
-            'encodedTrack': track.encoded,
-            'position': start or 0,
-            'volume': volume or self._volume
+        request: RequestPayload = {
+            "encodedTrack": track.encoded,
+            "volume": vol,
+            "position": start,
+            "endTime": end,
+            "paused": pause,
+            "filters": self._filters(),
         }
 
-        if end:
-            data['endTime'] = end
-
-        self._current = track
-        self._original = track
-
         try:
-
-            resp: dict[str, Any] = await self.current_node._send(
-                method='PATCH',
-                path=f'sessions/{self.current_node._session_id}/players',
-                guild_id=self._guild.id,
-                data=data,
-                query=f'noReplace={not replace}'
-            )
-
-        except InvalidLavalinkResponse as e:
+            await self.node._update_player(self.guild.id, data=request, replace=replace)
+        except LavalinkException as e:
             self._current = None
             self._original = None
-            logger.debug(f'Player {self._guild.id} attempted to load track: {track}, but failed: {e}')
+            self._previous = old_previous
+            self._volume = original_vol
             raise e
 
-        self._player_state['track'] = resp['track']['encoded']
+        self._paused = pause
 
-        if not (self.queue.loop and self.queue._loaded):
+        if add_history:
+            assert self.queue.history is not None
             self.queue.history.put(track)
 
-        self.queue._loaded = track
-
-        logger.debug(f'Player {self._guild.id} loaded and started playing track: {track}.')
         return track
 
-    async def set_volume(self, value: int) -> None:
-        """|coro|
-
-        Set the Player volume.
+    async def pause(self, value: bool, /) -> None:
+        """Set the paused or resume state of the player.
 
         Parameters
         ----------
-        value: int
-            A volume value between 0 and 1000.
+        value: bool
+            A bool indicating whether the player should be paused or resumed. True indicates that the player should be
+            ``paused``. False will resume the player if it is currently paused.
+
+
+        .. versionchanged:: 3.0.0
+
+            This method now expects a positional-only bool value. The ``resume`` method has been removed.
         """
-        assert self._guild is not None
+        assert self.guild is not None
 
-        self._volume = max(min(value, 1000), 0)
+        request: RequestPayload = {"paused": value}
+        await self.node._update_player(self.guild.id, data=request)
 
-        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
-                                                             path=f'sessions/{self.current_node._session_id}/players',
-                                                             guild_id=self._guild.id,
-                                                             data={'volume': self._volume})
+        self._paused = value
 
-        logger.debug(f'Player {self.guild.id} volume was set to {self._volume}.')
-
-    async def seek(self, position: int) -> None:
-        """|coro|
-
-        Seek to the provided position, in milliseconds.
+    async def seek(self, position: int = 0, /) -> None:
+        """Seek to the provided position in the currently playing track, in milliseconds.
 
         Parameters
         ----------
         position: int
-            The position to seek to in milliseconds.
+            The position to seek to in milliseconds. To restart the song from the beginning,
+            you can disregard this parameter or set position to 0.
+
+
+        .. versionchanged:: 3.0.0
+
+            The ``position`` parameter is now positional-only, and has a default of 0.
         """
+        assert self.guild is not None
+
         if not self._current:
             return
 
-        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
-                                                             path=f'sessions/{self.current_node._session_id}/players',
-                                                             guild_id=self._guild.id,
-                                                             data={'position': position})
+        request: RequestPayload = {"position": position}
+        await self.node._update_player(self.guild.id, data=request)
 
-        logger.debug(f'Player {self.guild.id} seeked current track to position {position}.')
-
-    async def pause(self) -> None:
-        """|coro|
-
-        Pauses the Player.
-        """
-        assert self._guild is not None
-
-        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
-                                                             path=f'sessions/{self.current_node._session_id}/players',
-                                                             guild_id=self._guild.id,
-                                                             data={'paused': True})
-
-        self._paused = True
-        logger.debug(f'Player {self.guild.id} was paused.')
-
-    async def resume(self) -> None:
-        """|coro|
-
-        Resumes the Player.
-        """
-        assert self._guild is not None
-
-        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
-                                                             path=f'sessions/{self.current_node._session_id}/players',
-                                                             guild_id=self._guild.id,
-                                                             data={'paused': False})
-
-        self._paused = False
-        logger.debug(f'Player {self.guild.id} was resumed.')
-
-    async def stop(self, *, force: bool = True) -> None:
-        """|coro|
-
-        Stops the currently playing Track.
+    async def set_filters(self, filters: Filters | None = None, /, *, seek: bool = False) -> None:
+        """Set the :class:`wavelink.Filters` on the player.
 
         Parameters
         ----------
-        force: Optional[bool]
-            Whether to stop the currently playing track and proceed to the next regardless if :attr:`~Queue.loop`
-            is ``True``. Defaults to ``True``.
+        filters: Optional[:class:`~wavelink.Filters`]
+            The filters to set on the player. Could be ```None`` to reset the currently applied filters.
+            Defaults to ``None``.
+        seek: bool
+            Whether to seek immediately when applying these filters. Seeking uses more resources, but applies the
+            filters immediately. Defaults to ``False``.
 
 
-        .. versionchanged:: 2.6
+        .. versionchanged:: 3.0.0
 
-            Added the ``force`` keyword argument.
+            This method now accepts a positional-only argument of filters, which now defaults to None. Filters
+            were redesigned in this version, see: :class:`wavelink.Filters`.
+
+
+        .. versionchanged:: 3.0.0
+
+            This method was previously known as ``set_filter``.
         """
-        assert self._guild is not None
+        assert self.guild is not None
+
+        if filters is None:
+            filters = Filters()
+
+        request: RequestPayload = {"filters": filters()}
+        await self.node._update_player(self.guild.id, data=request)
+        self._filters = filters
+
+        if self.playing and seek:
+            await self.seek(self.position)
+
+    async def set_volume(self, value: int = 100, /) -> None:
+        """Set the :class:`Player` volume, as a percentage, between 0 and 1000.
+
+        By default, every player is set to 100 on creation. If a value outside 0 to 1000 is provided it will be
+        clamped.
+
+        Parameters
+        ----------
+        value: int
+            A volume value between 0 and 1000. To reset the player to 100, you can disregard this parameter.
+
+
+        .. versionchanged:: 3.0.0
+
+            The ``value`` parameter is now positional-only, and has a default of 100.
+        """
+        assert self.guild is not None
+        vol: int = max(min(value, 1000), 0)
+
+        request: RequestPayload = {"volume": vol}
+        await self.node._update_player(self.guild.id, data=request)
+
+        self._volume = vol
+
+    async def disconnect(self, **kwargs: Any) -> None:
+        """Disconnect the player from the current voice channel and remove it from the :class:`~wavelink.Node`.
+
+        This method will cause any playing track to stop and potentially trigger the following events:
+
+            - ``on_wavelink_track_end``
+            - ``on_wavelink_websocket_closed``
+
+
+        .. warning::
+
+            Please do not re-use a :class:`Player` instance that has been disconnected, unwanted side effects are
+            possible.
+        """
+        assert self.guild
+
+        await self._destroy()
+        await self.guild.change_voice_state(channel=None)
+
+    async def stop(self, *, force: bool = True) -> Playable | None:
+        """An alias to :meth:`skip`.
+
+        See Also: :meth:`skip` for more information.
+
+        .. versionchanged:: 3.0.0
+
+            This method is now known as ``skip``, but the alias ``stop`` has been kept for backwards compatability.
+        """
+        return await self.skip(force=force)
+
+    async def skip(self, *, force: bool = True) -> Playable | None:
+        """Stop playing the currently playing track.
+
+        Parameters
+        ----------
+        force: bool
+            Whether the track should skip looping, if :class:`wavelink.Queue` has been set to loop.
+            Defaults to ``True``.
+
+        Returns
+        -------
+        :class:`~wavelink.Playable` | None
+            The currently playing track that was skipped, or ``None`` if no track was playing.
+
+
+        .. versionchanged:: 3.0.0
+
+            This method was previously known as ``stop``. To avoid confusion this method is now known as ``skip``.
+            This method now returns the :class:`~wavelink.Playable` that was skipped.
+        """
+        assert self.guild is not None
+        old: Playable | None = self._current
 
         if force:
             self.queue._loaded = None
 
-        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
-                                                             path=f'sessions/{self.current_node._session_id}/players',
-                                                             guild_id=self._guild.id,
-                                                             data={'encodedTrack': None})
+        request: RequestPayload = {"encodedTrack": None}
+        await self.node._update_player(self.guild.id, data=request, replace=True)
 
-        self._player_state['track'] = None
-        logger.debug(f'Player {self.guild.id} was stopped.')
+        return old
 
-    async def set_filter(
-        self,
-        _filter: Filter,
-        /, *,
-        seek: bool = False
-    ) -> None:
-        """|coro|
-
-        Set the player's filter.
-
-        Parameters
-        ----------
-        filter: :class:`wavelink.Filter`
-            The filter to apply to the player.
-        seek: bool
-            Whether to seek the player to its current position
-            which will apply the filter immediately. Defaults to ``False``.
-        """
-
-        assert self._guild is not None
-
-        self._filter = _filter
-        data: Request = {"filters": _filter._payload}
-
-        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
-                                                             path=f'sessions/{self.current_node._session_id}/players',
-                                                             guild_id=self._guild.id,
-                                                             data=data)        
-
-        if self.is_playing() and seek:
-            await self.seek(int(self.position))
-
-        logger.debug(f'Player {self.guild.id} set filter to: {_filter}')
-
-    def _invalidate(self, *, silence: bool = False, before_connect: bool = False) -> None:
-        self.current_node._players.pop(self._guild.id, None)
-
-        if not before_connect:
-            self.current_node._invalidated[self._guild.id] = self
+    def _invalidate(self) -> None:
+        self._connected = False
+        self._connection_event.clear()
 
         try:
             self.cleanup()
-        except AttributeError:
+        except (AttributeError, KeyError):
             pass
-        except Exception as e:
-            logger.debug(f'Failed to cleanup player, most likely due to never having been connected: {e}')
 
-        self._voice_state = {}
-        self._player_state = {}
-        self.channel = None
+    async def _destroy(self) -> None:
+        assert self.guild
 
-        if not silence:
-            logger.debug(f'Player {self._guild.id} was invalidated.')
-
-    async def _destroy(self, *, guild_id: int | None = None) -> None:
-        if self._destroyed:
-            return
-
-        self._invalidate(silence=True)
-
-        guild_id = guild_id or self._guild.id
-
-        await self.current_node._send(method='DELETE',
-                                      path=f'sessions/{self.current_node._session_id}/players',
-                                      guild_id=guild_id)
-
-        self._destroyed = True
-        self.current_node._invalidated.pop(guild_id, None)
-        logger.debug(f'Player {guild_id} was destroyed.')
-
-    async def disconnect(self, **kwargs) -> None:
-        """|coro|
-
-        Disconnect the Player from voice and cleanup the Player state.
-
-        .. versionchanged:: 2.5
-
-            The discord.py Voice Client cache and Player are invalidated as soon as this is called.
-        """
         self._invalidate()
-        await self.guild.change_voice_state(channel=None)
+        player: Player | None = self.node._players.pop(self.guild.id, None)
 
-        logger.debug(f'Player {self._guild.id} was disconnected.')
+        if player:
+            try:
+                await self.node._destroy_player(self.guild.id)
+            except LavalinkException:
+                pass
 
-    async def _swap_state(self) -> None:
-        assert self._guild is not None
-
-        try:
-            self._player_state['track']
-        except KeyError:
-            return
-
-        data: EncodedTrackRequest = {'encodedTrack': self._player_state['track'], 'position': self.position}
-        resp: dict[str, Any] = await self.current_node._send(method='PATCH',
-                                                             path=f'sessions/{self.current_node._session_id}/players',
-                                                             guild_id=self._guild.id,
-                                                             data=data)
-
-        logger.debug(f'Player {self.guild.id} is swapping State: {resp}')
+    def _add_to_previous_seeds(self, seed: str) -> None:
+        # Helper method to manage previous seeds.
+        if self.__previous_seeds.full():
+            self.__previous_seeds.get_nowait()
+        self.__previous_seeds.put_nowait(seed)

@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2019-Present PythonistaGuild
+Copyright (c) 2019-Current PythonistaGuild, EvieePy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,22 +21,22 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from discord.enums import Enum
+import enum
 
-__all__ = ('NodeStatus', 'TrackSource', 'LoadType', 'TrackEventType', 'DiscordVoiceCloseType')
+__all__ = ("NodeStatus", "TrackSource", "DiscordVoiceCloseType", "AutoPlayMode", "QueueMode")
 
 
-class NodeStatus(Enum):
-    """Enum representing the current status of a Node.
+class NodeStatus(enum.Enum):
+    """Enum representing the connection status of a Node.
 
     Attributes
     ----------
     DISCONNECTED
-        0
+        The Node has been disconnected or has never been connected previously.
     CONNECTING
-        1
+        The Node is currently attempting to connect.
     CONNECTED
-        2
+        The Node is currently connected.
     """
 
     DISCONNECTED = 0
@@ -44,69 +44,25 @@ class NodeStatus(Enum):
     CONNECTED = 2
 
 
-class TrackSource(Enum):
-    """Enum representing the Track Source Type.
+class TrackSource(enum.Enum):
+    """Enum representing a :class:`Playable` source.
 
     Attributes
     ----------
     YouTube
-        0
+        A source representing a track that comes from YouTube.
     YouTubeMusic
-        1
+        A source representing a track that comes from YouTube Music.
     SoundCloud
-        2
-    Local
-        3
-    Unknown
-        4
+        A source representing a track that comes from SoundCloud.
     """
 
     YouTube = 0
     YouTubeMusic = 1
     SoundCloud = 2
-    Local = 3
-    Unknown = 4
 
 
-class LoadType(Enum):
-    """Enum representing the Tracks Load Type.
-
-    Attributes
-    ----------
-    track_loaded
-        "TRACK_LOADED"
-    playlist_loaded
-        "PLAYLIST_LOADED"
-    search_result
-        "SEARCH_RESULT"
-    no_matches
-        "NO_MATCHES"
-    load_failed
-        "LOAD_FAILED"
-    """
-    track_loaded = "TRACK_LOADED"
-    playlist_loaded = "PLAYLIST_LOADED"
-    search_result = "SEARCH_RESULT"
-    no_matches = "NO_MATCHES"
-    load_failed = "LOAD_FAILED"
-
-
-class TrackEventType(Enum):
-    """Enum representing the TrackEvent types.
-
-    Attributes
-    ----------
-    START
-        "TrackStartEvent"
-    END
-        "TrackEndEvent"
-    """
-
-    START = 'TrackStartEvent'
-    END = 'TrackEndEvent'
-
-
-class DiscordVoiceCloseType(Enum):
+class DiscordVoiceCloseType(enum.Enum):
     """Enum representing the various Discord Voice Websocket Close Codes.
 
     Attributes
@@ -138,6 +94,7 @@ class DiscordVoiceCloseType(Enum):
     UNKNOWN_ENCRYPTION_MODE
         4016
     """
+
     CLOSE_NORMAL = 1000  # Not Discord but standard websocket
     UNKNOWN_OPCODE = 4001
     FAILED_DECODE_PAYLOAD = 4002
@@ -151,3 +108,41 @@ class DiscordVoiceCloseType(Enum):
     DISCONNECTED = 4014
     VOICE_SERVER_CRASHED = 4015
     UNKNOWN_ENCRYPTION_MODE = 4016
+
+
+class AutoPlayMode(enum.Enum):
+    """Enum representing the various AutoPlay modes.
+
+    Attributes
+    ----------
+    enabled
+        When enabled, AutoPlay will work fully autonomously and fill the auto_queue with recommended tracks.
+        If a song is put into a players standard queue, AutoPlay will use it as a priority.
+    partial
+        When partial, AutoPlay will work fully autonomously but **will not** fill the auto_queue with
+        recommended tracks.
+    disabled
+        When disabled, AutoPlay will not do anything automatically.
+    """
+
+    enabled = 0
+    partial = 1
+    disabled = 2
+
+
+class QueueMode(enum.Enum):
+    """Enum representing the various modes on :class:`wavelink.Queue`
+
+    Attributes
+    ----------
+    normal
+        When set, the queue will not loop either track or history. This is the default.
+    loop
+        When set, the track will continuously loop.
+    loop_all
+        When set, the queue will continuously loop through all tracks.
+    """
+
+    normal = 0
+    loop = 1
+    loop_all = 2

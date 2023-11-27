@@ -21,27 +21,38 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
 
-class PlayerState(TypedDict):
-    time: int
+class TrackInfoPayload(TypedDict):
+    identifier: str
+    isSeekable: bool
+    author: str
+    length: int
+    isStream: bool
     position: int
-    connected: bool
-    ping: int
+    title: str
+    uri: NotRequired[str]
+    artworkUrl: NotRequired[str]
+    isrc: NotRequired[str]
+    sourceName: str
 
 
-class VoiceState(TypedDict, total=False):
-    token: str
-    endpoint: str | None
-    session_id: str
+class PlaylistInfoPayload(TypedDict):
+    name: str
+    selectedTrack: int
 
 
-class PlayerVoiceState(TypedDict):
-    voice: VoiceState
-    channel_id: NotRequired[str]
-    track: NotRequired[str]
-    position: NotRequired[int]
+class TrackPayload(TypedDict):
+    encoded: str
+    info: TrackInfoPayload
+    pluginInfo: dict[Any, Any]
+
+
+class PlaylistPayload(TypedDict):
+    info: PlaylistInfoPayload
+    tracks: list[TrackPayload]
+    pluginInfo: dict[Any, Any]

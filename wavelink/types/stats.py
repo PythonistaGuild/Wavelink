@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2019-Present PythonistaGuild
+Copyright (c) 2019-Current PythonistaGuild, EvieePy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,23 +21,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import discord
-import wavelink
-from discord.ext import commands
+from typing import TypedDict
 
 
-class Bot(commands.Bot):
+class MemoryStats(TypedDict):
+    free: int
+    used: int
+    allocated: int
+    reservable: int
 
-    def __init__(self) -> None:
-        intents = discord.Intents.default()
-        super().__init__(intents=intents, command_prefix='?')
 
-    async def on_ready(self) -> None:
-        print(f'Logged in {self.user} | {self.user.id}')
+class CPUStats(TypedDict):
+    cores: int
+    systemLoad: float
+    lavalinkLoad: float
 
-    async def setup_hook(self) -> None:
-        # Wavelink 2.0 has made connecting Nodes easier... Simply create each Node
-        # and pass it to NodePool.connect with the client/bot.
-        node: wavelink.Node = wavelink.Node(uri='http://localhost:2333', password='youshallnotpass')
-        await wavelink.NodePool.connect(client=self, nodes=[node])
 
+class FrameStats(TypedDict):
+    sent: int
+    nulled: int
+    deficit: int

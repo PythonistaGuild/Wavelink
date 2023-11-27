@@ -25,13 +25,16 @@ __title__ = "WaveLink"
 __author__ = "PythonistaGuild, EvieePy"
 __license__ = "MIT"
 __copyright__ = "Copyright 2019-Present (c) PythonistaGuild, EvieePy"
-__version__ = "2.6.5"
+__version__ = "3.0.0"
+
 
 from .enums import *
 from .exceptions import *
+from .filters import *
+from .lfu import CapacityZero as CapacityZero
+from .lfu import LFUCache as LFUCache
 from .node import *
 from .payloads import *
 from .player import Player as Player
-from .tracks import *
 from .queue import *
-from .filters import *
+from .tracks import *

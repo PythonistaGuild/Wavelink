@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wavelink"
-version = "2.6.5"
+version = "3.0.0"
 authors = [
-  { name="EvieePy", email="evieepy@gmail.com" },
+  { name="PythonistaGuild, EvieePy", email="evieepy@gmail.com" },
 ]
 dynamic = ["dependencies"]
-description = "A robust and powerful Lavalink wrapper for discord.py"
+description = "A robust and powerful, fully asynchronous Lavalink wrapper built for discord.py in Python."
 readme = "README.rst"
 requires-python = ">=3.10"
 classifiers = [
@@ -28,5 +28,23 @@ classifiers = [
 [project.urls]
 "Homepage" = "https://github.com/PythonistaGuild/Wavelink"
 
+[tool.setuptools]
+packages = ["wavelink", "wavelink.types"]
+
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.package-data]
+wavelink = ["py.typed"]
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+
+[tool.pyright]
+ignore = ["test*.py", "examples/*.py", "docs/*"]
+pythonVersion = "3.10"
+typeCheckingMode = "strict"
+reportPrivateUsage = false
