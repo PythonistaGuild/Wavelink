@@ -526,7 +526,12 @@ class Player(discord.VoiceProtocol):
             raise ChannelTimeoutException(msg)
 
     async def move_to(
-        self, channel: VocalGuildChannel | None, *, timeout: float = 10.0, self_deaf: bool = False, self_mute: bool = False
+        self,
+        channel: VocalGuildChannel | None,
+        *,
+        timeout: float = 10.0,
+        self_deaf: bool = False,
+        self_mute: bool = False,
     ) -> None:
         """Method to move the player to another channel.
 
@@ -549,7 +554,7 @@ class Player(discord.VoiceProtocol):
 
         self._connection_event.clear()
         await self.guild.change_voice_state(channel=channel)
-        
+
         if channel is None:
             return
 
