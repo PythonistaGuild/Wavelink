@@ -285,7 +285,7 @@ class Player(discord.VoiceProtocol):
             self.auto_queue.history.put(now)
 
             await self.play(now, add_history=False)
-            
+
         # Possibly adjust these thresholds?
         history: list[Playable] = (
             self.auto_queue[:40] + self.queue[:40] + self.queue.history[:-41:-1] + self.auto_queue.history[:-61:-1]
@@ -488,7 +488,7 @@ class Player(discord.VoiceProtocol):
         logger.debug(f"Player {self.guild.id} is dispatching VOICE_UPDATE.")
 
     async def connect(
-        self, *, timeout: float = 5.0, reconnect: bool, self_deaf: bool = False, self_mute: bool = False
+        self, *, timeout: float = 10.0, reconnect: bool, self_deaf: bool = False, self_mute: bool = False
     ) -> None:
         """
 
@@ -523,6 +523,41 @@ class Player(discord.VoiceProtocol):
                 await self._connection_event.wait()
         except (asyncio.TimeoutError, asyncio.CancelledError):
             msg = f"Unable to connect to {self.channel} as it exceeded the timeout of {timeout} seconds."
+            raise ChannelTimeoutException(msg)
+
+    async def move_to(
+        self, channel: VocalGuildChannel | None, *, timeout: float = 10.0, self_deaf: bool = False, self_mute: bool = False
+    ) -> None:
+        """Method to move the player to another channel.
+
+        Parameters
+        ----------
+        channel: :class:`discord.VoiceChannel` | :class:`discord.StageChannel`
+            The new channel to move to.
+        timeout: float
+            The timeout in ``seconds`` before raising. Defaults to 10.0.
+
+        Raises
+        ------
+        ChannelTimeoutException
+            Connecting to the voice channel timed out.
+        InvalidChannelStateException
+            You tried to connect this player without an appropriate guild.
+        """
+        if not self.guild:
+            raise InvalidChannelStateException(f"Player tried to move without a valid guild.")
+
+        self._connection_event.clear()
+        await self.guild.change_voice_state(channel=channel)
+        
+        if channel is None:
+            return
+
+        try:
+            async with async_timeout.timeout(timeout):
+                await self._connection_event.wait()
+        except (asyncio.TimeoutError, asyncio.CancelledError):
+            msg = f"Unable to connect to {channel} as it exceeded the timeout of {timeout} seconds."
             raise ChannelTimeoutException(msg)
 
     async def play(
