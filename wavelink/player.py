@@ -530,8 +530,8 @@ class Player(discord.VoiceProtocol):
         channel: VocalGuildChannel | None,
         *,
         timeout: float = 10.0,
-        self_deaf: bool = False,
-        self_mute: bool = False,
+        self_deaf: bool | None = None,
+        self_mute: bool | None = None,
     ) -> None:
         """Method to move the player to another channel.
 
@@ -541,6 +541,12 @@ class Player(discord.VoiceProtocol):
             The new channel to move to.
         timeout: float
             The timeout in ``seconds`` before raising. Defaults to 10.0.
+        self_deaf: bool | None
+            Whether to deafen when moving. Defaults to ``None`` which keeps the current setting or ``False``
+            if they can not be determined.
+        self_mute: bool | None
+            Whether to self mute when moving. Defaults to ``None`` which keeps the current setting or ``False``
+            if they can not be determined.
 
         Raises
         ------
@@ -553,7 +559,18 @@ class Player(discord.VoiceProtocol):
             raise InvalidChannelStateException(f"Player tried to move without a valid guild.")
 
         self._connection_event.clear()
-        await self.guild.change_voice_state(channel=channel)
+        voice: discord.VoiceState | None = self.guild.me.voice
+
+        if self_deaf is None and voice:
+            self_deaf = voice.self_deaf
+
+        if self_mute is None and voice:
+            self_mute = voice.self_mute
+
+        self_deaf = bool(self_deaf)
+        self_mute = bool(self_mute)
+
+        await self.guild.change_voice_state(channel=channel, self_mute=self_mute, self_deaf=self_deaf)
 
         if channel is None:
             return
