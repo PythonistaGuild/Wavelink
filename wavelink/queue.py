@@ -167,7 +167,7 @@ class Queue:
             if not waiter.done():
                 waiter.set_result(None)
                 break
-    
+
     @staticmethod
     def _check_compatability(item: object) -> None:
         if not isinstance(item, Playable):
@@ -209,7 +209,7 @@ class Queue:
         self._loaded = track
 
         return track
-    
+
     def get_at(self, index: int, /) -> Playable:
         if not self:
             raise QueueEmpty("There are no items currently in this queue.")
@@ -362,7 +362,7 @@ class Queue:
             queue.delete(1)
             # Deletes the track at index 1 (The second track).
         """
-        
+
         del self.__items[index]
 
     def count(self) -> int:
@@ -413,7 +413,7 @@ class Queue:
         """
 
         self.__items.clear()
-    
+
     def copy(self) -> Queue:
         return Queue(max_retention=self.max_retention, history=self.history is not None)
 
