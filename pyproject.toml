@@ -10,7 +10,7 @@ authors = [
 ]
 dynamic = ["dependencies"]
 description = "A robust and powerful, fully asynchronous Lavalink wrapper built for discord.py in Python."
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
         "License :: OSI Approved :: MIT License",
@@ -19,6 +19,7 @@ classifiers = [
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Internet",
         "Topic :: Software Development :: Libraries",
         "Topic :: Software Development :: Libraries :: Python Modules",
