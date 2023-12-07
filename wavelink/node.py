@@ -341,7 +341,7 @@ class Node:
             and Lavalink was unable to send any error information.
         
         
-        .. versionadd:: 3.0.0
+        .. versionadded:: 3.0.0
         """
         clean_path: str = path.removesuffix("/")
         uri: str = f"{self.uri}/{clean_path}"
@@ -418,7 +418,7 @@ class Node:
             and Lavalink was unable to send any error information.
         
         
-        .. versionadd:: 3.1.0
+        .. versionadded:: 3.1.0
         """
         data: list[PlayerResponse] = await self._fetch_players()
 
@@ -471,7 +471,7 @@ class Node:
             and Lavalink was unable to send any error information.
         
         
-        .. versionadd:: 3.1.0
+        .. versionadded:: 3.1.0
         """
         try:
             data: PlayerResponse = await self._fetch_player(guild_id)
@@ -592,7 +592,7 @@ class Node:
             and Lavalink was unable to send any error information.
         
         
-        .. versionadd:: 3.1.0
+        .. versionadded:: 3.1.0
         """
         data: InfoResponse = await self._fetch_info()
 
@@ -633,7 +633,7 @@ class Node:
             and Lavalink was unable to send any error information.
         
         
-        .. versionadd:: 3.1.0
+        .. versionadded:: 3.1.0
         """
         data: StatsResponse = await self._fetch_stats()
 
@@ -672,7 +672,7 @@ class Node:
             and Lavalink was unable to send any error information.
         
         
-        .. versionadd:: 3.1.0
+        .. versionadded:: 3.1.0
         """
         data: str = await self._fetch_version()
         return data
