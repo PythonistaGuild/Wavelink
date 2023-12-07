@@ -150,6 +150,46 @@ Payloads
 .. autoclass:: StatsEventFrames
     :members:
 
+.. attributetable:: StatsResponsePayload
+
+.. autoclass:: StatsResponsePayload
+    :members:
+
+.. attributetable:: PlayerStatePayload
+
+.. autoclass:: PlayerStatePayload
+    :members:
+
+.. attributetable:: VoiceStatePayload
+
+.. autoclass:: VoiceStatePayload
+    :members:
+
+.. attributetable:: PlayerResponsePayload
+
+.. autoclass:: PlayerResponsePayload
+    :members:
+
+.. attributetable:: GitResponsePayload
+
+.. autoclass:: GitResponsePayload
+    :members:
+
+.. attributetable:: VersionResponsePayload
+
+.. autoclass:: VersionResponsePayload
+    :members:
+
+.. attributetable:: PluginResponsePayload
+
+.. autoclass:: PluginResponsePayload
+    :members:
+
+.. attributetable:: InfoResponsePayload
+
+.. autoclass:: InfoResponsePayload
+    :members:
+
 
 Enums
 -----

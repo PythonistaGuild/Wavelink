@@ -44,6 +44,7 @@ from .exceptions import (
     NodeException,
 )
 from .lfu import LFUCache
+from .payloads import *
 from .tracks import Playable, Playlist
 from .websocket import Websocket
 
@@ -338,6 +339,9 @@ class Node:
         NodeException
             An error occured while making this request to Lavalink,
             and Lavalink was unable to send any error information.
+
+
+        .. versionadded:: 3.0.0
         """
         clean_path: str = path.removesuffix("/")
         uri: str = f"{self.uri}/{clean_path}"
@@ -391,6 +395,36 @@ class Node:
 
                 raise LavalinkException(data=exc_data)
 
+    async def fetch_players(self) -> list[PlayerResponsePayload]:
+        """Method to fetch the player information Lavalink holds for every connected player on this node.
+
+        .. warning::
+
+            This payload is not the same as the :class:`wavelink.Player` class. This is the data received from
+            Lavalink about the players.
+
+
+        Returns
+        -------
+        list[:class:`PlayerResponsePayload`]
+            A list of :class:`PlayerResponsePayload` representing each player connected to this node.
+
+        Raises
+        ------
+        LavalinkException
+            An error occurred while making this request to Lavalink.
+        NodeException
+            An error occured while making this request to Lavalink,
+            and Lavalink was unable to send any error information.
+
+
+        .. versionadded:: 3.1.0
+        """
+        data: list[PlayerResponse] = await self._fetch_players()
+
+        payload: list[PlayerResponsePayload] = [PlayerResponsePayload(p) for p in data]
+        return payload
+
     async def _fetch_player(self, guild_id: int, /) -> PlayerResponse:
         uri: str = f"{self.uri}/v4/sessions/{self.session_id}/players/{guild_id}"
 
@@ -407,6 +441,48 @@ class Node:
                     raise NodeException(status=resp.status)
 
                 raise LavalinkException(data=exc_data)
+
+    async def fetch_player_info(self, guild_id: int, /) -> PlayerResponsePayload | None:
+        """Method to fetch the player information Lavalink holds for the specific guild.
+
+        .. warning::
+
+            This payload is not the same as the :class:`wavelink.Player` class. This is the data received from
+            Lavalink about the player. See: :meth:`~wavelink.Node.get_player`
+
+
+        Parameters
+        ----------
+        guild_id: int
+            The ID of the guild you want to fetch info for.
+
+        Returns
+        -------
+        :class:`PlayerResponsePayload` | None
+            The :class:`PlayerResponsePayload` representing the player info for the guild ID connected to this node.
+            Could be ``None`` if no player is found with the given guild ID.
+
+        Raises
+        ------
+        LavalinkException
+            An error occurred while making this request to Lavalink.
+        NodeException
+            An error occured while making this request to Lavalink,
+            and Lavalink was unable to send any error information.
+
+
+        .. versionadded:: 3.1.0
+        """
+        try:
+            data: PlayerResponse = await self._fetch_player(guild_id)
+        except LavalinkException as e:
+            if e.status == 404:
+                return None
+
+            raise e
+
+        payload: PlayerResponsePayload = PlayerResponsePayload(data)
+        return payload
 
     async def _update_player(self, guild_id: int, /, *, data: Request, replace: bool = False) -> PlayerResponse:
         no_replace: bool = not replace
@@ -499,6 +575,30 @@ class Node:
 
                 raise LavalinkException(data=exc_data)
 
+    async def fetch_info(self) -> InfoResponsePayload:
+        """Method to fetch this Lavalink Nodes info response data.
+
+        Returns
+        -------
+        :class:`InfoResponsePayload`
+            The :class:`InfoResponsePayload` associated with this Node.
+
+        Raises
+        ------
+        LavalinkException
+            An error occurred while making this request to Lavalink.
+        NodeException
+            An error occured while making this request to Lavalink,
+            and Lavalink was unable to send any error information.
+
+
+        .. versionadded:: 3.1.0
+        """
+        data: InfoResponse = await self._fetch_info()
+
+        payload: InfoResponsePayload = InfoResponsePayload(data)
+        return payload
+
     async def _fetch_stats(self) -> StatsResponse:
         uri: str = f"{self.uri}/v4/stats"
 
@@ -516,6 +616,30 @@ class Node:
 
                 raise LavalinkException(data=exc_data)
 
+    async def fetch_stats(self) -> StatsResponsePayload:
+        """Method to fetch this Lavalink Nodes stats response data.
+
+        Returns
+        -------
+        :class:`StatsResponsePayload`
+            The :class:`StatsResponsePayload` associated with this Node.
+
+        Raises
+        ------
+        LavalinkException
+            An error occurred while making this request to Lavalink.
+        NodeException
+            An error occured while making this request to Lavalink,
+            and Lavalink was unable to send any error information.
+
+
+        .. versionadded:: 3.1.0
+        """
+        data: StatsResponse = await self._fetch_stats()
+
+        payload: StatsResponsePayload = StatsResponsePayload(data)
+        return payload
+
     async def _fetch_version(self) -> str:
         uri: str = f"{self.uri}/version"
 
@@ -530,6 +654,28 @@ class Node:
                 raise NodeException(status=resp.status)
 
             raise LavalinkException(data=exc_data)
+
+    async def fetch_version(self) -> str:
+        """Method to fetch this Lavalink version string.
+
+        Returns
+        -------
+        str
+            The version string associated with this Lavalink node.
+
+        Raises
+        ------
+        LavalinkException
+            An error occurred while making this request to Lavalink.
+        NodeException
+            An error occured while making this request to Lavalink,
+            and Lavalink was unable to send any error information.
+
+
+        .. versionadded:: 3.1.0
+        """
+        data: str = await self._fetch_version()
+        return data
 
     def get_player(self, guild_id: int, /) -> Player | None:
         """Return a :class:`~wavelink.Player` associated with the provided :attr:`discord.Guild.id`.
