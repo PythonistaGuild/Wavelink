@@ -339,6 +339,9 @@ class Node:
         NodeException
             An error occured while making this request to Lavalink,
             and Lavalink was unable to send any error information.
+        
+        
+        .. versionadd:: 3.0.0
         """
         clean_path: str = path.removesuffix("/")
         uri: str = f"{self.uri}/{clean_path}"
@@ -413,6 +416,9 @@ class Node:
         NodeException
             An error occured while making this request to Lavalink,
             and Lavalink was unable to send any error information.
+        
+        
+        .. versionadd:: 3.1.0
         """
         data: list[PlayerResponse] = await self._fetch_players()
 
@@ -463,6 +469,9 @@ class Node:
         NodeException
             An error occured while making this request to Lavalink,
             and Lavalink was unable to send any error information.
+        
+        
+        .. versionadd:: 3.1.0
         """
         try:
             data: PlayerResponse = await self._fetch_player(guild_id)
@@ -581,6 +590,9 @@ class Node:
         NodeException
             An error occured while making this request to Lavalink,
             and Lavalink was unable to send any error information.
+        
+        
+        .. versionadd:: 3.1.0
         """
         data: InfoResponse = await self._fetch_info()
 
@@ -619,6 +631,9 @@ class Node:
         NodeException
             An error occured while making this request to Lavalink,
             and Lavalink was unable to send any error information.
+        
+        
+        .. versionadd:: 3.1.0
         """
         data: StatsResponse = await self._fetch_stats()
 
@@ -655,6 +670,9 @@ class Node:
         NodeException
             An error occured while making this request to Lavalink,
             and Lavalink was unable to send any error information.
+        
+        
+        .. versionadd:: 3.1.0
         """
         data: str = await self._fetch_version()
         return data
