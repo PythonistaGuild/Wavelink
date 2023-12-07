@@ -395,6 +395,12 @@ class Node:
     async def fetch_players(self) -> list[PlayerResponsePayload]:
         """Method to fetch the player information Lavalink holds for every connected player on this node.
 
+        .. warning::
+
+            This payload is not the same as the :class:`wavelink.Player` class. This is the data received from
+            Lavalink about the players.
+
+
         Returns
         -------
         list[:class:`PlayerResponsePayload`]
@@ -432,6 +438,12 @@ class Node:
 
     async def fetch_player_info(self, guild_id: int, /) -> PlayerResponsePayload | None:
         """Method to fetch the player information Lavalink holds for the specific guild.
+
+        .. warning::
+
+            This payload is not the same as the :class:`wavelink.Player` class. This is the data received from
+            Lavalink about the player. See: :meth:`~wavelink.Node.get_player`
+
 
         Parameters
         ----------
