@@ -23,16 +23,20 @@ SOFTWARE.
 """
 from __future__ import annotations
 
+import datetime
 from typing import TYPE_CHECKING, cast
 
 import wavelink
 
 from .enums import DiscordVoiceCloseType
+from .filters import Filters
+from .tracks import Playable
 
 if TYPE_CHECKING:
     from .node import Node
     from .player import Player
-    from .tracks import Playable
+    from .types.filters import *
+    from .types.response import *
     from .types.state import PlayerState
     from .types.stats import CPUStats, FrameStats, MemoryStats
     from .types.websocket import StatsOP, TrackExceptionPayload
@@ -50,6 +54,14 @@ __all__ = (
     "StatsEventMemory",
     "StatsEventCPU",
     "StatsEventFrames",
+    "StatsResponsePayload",
+    "GitResponsePayload",
+    "VersionResponsePayload",
+    "PluginResponsePayload",
+    "InfoResponsePayload",
+    "PlayerStatePayload",
+    "VoiceStatePayload",
+    "PlayerResponsePayload",
 )
 
 
@@ -281,8 +293,8 @@ class StatsEventPayload:
         See Also: :class:`wavelink.StatsEventMemory`
     cpu: :class:`wavelink.StatsEventCPU`
         See Also: :class:`wavelink.StatsEventCPU`
-    frames: :class:`wavelink.StatsEventFrames`
-        See Also: :class:`wavelink.StatsEventFrames`
+    frames: :class:`wavelink.StatsEventFrames` | None
+        See Also: :class:`wavelink.StatsEventFrames`. This could be ``None``.
     """
 
     def __init__(self, data: StatsOP) -> None:
@@ -294,5 +306,217 @@ class StatsEventPayload:
         self.cpu: StatsEventCPU = StatsEventCPU(data=data["cpu"])
         self.frames: StatsEventFrames | None = None
 
-        if data["frameStats"]:
-            self.frames = StatsEventFrames(data=data["frameStats"])
+        if frames := data.get("frameStats", None):
+            self.frames = StatsEventFrames(frames)
+
+
+class StatsResponsePayload:
+    """Payload received when using :meth:`~wavelink.Node.fetch_stats`
+
+    Attributes
+    ----------
+    players: int
+        The amount of players connected to the node (Lavalink).
+    playing: int
+        The amount of players playing a track.
+    uptime: int
+        The uptime of the node in milliseconds.
+    memory: :class:`wavelink.StatsEventMemory`
+        See Also: :class:`wavelink.StatsEventMemory`
+    cpu: :class:`wavelink.StatsEventCPU`
+        See Also: :class:`wavelink.StatsEventCPU`
+    frames: :class:`wavelink.StatsEventFrames` | None
+        See Also: :class:`wavelink.StatsEventFrames`. This could be ``None``.
+    """
+
+    def __init__(self, data: StatsResponse) -> None:
+        self.players: int = data["players"]
+        self.playing: int = data["playingPlayers"]
+        self.uptime: int = data["uptime"]
+
+        self.memory: StatsEventMemory = StatsEventMemory(data=data["memory"])
+        self.cpu: StatsEventCPU = StatsEventCPU(data=data["cpu"])
+        self.frames: StatsEventFrames | None = None
+
+        if frames := data.get("frameStats", None):
+            self.frames = StatsEventFrames(frames)
+
+
+class PlayerStatePayload:
+    """Represents the PlayerState information received via :meth:`~wavelink.Node.fetch_player_info` or
+    :meth:`~wavelink.Node.fetch_players`
+
+    Attributes
+    ----------
+    time: int
+        Unix timestamp in milliseconds received from Lavalink.
+    position: int
+        The position of the track in milliseconds received from Lavalink.
+    connected: bool
+        Whether Lavalink is connected to the voice gateway.
+    ping: int
+        The ping of the node to the Discord voice server in milliseconds (-1 if not connected).
+    """
+
+    def __init__(self, data: PlayerState) -> None:
+        self.time: int = data["time"]
+        self.position: int = data["position"]
+        self.connected: bool = data["connected"]
+        self.ping: int = data["ping"]
+
+
+class VoiceStatePayload:
+    """Represents the VoiceState information received via :meth:`~wavelink.Node.fetch_player_info` or
+    :meth:`~wavelink.Node.fetch_players`. This is the voice state information received via Discord and sent to your
+    Lavalink node.
+
+    Attributes
+    ----------
+    token: str | None
+        The Discord voice token authenticated with. This is not the same as your bots token. Could be ``None``.
+    endpoint: str | None
+        The Discord voice endpoint connected to. Could be ``None``.
+    session_id: str | None
+        The Discord voice session ID autheticated with. Could be ``None``.
+    """
+
+    def __init__(self, data: VoiceStateResponse) -> None:
+        self.token: str | None = data.get("token")
+        self.endpoint: str | None = data.get("endpoint")
+        self.session_id: str | None = data.get("sessionId")
+
+
+class PlayerResponsePayload:
+    """Payload received when using :meth:`~wavelink.Node.fetch_player_info` or :meth:`~wavelink.Node.fetch_players`
+
+    Attributes
+    ----------
+    guild_id: int
+        The guild ID as an int that this player is connected to.
+    track: :class:`wavelink.Playable` | None
+        The current track playing on Lavalink. Could be ``None`` if no track is playing.
+    volume: int
+        The current volume of the player.
+    paused: bool
+        A bool indicating whether the player is paused.
+    state: :class:`wavelink.PlayerStatePayload`
+        The current state of the player. See: :class:`wavelink.PlayerStatePayload`.
+    voice_state: :class:`wavelink.VoiceStatePayload`
+        The voice state infomration received via Discord and sent to Lavalink. See: :class:`wavelink.VoiceStatePayload`.
+    filters: :class:`wavelink.Filters`
+        The :class:`wavelink.Filters` currently associated with this player.
+    """
+
+    def __init__(self, data: PlayerResponse) -> None:
+        self.guild_id: int = int(data["guildId"])
+        self.track: Playable | None = None
+
+        if track := data.get("track"):
+            self.track = Playable(track)
+
+        self.volume: int = data["volume"]
+        self.paused: bool = data["paused"]
+        self.state: PlayerStatePayload = PlayerStatePayload(data["state"])
+        self.voice_state: VoiceStatePayload = VoiceStatePayload(data["voice"])
+        self.filters: Filters = Filters(data=data["filters"])
+
+
+class GitResponsePayload:
+    """Represents Git information received via :meth:`wavelink.Node.fetch_info`
+
+    Attributes
+    ----------
+    branch: str
+        The branch this Lavalink server was built on.
+    commit: str
+        The commit this Lavalink server was built on.
+    commit_time: :class:`datetime.datetime`
+        The timestamp for when the commit was created.
+    """
+
+    def __init__(self, data: GitPayload) -> None:
+        self.branch: str = data["branch"]
+        self.commit: str = data["commit"]
+        self.commit_time: datetime.datetime = datetime.datetime.fromtimestamp(
+            data["commitTime"] / 1000, tz=datetime.timezone.utc
+        )
+
+
+class VersionResponsePayload:
+    """Represents Version information received via :meth:`wavelink.Node.fetch_info`
+
+    Attributes
+    ----------
+    semver: str
+        The full version string of this Lavalink server.
+    major: int
+        The major version of this Lavalink server.
+    minor: int
+        The minor version of this Lavalink server.
+    patch: int
+        The patch version of this Lavalink server.
+    pre_release: str
+        The pre-release version according to semver as a ``.`` separated list of identifiers.
+    build: str | None
+        The build metadata according to semver as a ``.`` separated list of identifiers. Could be ``None``.
+    """
+
+    def __init__(self, data: VersionPayload) -> None:
+        self.semver: str = data["semver"]
+        self.major: int = data["major"]
+        self.minor: int = data["minor"]
+        self.patch: int = data["patch"]
+        self.pre_release: str | None = data.get("preRelease")
+        self.build: str | None = data.get("build")
+
+
+class PluginResponsePayload:
+    """Represents Plugin information received via :meth:`wavelink.Node.fetch_info`
+
+    Attributes
+    ----------
+    name: str
+        The plugin name.
+    version: str
+        The plugin version.
+    """
+
+    def __init__(self, data: PluginPayload) -> None:
+        self.name: str = data["name"]
+        self.version: str = data["version"]
+
+
+class InfoResponsePayload:
+    """Payload received when using :meth:`~wavelink.Node.fetch_info`
+
+    Attributes
+    ----------
+    version: :class:`VersionResponsePayload`
+        The version info payload for this Lavalink node in the :class:`VersionResponsePayload` object.
+    build_time: :class:`datetime.datetime`
+        The timestamp when this Lavalink jar was built.
+    git: :class:`GitResponsePayload`
+        The git info payload for this Lavalink node in the :class:`GitResponsePayload` object.
+    jvm: str
+        The JVM version this Lavalink node runs on.
+    lavaplayer: str
+        The Lavaplayer version being used by this Lavalink node.
+    source_managers: list[str]
+        The enabled source managers for this node.
+    filters: list[str]
+        The enabled filters for this node.
+    plugins: list[:class:`PluginResponsePayload`]
+        The enabled plugins for this node.
+    """
+
+    def __init__(self, data: InfoResponse) -> None:
+        self.version: VersionResponsePayload = VersionResponsePayload(data["version"])
+        self.build_time: datetime.datetime = datetime.datetime.fromtimestamp(
+            data["buildTime"] / 1000, tz=datetime.timezone.utc
+        )
+        self.git: GitResponsePayload = GitResponsePayload(data["git"])
+        self.jvm: str = data["jvm"]
+        self.lavaplayer: str = data["lavaplayer"]
+        self.source_managers: list[str] = data["sourceManagers"]
+        self.filters: list[str] = data["filters"]
+        self.plugins: list[PluginResponsePayload] = [PluginResponsePayload(p) for p in data["plugins"]]
