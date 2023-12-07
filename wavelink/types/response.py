@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from typing_extensions import Never, NotRequired
 
     from .filters import FilterPayload
-    from .state import PlayerState, VoiceState
+    from .state import PlayerState
     from .stats import CPUStats, FrameStats, MemoryStats
     from .tracks import PlaylistPayload, TrackPayload
 
@@ -47,13 +47,19 @@ class LoadedErrorPayload(TypedDict):
     cause: str
 
 
+class VoiceStateResponse(TypedDict, total=False):
+    token: str
+    endpoint: str | None
+    sessionId: str
+
+
 class PlayerResponse(TypedDict):
     guildId: str
     track: NotRequired[TrackPayload]
     volume: int
     paused: bool
     state: PlayerState
-    voice: VoiceState
+    voice: VoiceStateResponse
     filters: FilterPayload
 
 
