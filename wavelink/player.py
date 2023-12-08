@@ -667,7 +667,7 @@ class Player(discord.VoiceProtocol):
             self._filters = filters
 
         request: RequestPayload = {
-            "encodedTrack": track.encoded,
+            "track": {"encoded": track.encoded, "userData": dict(track.extras)},
             "volume": vol,
             "position": start,
             "endTime": end,
@@ -850,7 +850,7 @@ class Player(discord.VoiceProtocol):
         if force:
             self.queue._loaded = None
 
-        request: RequestPayload = {"encodedTrack": None}
+        request: RequestPayload = {"track": {"encoded": None}}
         await self.node._update_player(self.guild.id, data=request, replace=True)
 
         return old

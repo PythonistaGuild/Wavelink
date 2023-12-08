@@ -347,6 +347,15 @@ Filters
     :members:
 
 
+Utils
+-----
+
+.. attributetable:: ExtrasNamespace
+
+.. autoclass:: ExtrasNamespace
+
+    
+
 Exceptions
 ----------
 
