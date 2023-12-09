@@ -542,6 +542,9 @@ class ExtraEventPayload:
         The player associated with this event. Could be None.
     data: dict[str, Any]
         The raw data sent from Lavalink for this event.
+
+
+    .. versionadded:: 3.1.0
     """
 
     def __init__(self, *, node: Node, player: Player | None, data: dict[str, Any]) -> None:

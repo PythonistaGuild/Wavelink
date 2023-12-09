@@ -85,6 +85,9 @@ An event listener in a cog.
     .. note::
 
         Please see the documentation for your Lavalink plugins to determine what data they send.
+    
+
+    .. versionadded:: 3.1.0
 
 
 Types

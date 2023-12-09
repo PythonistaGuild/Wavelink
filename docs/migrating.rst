@@ -86,6 +86,7 @@ Added
 - :meth:`wavelink.Node.fetch_player_info`
 - :meth:`wavelink.Node.fetch_players`
 - :attr:`wavelink.Playable.extras`
+- :func:`wavelink.on_wavelink_extra_event`
 
 
 Connecting
