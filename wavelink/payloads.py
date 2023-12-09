@@ -62,6 +62,7 @@ __all__ = (
     "PlayerStatePayload",
     "VoiceStatePayload",
     "PlayerResponsePayload",
+    "ExtraEventPayload",
 )
 
 
@@ -520,3 +521,33 @@ class InfoResponsePayload:
         self.source_managers: list[str] = data["sourceManagers"]
         self.filters: list[str] = data["filters"]
         self.plugins: list[PluginResponsePayload] = [PluginResponsePayload(p) for p in data["plugins"]]
+
+
+class ExtraEventPayload:
+    """Payload received in the :func:`on_wavelink_extra_event` event.
+
+    This payload is created when an ``Unknown`` and ``Unhandled`` event is received from Lavalink, most likely via
+    a plugin.
+
+    .. note::
+
+        See the appropriate documentation of the plugin for the data sent with these events.
+
+
+    Attributes
+    ----------
+    node: :class:`~wavelink.Node`
+        The node that the event pertains to.
+    player: :class:`~wavelink.Player` | None
+        The player associated with this event. Could be None.
+    data: dict[str, Any]
+        The raw data sent from Lavalink for this event.
+
+
+    .. versionadded:: 3.1.0
+    """
+
+    def __init__(self, *, node: Node, player: Player | None, data: dict[str, Any]) -> None:
+        self.node = node
+        self.player = player
+        self.data = data
