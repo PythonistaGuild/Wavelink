@@ -50,6 +50,7 @@ class TrackPayload(TypedDict):
     encoded: str
     info: TrackInfoPayload
     pluginInfo: dict[Any, Any]
+    userData: dict[str, Any]
 
 
 class PlaylistPayload(TypedDict):

@@ -239,7 +239,8 @@ class Websocket:
                     self.dispatch("websocket_closed", wcpayload)
 
                 else:
-                    logger.debug(f"Received unknown event type from Lavalink '{data['type']}'. Disregarding.")
+                    other_payload: ExtraEventPayload = ExtraEventPayload(node=self.node, player=player, data=data)
+                    self.dispatch("extra_event", other_payload)
             else:
                 logger.debug(f"'Received an unknown OP from Lavalink '{data['op']}'. Disregarding.")
 

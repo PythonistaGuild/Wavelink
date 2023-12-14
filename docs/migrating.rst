@@ -80,6 +80,13 @@ Added
 - :meth:`wavelink.Node.send`
 - :class:`wavelink.Search`
 - LFU (Least Frequently Used) Cache for request caching.
+- :meth:`wavelink.Node.fetch_info`
+- :meth:`wavelink.Node.fetch_stats`
+- :meth:`wavelink.Node.fetch_version`
+- :meth:`wavelink.Node.fetch_player_info`
+- :meth:`wavelink.Node.fetch_players`
+- :attr:`wavelink.Playable.extras`
+- :func:`wavelink.on_wavelink_extra_event`
 
 
 Connecting

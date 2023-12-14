@@ -31,6 +31,7 @@ import yarl
 import wavelink
 
 from .enums import TrackSource
+from .utils import ExtrasNamespace
 
 if TYPE_CHECKING:
     from .types.tracks import (
@@ -133,6 +134,8 @@ class Playable:
 
         self._playlist = playlist
         self._recommended: bool = False
+
+        self._extras: ExtrasNamespace = ExtrasNamespace(data.get("userData", {}))
 
     def __hash__(self) -> int:
         return hash(self.encoded)
@@ -246,6 +249,50 @@ class Playable:
     def recommended(self) -> bool:
         """Property returning a bool indicating whether this track was recommended via AutoPlay."""
         return self._recommended
+
+    @property
+    def extras(self) -> ExtrasNamespace:
+        """Property returning a :class:`~wavelink.ExtrasNamespace` of extras for this :class:`Playable`.
+
+        You can set this property with a :class:`dict` of valid :class:`str` keys to any valid ``JSON`` value,
+        or a :class:`~wavelink.ExtrasNamespace`.
+
+        If a dict is passed, it will be converted into an :class:`~wavelink.ExtrasNamespace`,
+        which can be converted back to a dict with dict(...). Additionally, you can also use list or tuple on
+        :class:`~wavelink.ExtrasNamespace`.
+
+        The extras dict will be sent to Lavalink as the ``userData`` field.
+
+
+        .. warning::
+
+            This is only available when using Lavalink 4+ (**Non BETA**) versions.
+
+
+        Examples
+        --------
+
+            .. code:: python
+
+                track: wavelink.Playable = wavelink.Playable.search("QUERY")
+                track.extras = {"requester_id": 1234567890}
+
+                # later...
+                print(track.extras.requester_id)
+                # or
+                print(dict(track.extras)["requester_id"])
+
+
+        .. versionadded:: 3.1.0
+        """
+        return self._extras
+
+    @extras.setter
+    def extras(self, __value: ExtrasNamespace | dict[str, Any]) -> None:
+        if isinstance(__value, ExtrasNamespace):
+            self._extras = __value
+        else:
+            self._extras = ExtrasNamespace(__value)
 
     @classmethod
     async def search(cls, query: str, /, *, source: TrackSource | str | None = TrackSource.YouTubeMusic) -> Search:

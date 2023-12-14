@@ -23,7 +23,7 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeAlias, TypedDict
+from typing import TYPE_CHECKING, Any, TypeAlias, TypedDict
 
 if TYPE_CHECKING:
     from typing_extensions import NotRequired
@@ -37,6 +37,12 @@ class VoiceRequest(TypedDict):
     sessionId: str
 
 
+class TrackRequest(TypedDict, total=False):
+    encoded: str | None
+    identifier: str
+    userData: dict[str, Any]
+
+
 class _BaseRequest(TypedDict, total=False):
     voice: VoiceRequest
     position: int
@@ -44,6 +50,7 @@ class _BaseRequest(TypedDict, total=False):
     volume: int
     paused: bool
     filters: FilterPayload
+    track: TrackRequest
 
 
 class EncodedTrackRequest(_BaseRequest):

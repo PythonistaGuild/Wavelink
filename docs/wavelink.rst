@@ -77,6 +77,18 @@ An event listener in a cog.
     Called when a node has been closed and cleaned-up. The second parameter ``disconnected`` is a list of
     :class:`wavelink.Player` that were connected on this Node and are now disconnected.
 
+.. function:: on_wavelink_extra_event(payload: wavelink.ExtraEventPayload)
+
+    Called when an ``Unknown`` and/or ``Unhandled`` event is recevied via Lavalink. This is most likely due to
+    a plugin like SponsorBlock sending custom event data. The payload includes the raw data sent from Lavalink.
+
+    .. note::
+
+        Please see the documentation for your Lavalink plugins to determine what data they send.
+    
+
+    .. versionadded:: 3.1.0
+
 
 Types
 -----
@@ -148,6 +160,51 @@ Payloads
 .. attributetable:: StatsEventFrames
 
 .. autoclass:: StatsEventFrames
+    :members:
+
+.. attributetable:: StatsResponsePayload
+
+.. autoclass:: StatsResponsePayload
+    :members:
+
+.. attributetable:: PlayerStatePayload
+
+.. autoclass:: PlayerStatePayload
+    :members:
+
+.. attributetable:: VoiceStatePayload
+
+.. autoclass:: VoiceStatePayload
+    :members:
+
+.. attributetable:: PlayerResponsePayload
+
+.. autoclass:: PlayerResponsePayload
+    :members:
+
+.. attributetable:: GitResponsePayload
+
+.. autoclass:: GitResponsePayload
+    :members:
+
+.. attributetable:: VersionResponsePayload
+
+.. autoclass:: VersionResponsePayload
+    :members:
+
+.. attributetable:: PluginResponsePayload
+
+.. autoclass:: PluginResponsePayload
+    :members:
+
+.. attributetable:: InfoResponsePayload
+
+.. autoclass:: InfoResponsePayload
+    :members:
+
+.. attributetable:: ExtraEventPayload
+
+.. autoclass:: ExtraEventPayload
     :members:
 
 
@@ -306,6 +363,15 @@ Filters
 .. autoclass:: LowPass
     :members:
 
+
+Utils
+-----
+
+.. attributetable:: ExtrasNamespace
+
+.. autoclass:: ExtrasNamespace
+
+    
 
 Exceptions
 ----------
