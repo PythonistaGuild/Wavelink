@@ -56,7 +56,7 @@ Changed
 - ``Player.resume()`` logic was moved to :meth:`wavelink.Player.pause`.
 - :meth:`wavelink.Player.seek` the ``position`` parameter is now positional-only, and has a default of ``0`` which restarts the track from the beginning.
 - :meth:`wavelink.Player.set_volume` the ``value`` parameter is now positional-only, and has a default of ``100``.
-- :attr:`wavelink.Player.autoplay` accepts a :class:`wavelink.AutoPlayMode` instead of a bool. AutoPlay has been changed to be more effecient and better with recomendations.
+- :attr:`wavelink.Player.autoplay` accepts a :class:`wavelink.AutoPlayMode` instead of a bool. AutoPlay has been changed to be more efficient and better with recomendations.
 - :class:`wavelink.Queue` accepts a :class:`wavelink.QueueMode` in :attr:`wavelink.Queue.mode` for looping.
 - Filters have been completely reworked. See: :class:`wavelink.Filters`
 - ``Player.set_filter`` is now known as :meth:`wavelink.Player.set_filters`
