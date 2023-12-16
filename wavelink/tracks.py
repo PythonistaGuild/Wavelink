@@ -137,6 +137,8 @@ class Playable:
 
         self._extras: ExtrasNamespace = ExtrasNamespace(data.get("userData", {}))
 
+        self._raw_data = data
+
     def __hash__(self) -> int:
         return hash(self.encoded)
 
@@ -293,6 +295,29 @@ class Playable:
             self._extras = __value
         else:
             self._extras = ExtrasNamespace(__value)
+
+    @property
+    def raw_data(self) -> TrackPayload:
+        """The raw data for this ``Playable`` received via ``Lavalink``.
+
+        You can use this data to reconstruct this ``Playable`` object.
+
+
+        Examples
+        --------
+
+            .. code:: python3
+
+                # For example purposes...
+                old_data = track.raw_data
+
+                # Later...
+                track: wavelink.Playable = wavelink.Playable(old_data)
+
+
+        .. versionadded:: 3.2.0
+        """
+        return self._raw_data
 
     @classmethod
     async def search(cls, query: str, /, *, source: TrackSource | str | None = TrackSource.YouTubeMusic) -> Search:
