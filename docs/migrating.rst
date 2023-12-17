@@ -92,7 +92,11 @@ Added
 Connecting
 ==========
 Connecting in version **3** is similar to version **2**.
-It is recommended to use discord.py ``setup_hook`` to connect your nodes.
+
+
+.. important::
+    
+    It is recommended to use discord.py ``setup_hook`` to connect your nodes.
 
 
 .. code:: python3
@@ -164,10 +168,10 @@ when playing a song from a command it is advised to check whether the Player is 
         await player.play(track)
 
 
-You can skip adding any track to your history queue in version **3** by passing ``add_history=False`` to ``.play``.
+You can skip adding any track to your history queue in version **3** by passing ``add_history=False`` to :meth:`wavelink.Player.play`.
 
-Wavelink **does not** advise using the ``on_wavelink_track_end`` event in most cases. Use this event only when you plan to
-not use ``AutoPlay`` at all. Since version **3** implements ``AutPlayMode.partial``, a setting which skips fetching and recommending tracks,
+Wavelink **does not** advise using the :func:`wavelink.on_wavelink_track_end` event in most cases. Use this event only when you plan to
+not use ``AutoPlay`` at all. Since version **3** implements :attr:`wavelink.AutoPlayMode.partial`, a setting which skips fetching and recommending tracks,
 using this event is no longer recommended in most use cases.
 
 To send track updates or do player updates, consider using :func:`wavelink.on_wavelink_track_start` instead.
