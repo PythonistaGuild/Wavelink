@@ -27,7 +27,7 @@ import asyncio
 import random
 from collections import deque
 from collections.abc import Iterable, Iterator
-from typing import overload
+from typing import SupportsIndex, TypeGuard, overload
 
 from .enums import QueueMode
 from .exceptions import QueueEmpty
@@ -80,7 +80,7 @@ class Queue:
     """
 
     def __init__(self, *, max_retention: int = 500, history: bool = True) -> None:
-        self.__items: list[Playable] = []
+        self._items: list[Playable] = []
         self.max_retention = max_retention
 
         self._history: Queue | None = None if not history else Queue(history=False)
@@ -109,6 +109,18 @@ class Queue:
     def history(self) -> Queue | None:
         return self._history
 
+    @property
+    def count(self) -> int:
+        """The queue member count."""
+
+        return len(self)
+
+    @property
+    def is_empty(self) -> bool:
+        """Whether the queue has no members."""
+
+        return not bool(self)
+
     def __str__(self) -> str:
         return ", ".join([f'"{p}"' for p in self])
 
@@ -119,46 +131,44 @@ class Queue:
         self.put(item)
 
     def __bool__(self) -> bool:
-        return bool(self.__items)
+        return bool(self._items)
 
     @overload
-    def __getitem__(self, __index: int) -> Playable:
+    def __getitem__(self, __index: SupportsIndex, /) -> Playable:
         ...
 
     @overload
-    def __getitem__(self, __index: slice) -> list[Playable]:
+    def __getitem__(self, __index: slice, /) -> list[Playable]:
         ...
 
-    def __getitem__(self, __index: int | slice) -> Playable | list[Playable]:
-        return self.__items[__index]
+    def __getitem__(self, __index: SupportsIndex | slice, /) -> Playable | list[Playable]:
+        return self._items[__index]
 
     @overload
-    def __setitem__(self, __index: int, __value: Playable) -> None:
+    def __setitem__(self, __index: SupportsIndex, __value: Playable, /) -> None:
         ...
 
     @overload
-    def __setitem__(self, __index: slice, __value: Playlist | Iterable[Playable]) -> None:
+    def __setitem__(self, __index: slice, __value: Iterable[Playable], /) -> None:
         ...
 
-    def __setitem__(self, __index: int | slice, __value: Playable | Playlist | Iterable[Playable], /) -> None:
-        if isinstance(__value, Playlist):
-            __value = __value.tracks
-        self.__items[__index] = __value
+    def __setitem__(self, __index: SupportsIndex | slice, __value: Playable | Iterable[Playable], /) -> None:
+        self._items[__index] = __value
 
     def __delitem__(self, __index: int | slice, /) -> None:
-        del self.__items[__index]
+        del self._items[__index]
 
     def __contains__(self, __other: Playable) -> bool:
-        return __other in self.__items
+        return __other in self._items
 
     def __len__(self) -> int:
-        return len(self.__items)
+        return len(self._items)
 
     def __reversed__(self) -> Iterator[Playable]:
-        return reversed(self.__items)
+        return reversed(self._items)
 
     def __iter__(self) -> Iterator[Playable]:
-        return iter(self.__items)
+        return iter(self._items)
 
     def _wakeup_next(self) -> None:
         while self._waiters:
@@ -169,13 +179,16 @@ class Queue:
                 break
 
     @staticmethod
-    def _check_compatability(item: object) -> None:
+    def _check_compatability(item: object) -> TypeGuard[Playable]:
         if not isinstance(item, Playable):
             raise TypeError("This queue is restricted to Playable objects.")
+        return True
 
-    def _check_atomic(self, item: list[Playable] | Playlist) -> None:
+    @classmethod
+    def _check_atomic(cls, item: Iterable[object]) -> TypeGuard[Iterable[Playable]]:
         for track in item:
-            self._check_compatability(track)
+            cls._check_compatability(track)
+        return True
 
     def get(self) -> Playable:
         """Retrieve a track from the left side of the queue. E.g. the first.
@@ -199,25 +212,59 @@ class Queue:
         if self.mode is QueueMode.loop_all and not self:
             assert self.history is not None
 
-            self.__items.extend(self.history.__items)
+            self._items.extend(self.history._items)
             self.history.clear()
 
         if not self:
             raise QueueEmpty("There are no items currently in this queue.")
 
-        track: Playable = self.__items.pop(0)
+        track: Playable = self._items.pop(0)
         self._loaded = track
 
         return track
 
     def get_at(self, index: int, /) -> Playable:
+        """Retrieve a track from the queue at a given index.
+
+        Parameters
+        ----------
+        index: int
+            The index of the track to get.
+
+        Returns
+        -------
+        :class:`wavelink.Playable`
+            The track retrieved from the queue.
+
+        Raises
+        ------
+        QueueEmpty
+            The queue was empty when retrieving a track.
+        IndexError
+            The index was out of range for the current queue.
+        """
+
         if not self:
             raise QueueEmpty("There are no items currently in this queue.")
 
-        return self.__items.pop(index)
+        return self._items.pop(index)
 
     def put_at(self, index: int, value: Playable, /) -> None:
-        self[index] = value
+        """Put a track into the queue at a given index.
+
+        .. note::
+
+            This method doesn't replace the track at the index but rather inserts one there.
+
+        Parameters
+        ----------
+        index: int
+            The index to put the track at.
+        value: :class:`wavelink.Playable`
+            The track to put.
+        """
+
+        self._items.insert(index, value)
 
     async def get_wait(self) -> Playable:
         """This method returns the first :class:`wavelink.Playable` if one is present or
@@ -257,7 +304,7 @@ class Queue:
     def put(self, item: Playable | Playlist, /, *, atomic: bool = True) -> int:
         """Put an item into the end of the queue.
 
-        Accepts a :class:`wavelink.Playable` or :class:`wavelink.Playlist`
+        Accepts a :class:`wavelink.Playable` or :class:`wavelink.Playlist`.
 
         Parameters
         ----------
@@ -265,12 +312,12 @@ class Queue:
             The item to enter into the queue.
         atomic: bool
             Whether the items should be inserted atomically. If set to ``True`` this method won't enter any tracks if
-            it encounters an error. Defaults to ``True``
+            it encounters an error. Defaults to ``True``.
 
         Returns
         -------
         int
-            The amount of tracks added to the queue.
+            The number of tracks added to the queue.
         """
 
         added = 0
@@ -278,19 +325,23 @@ class Queue:
         if isinstance(item, Iterable):
             if atomic:
                 self._check_atomic(item)
+                self._items.extend(item)
+                added = len(item)
+            else:
 
-            for track in item:
-                try:
-                    self._check_compatability(track)
-                except TypeError:
-                    pass
-                else:
-                    self.__items.append(track)
-                    added += 1
+                def try_compatibility(track: object) -> bool:
+                    try:
+                        return self._check_compatability(track)
+                    except TypeError:
+                        return False
+
+                passing_items = [track for track in item if try_compatibility(track)]
+                self._items.extend(passing_items)
+                added = len(passing_items)
         else:
             self._check_compatability(item)
-            self.__items.append(item)
-            added += 1
+            self._items.append(item)
+            added = 1
 
         self._wakeup_next()
 
@@ -299,7 +350,7 @@ class Queue:
     async def put_wait(self, item: list[Playable] | Playable | Playlist, /, *, atomic: bool = True) -> int:
         """Put an item or items into the end of the queue asynchronously.
 
-        Accepts a :class:`wavelink.Playable` or :class:`wavelink.Playlist` or list[:class:`wavelink.Playable`]
+        Accepts a :class:`wavelink.Playable` or :class:`wavelink.Playlist` or list[:class:`wavelink.Playable`].
 
         .. note::
 
@@ -311,12 +362,12 @@ class Queue:
             The item or items to enter into the queue.
         atomic: bool
             Whether the items should be inserted atomically. If set to ``True`` this method won't enter any tracks if
-            it encounters an error. Defaults to ``True``
+            it encounters an error. Defaults to ``True``.
 
         Returns
         -------
         int
-            The amount of tracks added to the queue.
+            The number of tracks added to the queue.
         """
 
         added: int = 0
@@ -325,6 +376,8 @@ class Queue:
             if isinstance(item, Iterable):
                 if atomic:
                     self._check_atomic(item)
+                    self._items.extend(item)
+                    return len(item)
 
                 for track in item:
                     try:
@@ -332,14 +385,14 @@ class Queue:
                     except TypeError:
                         pass
                     else:
-                        self.__items.append(track)
+                        self._items.append(track)
                         added += 1
 
                     await asyncio.sleep(0)
 
             else:
                 self._check_compatability(item)
-                self.__items.append(item)
+                self._items.append(item)
                 added += 1
                 await asyncio.sleep(0)
 
@@ -363,13 +416,7 @@ class Queue:
             # Deletes the track at index 1 (The second track).
         """
 
-        del self.__items[index]
-
-    def count(self) -> int:
-        return len(self)
-
-    def is_empty(self) -> bool:
-        return bool(self)
+        del self._items[index]
 
     def peek(self, index: int, /) -> Playable:
         if not self:
@@ -381,7 +428,7 @@ class Queue:
         self[first], self[second] = self[second], self[first]
 
     def index(self, item: Playable, /) -> int:
-        return self.__items.index(item)
+        return self._items.index(item)
 
     def shuffle(self) -> None:
         """Shuffles the queue in place. This does **not** return anything.
@@ -395,7 +442,7 @@ class Queue:
             # Your queue has now been shuffled...
         """
 
-        random.shuffle(self.__items)
+        random.shuffle(self._items)
 
     def clear(self) -> None:
         """Remove all items from the queue.
@@ -412,10 +459,14 @@ class Queue:
             # Your queue is now empty...
         """
 
-        self.__items.clear()
+        self._items.clear()
 
     def copy(self) -> Queue:
-        return Queue(max_retention=self.max_retention, history=self.history is not None)
+        """Return a shallow copy of the queue."""
+
+        copy_queue = Queue(max_retention=self.max_retention, history=self.history is not None)
+        copy_queue._items = self._items.copy()
+        return copy_queue
 
     def reset(self) -> None:
         self.clear()

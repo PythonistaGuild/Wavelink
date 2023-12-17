@@ -91,7 +91,11 @@ class Player(discord.VoiceProtocol):
         return self
 
     def __init__(
-        self, client: discord.Client = MISSING, channel: Connectable = MISSING, *, nodes: list[Node] | None = None
+        self,
+        client: discord.Client = MISSING,
+        channel: Connectable = MISSING,
+        *,
+        nodes: list[Node] | None = None,
     ) -> None:
         super().__init__(client, channel)
 
@@ -203,7 +207,12 @@ class Player(discord.VoiceProtocol):
 
         weighted_history: list[Playable] = self.queue.history[::-1][: max(5, 5 * self._auto_weight)]
         weighted_upcoming: list[Playable] = self.auto_queue[: max(3, int((5 * self._auto_weight) / 3))]
-        choices: list[Playable | None] = [*weighted_history, *weighted_upcoming, self._current, self._previous]
+        choices: list[Playable | None] = [
+            *weighted_history,
+            *weighted_upcoming,
+            self._current,
+            self._previous,
+        ]
 
         # Filter out tracks which are None...
         _previous: deque[str] = self.__previous_seeds._queue  # type: ignore
@@ -299,7 +308,7 @@ class Player(discord.VoiceProtocol):
             track._recommended = True
             added += await self.auto_queue.put_wait(track)
 
-        random.shuffle(self.auto_queue.__items)
+        random.shuffle(self.auto_queue._items)
         logger.debug(f'Player "{self.guild.id}" added "{added}" tracks to the auto_queue via AutoPlay.')
 
     @property
@@ -488,7 +497,12 @@ class Player(discord.VoiceProtocol):
         logger.debug(f"Player {self.guild.id} is dispatching VOICE_UPDATE.")
 
     async def connect(
-        self, *, timeout: float = 10.0, reconnect: bool, self_deaf: bool = False, self_mute: bool = False
+        self,
+        *,
+        timeout: float = 10.0,
+        reconnect: bool,
+        self_deaf: bool = False,
+        self_mute: bool = False,
     ) -> None:
         """
 
