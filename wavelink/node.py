@@ -208,10 +208,10 @@ class Node:
     @property
     def players(self) -> dict[int, Player]:
         """A mapping of :attr:`discord.Guild.id` to :class:`~wavelink.Player`.
-        
-        
+
+
         .. versionchanged:: 3.2.0
-        
+
             This property now returns a shallow copy of the internal mapping.
         """
         return self._players.copy()
