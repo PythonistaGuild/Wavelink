@@ -210,7 +210,7 @@ class Node:
         """A mapping of :attr:`discord.Guild.id` to :class:`~wavelink.Player`.
 
 
-        .. versionchanged:: 3.2.0
+        .. versionchanged:: 3.1.1
 
             This property now returns a shallow copy of the internal mapping.
         """
