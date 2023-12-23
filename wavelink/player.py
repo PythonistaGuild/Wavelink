@@ -513,7 +513,8 @@ class Player(discord.VoiceProtocol):
 
         if not self._guild:
             self._guild = self.channel.guild
-            self.node._players[self._guild.id] = self
+
+        self.node._players[self._guild.id] = self
 
         assert self.guild is not None
         await self.guild.change_voice_state(channel=self.channel, self_mute=self_mute, self_deaf=self_deaf)
