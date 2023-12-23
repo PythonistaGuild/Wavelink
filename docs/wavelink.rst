@@ -93,8 +93,9 @@ An event listener in a cog.
 
     Triggered when the :attr:`~wavelink.Player.inactive_timeout` countdown expires for the specific :class:`~wavelink.Player`.
 
-    See: :attr:`~wavelink.Player.inactive_timeout`
-    See: :class:`~wavelink.Node` for setting a default on all players.
+
+    - See: :attr:`~wavelink.Player.inactive_timeout`
+    - See: :class:`~wavelink.Node` for setting a default on all players.
 
 
     Examples

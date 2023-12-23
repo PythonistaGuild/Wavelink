@@ -400,8 +400,9 @@ class Player(discord.VoiceProtocol):
 
         When this property is set, the timeout will reset, and all previously waiting countdowns are cancelled.
 
-        See: :class:`~wavelink.Node`
-        See: :func:`on_wavelink_inactive_player`
+        - See: :class:`~wavelink.Node`
+        - See: :func:`on_wavelink_inactive_player`
+
 
         .. versionadded:: 3.2.0
         """

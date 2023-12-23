@@ -121,7 +121,9 @@ class Node:
         If this is ``0`` or below, resuming will be disabled. Defaults to ``60``.
     inactive_player_timeout: int | None
         Set the default for :attr:`wavelink.Player.inactive_timeout` on every player that connects to this node.
-        Defaults to ``300``. See also: :func:`on_wavelink_inactive_player`.
+        Defaults to ``300``.
+
+        See also: :func:`on_wavelink_inactive_player`.
     """
 
     def __init__(
