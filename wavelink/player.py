@@ -742,7 +742,7 @@ class Player(discord.VoiceProtocol):
         Parameters
         ----------
         filters: Optional[:class:`~wavelink.Filters`]
-            The filters to set on the player. Could be ```None`` to reset the currently applied filters.
+            The filters to set on the player. Could be ``None`` to reset the currently applied filters.
             Defaults to ``None``.
         seek: bool
             Whether to seek immediately when applying these filters. Seeking uses more resources, but applies the
