@@ -527,7 +527,8 @@ class Player(discord.VoiceProtocol):
 
         if not self._guild:
             self._guild = self.channel.guild
-            self.node._players[self._guild.id] = self
+
+        self.node._players[self._guild.id] = self
 
         assert self.guild is not None
         await self.guild.change_voice_state(channel=self.channel, self_mute=self_mute, self_deaf=self_deaf)
@@ -755,7 +756,7 @@ class Player(discord.VoiceProtocol):
         Parameters
         ----------
         filters: Optional[:class:`~wavelink.Filters`]
-            The filters to set on the player. Could be ```None`` to reset the currently applied filters.
+            The filters to set on the player. Could be ``None`` to reset the currently applied filters.
             Defaults to ``None``.
         seek: bool
             Whether to seek immediately when applying these filters. Seeking uses more resources, but applies the
