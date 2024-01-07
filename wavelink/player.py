@@ -393,7 +393,7 @@ class Player(discord.VoiceProtocol):
         :func:`on_wavelink_inactive_player` event or ``None`` to remove the timeout.
 
 
-        .. wanring::
+        .. warning::
 
             Setting this to a value of ``0`` or below is the equivalent of setting this property to ``None``.
 
@@ -415,7 +415,7 @@ class Player(discord.VoiceProtocol):
             self._inactivity_cancel()
             return
 
-        if value and value < 10:
+        if value < 10:
             logger.warn('Setting "inactive_timeout" below 10 seconds may result in unwanted side effects.')
 
         self._inactivity_wait = value
