@@ -119,6 +119,11 @@ class Node:
     resume_timeout: Optional[int]
         The seconds this Node should configure Lavalink for resuming its current session in case of network issues.
         If this is ``0`` or below, resuming will be disabled. Defaults to ``60``.
+    inactive_player_timeout: int | None
+        Set the default for :attr:`wavelink.Player.inactive_timeout` on every player that connects to this node.
+        Defaults to ``300``.
+
+        See also: :func:`on_wavelink_inactive_player`.
     """
 
     def __init__(
@@ -132,6 +137,7 @@ class Node:
         retries: int | None = None,
         client: discord.Client | None = None,
         resume_timeout: int = 60,
+        inactive_player_timeout: int | None = 300,
     ) -> None:
         self._identifier = identifier or secrets.token_urlsafe(12)
         self._uri = uri.removesuffix("/")
@@ -152,6 +158,13 @@ class Node:
         self._spotify_enabled: bool = False
 
         self._websocket: Websocket | None = None
+
+        if inactive_player_timeout and inactive_player_timeout < 10:
+            logger.warn('Setting "inactive_player_timeout" below 10 seconds may result in unwanted side effects.')
+
+        self._inactive_player_timeout = (
+            inactive_player_timeout if inactive_player_timeout and inactive_player_timeout > 0 else None
+        )
 
     def __repr__(self) -> str:
         return f"Node(identifier={self.identifier}, uri={self.uri}, status={self.status}, players={len(self.players)})"

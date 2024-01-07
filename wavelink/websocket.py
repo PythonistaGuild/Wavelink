@@ -197,6 +197,9 @@ class Websocket:
                     startpayload: TrackStartEventPayload = TrackStartEventPayload(player=player, track=track)
                     self.dispatch("track_start", startpayload)
 
+                    if player:
+                        asyncio.create_task(player._track_start(startpayload))
+
                 elif data["type"] == "TrackEndEvent":
                     track: Playable = Playable(data["track"])
                     reason: str = data["reason"]

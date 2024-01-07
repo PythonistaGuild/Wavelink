@@ -47,7 +47,11 @@ from .exceptions import (
 )
 from .filters import Filters
 from .node import Pool
-from .payloads import PlayerUpdateEventPayload, TrackEndEventPayload
+from .payloads import (
+    PlayerUpdateEventPayload,
+    TrackEndEventPayload,
+    TrackStartEventPayload,
+)
 from .queue import Queue
 from .tracks import Playable, Playlist
 
@@ -139,8 +143,63 @@ class Player(discord.VoiceProtocol):
 
         self._filters: Filters = Filters()
 
+        # Needed for the inactivity checks...
+        self._inactivity_task: asyncio.Task[bool] | None = None
+        self._inactivity_wait: int | None = self._node._inactive_player_timeout
+
+    def _inactivity_task_callback(self, task: asyncio.Task[bool]) -> None:
+        result: bool = task.result()
+        cancelled: bool = task.cancelled()
+
+        if cancelled or result is False:
+            logger.debug("Disregarding Inactivity Check Task <%s> as it was previously cancelled.", task.get_name())
+            return
+
+        if result is not True:
+            logger.debug("Disregarding Inactivity Check Task <%s> as it received an unknown result.", task.get_name())
+            return
+
+        if not self._guild:
+            logger.debug("Disregarding Inactivity Check Task <%s> as it has no guild.", task.get_name())
+            return
+
+        if self.playing:
+            logger.debug(
+                "Disregarding Inactivity Check Task <%s> as Player <%s> is playing.", task.get_name(), self._guild.id
+            )
+            return
+
+        self.client.dispatch("wavelink_inactive_player", self)
+        logger.debug('Dispatched "on_wavelink_inactive_player" for Player <%s>.', self._guild.id)
+
+    async def _inactivity_runner(self, wait: int) -> bool:
+        try:
+            await asyncio.sleep(wait)
+        except asyncio.CancelledError:
+            return False
+
+        return True
+
+    def _inactivity_cancel(self) -> None:
+        if self._inactivity_task:
+            try:
+                self._inactivity_task.cancel()
+            except Exception:
+                pass
+
+        self._inactivity_task = None
+
+    def _inactivity_start(self) -> None:
+        if self._inactivity_wait is not None and self._inactivity_wait > 0:
+            self._inactivity_task = asyncio.create_task(self._inactivity_runner(self._inactivity_wait))
+            self._inactivity_task.add_done_callback(self._inactivity_task_callback)
+
+    async def _track_start(self, payload: TrackStartEventPayload) -> None:
+        self._inactivity_cancel()
+
     async def _auto_play_event(self, payload: TrackEndEventPayload) -> None:
         if self._autoplay is AutoPlayMode.disabled:
+            self._inactivity_start()
             return
 
         if self._error_count >= 3:
@@ -148,6 +207,7 @@ class Player(discord.VoiceProtocol):
                 "AutoPlay was unable to continue as you have received too many consecutive errors."
                 "Please check the error log on Lavalink."
             )
+            self._inactivity_start()
             return
 
         if payload.reason == "replaced":
@@ -166,6 +226,7 @@ class Player(discord.VoiceProtocol):
 
         if not isinstance(self.queue, Queue) or not isinstance(self.auto_queue, Queue):  # type: ignore
             logger.warning(f'"Unable to use AutoPlay on Player for Guild "{self.guild}" due to unsupported Queue.')
+            self._inactivity_start()
             return
 
         if self.queue.mode is QueueMode.loop:
@@ -182,6 +243,10 @@ class Player(discord.VoiceProtocol):
                 await self._do_recommendation()
 
     async def _do_partial(self, *, history: bool = True) -> None:
+        # We still do the inactivity start here since if play fails and we have no more tracks...
+        # we should eventually fire the inactivity event...
+        self._inactivity_start()
+
         if self._current is None:
             try:
                 track: Playable = self.queue.get()
@@ -195,6 +260,10 @@ class Player(discord.VoiceProtocol):
         assert self.queue.history is not None and self.auto_queue.history is not None
 
         if len(self.auto_queue) > self._auto_cutoff + 1:
+            # We still do the inactivity start here since if play fails and we have no more tracks...
+            # we should eventually fire the inactivity event...
+            self._inactivity_start()
+
             track: Playable = self.auto_queue.get()
             self.auto_queue.history.put(track)
 
@@ -277,6 +346,7 @@ class Player(discord.VoiceProtocol):
 
         if not filtered_r:
             logger.debug(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
+            self._inactivity_start()
             return
 
         if not self._current:
@@ -301,6 +371,58 @@ class Player(discord.VoiceProtocol):
 
         random.shuffle(self.auto_queue._queue)
         logger.debug(f'Player "{self.guild.id}" added "{added}" tracks to the auto_queue via AutoPlay.')
+
+        # Probably don't need this here as it's likely to be cancelled instantly...
+        self._inactivity_start()
+
+    @property
+    def inactive_timeout(self) -> int | None:
+        """A property which returns the time as an ``int`` of seconds to wait before this player dispatches the
+        :func:`on_wavelink_inactive_player` event.
+
+        This property could return ``None`` if no time has been set.
+
+        An inactive player is a player that has not been playing anything for the specified amount of seconds.
+
+        - Pausing the player while a song is playing will not activate this countdown.
+        - The countdown starts when a track ends and cancels when a track starts.
+        - The countdown will not trigger until a song is played for the first time or this property is reset.
+        - The default countdown for all players is set on :class:`~wavelink.Node`.
+
+        This property can be set with a valid ``int`` of seconds to wait before dispatching the
+        :func:`on_wavelink_inactive_player` event or ``None`` to remove the timeout.
+
+
+        .. warning::
+
+            Setting this to a value of ``0`` or below is the equivalent of setting this property to ``None``.
+
+
+        When this property is set, the timeout will reset, and all previously waiting countdowns are cancelled.
+
+        - See: :class:`~wavelink.Node`
+        - See: :func:`on_wavelink_inactive_player`
+
+
+        .. versionadded:: 3.2.0
+        """
+        return self._inactivity_wait
+
+    @inactive_timeout.setter
+    def inactive_timeout(self, value: int | None) -> None:
+        if not value or value <= 0:
+            self._inactivity_wait = None
+            self._inactivity_cancel()
+            return
+
+        if value < 10:
+            logger.warn('Setting "inactive_timeout" below 10 seconds may result in unwanted side effects.')
+
+        self._inactivity_wait = value
+        self._inactivity_cancel()
+
+        if self.connected and not self.playing:
+            self._inactivity_start()
 
     @property
     def autoplay(self) -> AutoPlayMode:
@@ -859,6 +981,7 @@ class Player(discord.VoiceProtocol):
     def _invalidate(self) -> None:
         self._connected = False
         self._connection_event.clear()
+        self._inactivity_cancel()
 
         try:
             self.cleanup()

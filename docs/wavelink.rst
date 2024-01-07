@@ -89,6 +89,30 @@ An event listener in a cog.
 
     .. versionadded:: 3.1.0
 
+.. function:: on_wavelink_inactive_player(player: wavelink.Player)
+
+    Triggered when the :attr:`~wavelink.Player.inactive_timeout` countdown expires for the specific :class:`~wavelink.Player`.
+
+
+    - See: :attr:`~wavelink.Player.inactive_timeout`
+    - See: :class:`~wavelink.Node` for setting a default on all players.
+
+
+    Examples
+    --------
+
+        **Basic Usage:**
+
+        .. code:: python3
+
+            @commands.Cog.listener()
+            async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
+                await player.channel.send(f"The player has been inactive for `{player.inactive_timeout}` seconds. Goodbye!")
+                await player.disconnect()
+
+
+    .. versionadded:: 3.2.0
+
 
 Types
 -----
