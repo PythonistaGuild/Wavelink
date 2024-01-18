@@ -1,0 +1,2 @@
+# wavelink.AutoPlayMode
+::: wavelink.AutoPlayMode
