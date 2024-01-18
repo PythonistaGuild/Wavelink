@@ -53,7 +53,7 @@ extra_javascript:
   - javascripts/extra.js
 
 nav:
-  - Home: _pages/index.md
+  - Home: index.md
   - Getting Started:
     - Installation: _pages/getting-started/installing.md
     #- Quickstart: _pages/getting-started/quickstart.md
