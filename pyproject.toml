@@ -34,7 +34,13 @@ packages = ["wavelink", "wavelink.types"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
-optional-dependencies.docs = {file = ["docs/requirements.txt"]}
+
+[project.optional-dependencies]
+docs = [
+  "mkdocs-material", 
+  "mkdocstrings-python",
+  "mkdocstrings",
+]
 
 [tool.setuptools.package-data]
 wavelink = ["py.typed"]
