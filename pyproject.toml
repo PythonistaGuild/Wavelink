@@ -34,6 +34,7 @@ packages = ["wavelink", "wavelink.types"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
+optional-dependencies.docs = {file = ["docs/requirements.txt"]}
 
 [tool.setuptools.package-data]
 wavelink = ["py.typed"]
