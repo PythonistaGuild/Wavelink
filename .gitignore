@@ -160,3 +160,7 @@ cython_debug/
 #.idea/
 
 .vscode/
+
+# Testing files...
+test*.py
+tests/
