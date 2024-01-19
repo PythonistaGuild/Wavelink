@@ -629,10 +629,11 @@ class Playlist:
             self._extras = __value
         else:
             self._extras = ExtrasNamespace(__value)
-            
+
         for track in self.tracks:
             for name, value in dict(self._extras).items():
                 setattr(track, name, value)
+
 
 class PlaylistInfo:
     """The wavelink PlaylistInfo container class.
