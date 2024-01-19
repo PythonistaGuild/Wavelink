@@ -555,7 +555,7 @@ class Playlist:
     def pop(self, index: int = -1) -> Playable:
         return self.tracks.pop(index)
 
-    def track_extras(self, *, extras: bool = False, **attrs: object) -> None:
+    def track_extras(self, **attrs: object) -> None:
         """Method which sets attributes to all :class:`Playable` in this playlist, with the provided keyword arguments.
 
         This is useful when you need to attach state to your :class:`Playable`, E.g. create a requester attribute.
@@ -583,10 +583,56 @@ class Playlist:
                 print(track.requester)
         """
         for track in self.tracks:
-            target = track.extras if extras else track
             for name, value in attrs.items():
-                setattr(target, name, value)
+                setattr(track, name, value)
 
+    @property
+    def extras(self) -> ExtrasNamespace:
+        """Property returning a :class:`~wavelink.ExtrasNamespace` of extras for this :class:`Playlist`.
+
+        You can set this property with a :class:`dict` of valid :class:`str` keys to any valid ``JSON`` value,
+        or a :class:`~wavelink.ExtrasNamespace`.
+
+        If a dict is passed, it will be converted into an :class:`~wavelink.ExtrasNamespace`,
+        which can be converted back to a dict with dict(...). Additionally, you can also use list or tuple on
+        :class:`~wavelink.ExtrasNamespace`.
+
+        The extras dict will be sent to Lavalink as the ``userData`` field for each track in the playlist.
+
+
+        .. warning::
+
+            This is only available when using Lavalink 4+ (**Non BETA**) versions.
+
+
+        Examples
+        --------
+
+            .. code:: python
+
+                playlist: wavelink.Playable = wavelink.Playable.search("QUERY")
+                playlist.extras = {"requester_id": 1234567890}
+
+                # later...
+                print(playlist.extras.requester_id)
+                # or
+                print(dict(playlist.extras)["requester_id"])
+
+
+        .. versionadded:: 3.2.0
+        """
+        return self._extras
+
+    @extras.setter
+    def extras(self, __value: ExtrasNamespace | dict[str, Any]) -> None:
+        if isinstance(__value, ExtrasNamespace):
+            self._extras = __value
+        else:
+            self._extras = ExtrasNamespace(__value)
+            
+        for track in self.tracks:
+            for name, value in dict(self._extras).items():
+                setattr(track, name, value)
 
 class PlaylistInfo:
     """The wavelink PlaylistInfo container class.
