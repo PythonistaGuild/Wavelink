@@ -555,7 +555,7 @@ class Playlist:
     def pop(self, index: int = -1) -> Playable:
         return self.tracks.pop(index)
 
-    def track_extras(self, **attrs: object) -> None:
+    def track_extras(self, *, extras: bool = False, **attrs: object) -> None:
         """Method which sets attributes to all :class:`Playable` in this playlist, with the provided keyword arguments.
 
         This is useful when you need to attach state to your :class:`Playable`, E.g. create a requester attribute.
@@ -567,6 +567,8 @@ class Playlist:
 
         Parameters
         ----------
+        extras: bool
+            True sets data in track.extras and False to track. Default is False.
         **attrs
             The keyword arguments to set as attribute name=value on each :class:`Playable`.
 
@@ -581,8 +583,9 @@ class Playlist:
                 print(track.requester)
         """
         for track in self.tracks:
+            target = track.extras if extras else track
             for name, value in attrs.items():
-                setattr(track.extras, name, value)
+                setattr(target, name, value)
 
 
 class PlaylistInfo:
