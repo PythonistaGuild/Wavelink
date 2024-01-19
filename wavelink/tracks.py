@@ -610,7 +610,7 @@ class Playlist:
 
             .. code:: python
 
-                playlist: wavelink.Playable = wavelink.Playable.search("QUERY")
+                playlist: wavelink.Search = wavelink.Playable.search("QUERY")
                 playlist.extras = {"requester_id": 1234567890}
 
                 # later...
