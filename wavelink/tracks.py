@@ -582,7 +582,7 @@ class Playlist:
         """
         for track in self.tracks:
             for name, value in attrs.items():
-                setattr(track, name, value)
+                setattr(track.extras, name, value)
 
 
 class PlaylistInfo:
