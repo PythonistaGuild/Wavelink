@@ -33,6 +33,10 @@
     border-radius: 0.5rem;
   }
 
+  .pythonista-tag:hover {
+    filter: brightness(105%);
+  }
+
   .pythonista-tag > svg {
     height: 1rem;
     width: 1rem;

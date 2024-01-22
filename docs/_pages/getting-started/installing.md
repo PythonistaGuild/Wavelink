@@ -3,12 +3,11 @@
 **Wavelink currently supports the following [Python](https://www.python.org/downloads/) versions:**
 
 
-| Version            | Status                                                                                       | Notes                                                          |
-| -----------        | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| **`<= 3.9`**       | :fontawesome-solid-triangle-exclamation:{ .icon-warning .pythonista-tag title="Unsupported"} | Unsupported                                                    |
-| **`3.10, 3.11`**   | :fontawesome-solid-check:{ .icon-check .pythonista-tag title="Supported" }                   | Supported                                                      |
-| **`3.12`**         | :fontawesome-solid-check:{ .icon-unknown .pythonista-tag title="See Notes" }                 | May require a [Custom Index](#custom-index) or build-tools     |
-| **`3.13`**         | :fontawesome-solid-question:{ .icon-unknown .pythonista-tag title="Unknown" }                | Unknown                                                        |
+| Python Version           | Status                                                                                       | Notes                                                          |
+| -----------              | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **`<= 3.9`**             | :fontawesome-solid-triangle-exclamation:{ .icon-warning .pythonista-tag title="Unsupported"} | Unsupported                                                    |
+| **`3.10, 3.11, 3.12`**   | :fontawesome-solid-check:{ .icon-check .pythonista-tag title="Supported" }                   | Supported                                                      |
+| **`3.13`**               | :fontawesome-solid-question:{ .icon-unknown .pythonista-tag title="Unknown" }                | Unknown                                                        |
 
 
 ## Virtual Environments
@@ -91,6 +90,8 @@ Using wavelink with `Python >= 3.12` may require the use of a custom pip index.
 The index allows pip to fetch pre-built wheels for some dependencies that may require build-tools for C/C++ due to not having released their own wheels for recent versions of Python.
 
 Usually with time, dependencies will eventually release wheels for new Python releases.
+
+For convenience we provide an index thanks to [Abstract Umbra](https://github.com/AbstractUmbra)
 
 **To install with prebuilt wheels:**
 ``` shell
