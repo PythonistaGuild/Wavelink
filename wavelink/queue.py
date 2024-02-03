@@ -33,7 +33,6 @@ from .enums import QueueMode
 from .exceptions import QueueEmpty
 from .tracks import Playable, Playlist
 
-
 __all__ = ("Queue",)
 
 
