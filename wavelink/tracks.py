@@ -567,8 +567,6 @@ class Playlist:
 
         Parameters
         ----------
-        extras: bool
-            True sets data in track.extras and False to track. Default is False.
         **attrs
             The keyword arguments to set as attribute name=value on each :class:`Playable`.
 
