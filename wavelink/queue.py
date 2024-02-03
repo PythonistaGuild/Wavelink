@@ -42,7 +42,7 @@ class Queue:
     .. note::
 
         :class:`~wavelink.Player` implements this queue by default.
-        You can access it via :attr:`~wavelink.Player.queue`.
+        You can access it via :attr:`wavelink.Player.queue`.
 
     .. container:: operations
 

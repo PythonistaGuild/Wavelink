@@ -83,6 +83,13 @@ class Player(discord.VoiceProtocol):
 
         Since the Player is a :class:`discord.VoiceProtocol`, it is attached to the various ``voice_client`` attributes
         in discord.py, including ``guild.voice_client``, ``ctx.voice_client`` and ``interaction.voice_client``.
+
+    Attributes
+    ----------
+    queue: :class:`~wavelink.Queue`
+        The queue associated with this player.
+    auto_queue: :class:`~wavelink.Queue`
+        The auto_queue associated with this player. This queue holds tracks that are recommended by the AutoPlay feature.
     """
 
     channel: VocalGuildChannel
