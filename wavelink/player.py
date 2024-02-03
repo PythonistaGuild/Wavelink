@@ -83,6 +83,13 @@ class Player(discord.VoiceProtocol):
 
         Since the Player is a :class:`discord.VoiceProtocol`, it is attached to the various ``voice_client`` attributes
         in discord.py, including ``guild.voice_client``, ``ctx.voice_client`` and ``interaction.voice_client``.
+
+    Attributes
+    ----------
+    queue: :class:`~wavelink.Queue`
+        The queue associated with this player.
+    auto_queue: :class:`~wavelink.Queue`
+        The auto_queue associated with this player. This queue holds tracks that are recommended by the AutoPlay feature.
     """
 
     channel: VocalGuildChannel
@@ -369,7 +376,7 @@ class Player(discord.VoiceProtocol):
             track._recommended = True
             added += await self.auto_queue.put_wait(track)
 
-        random.shuffle(self.auto_queue._queue)
+        random.shuffle(self.auto_queue._items)
         logger.debug(f'Player "{self.guild.id}" added "{added}" tracks to the auto_queue via AutoPlay.')
 
         # Probably don't need this here as it's likely to be cancelled instantly...
@@ -943,7 +950,7 @@ class Player(discord.VoiceProtocol):
 
         .. versionchanged:: 3.0.0
 
-            This method is now known as ``skip``, but the alias ``stop`` has been kept for backwards compatability.
+            This method is now known as ``skip``, but the alias ``stop`` has been kept for backwards compatibility.
         """
         return await self.skip(force=force)
 
