@@ -99,7 +99,7 @@ class Queue:
     def __init__(self, *, history: bool = True) -> None:
         self._items: list[Playable] = []
 
-        self._history: Queue | None = None if not history else Queue(history=False)
+        self._history: Queue | None = Queue(history=False) if history else None
         self._mode: QueueMode = QueueMode.normal
         self._loaded: Playable | None = None
 
@@ -677,3 +677,33 @@ class Queue:
                     break
 
         return deleted_count
+
+    @property
+    def loaded(self) -> Playable | None:
+        """The currently loaded track that will repeat when the queue is set to :attr:`wavelink.QueueMode.loop`.
+
+        This track will be retrieved when using :meth:`wavelink.Queue.get` if the queue is in loop mode.
+        You can unload the track by setting this property to ``None`` or by using :meth:`wavelink.Player.skip` with
+        ``force=True``.
+
+        Setting this property to a new :class:`wavelink.Playable` will replace the currently loaded track, but will not
+        add it to the queue; or history until the track is played.
+
+        Returns
+        -------
+        :class:`wavelink.Playable` | None
+            The currently loaded track or ``None`` if there is no track ready to repeat.
+
+        Raises
+        ------
+        TypeError
+            The track was not a :class:`wavelink.Playable` or ``None``.
+        """
+        return self._loaded
+
+    @loaded.setter
+    def loaded(self, value: Playable | None) -> None:
+        if value is not None:
+            self._check_compatibility(value)
+
+        self._loaded = value
