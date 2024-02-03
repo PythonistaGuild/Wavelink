@@ -950,7 +950,7 @@ class Player(discord.VoiceProtocol):
 
         .. versionchanged:: 3.0.0
 
-            This method is now known as ``skip``, but the alias ``stop`` has been kept for backwards compatability.
+            This method is now known as ``skip``, but the alias ``stop`` has been kept for backwards compatibility.
         """
         return await self.skip(force=force)
 

@@ -175,7 +175,7 @@ class Queue:
         return self._items[__index]
 
     def __setitem__(self, __index: SupportsIndex, __value: Playable, /) -> None:
-        self._check_compatability(__value)
+        self._check_compatibility(__value)
         self._items[__index] = __value
         self._wakeup_next()
 
@@ -203,7 +203,7 @@ class Queue:
                 break
 
     @staticmethod
-    def _check_compatability(item: object) -> TypeGuard[Playable]:
+    def _check_compatibility(item: object) -> TypeGuard[Playable]:
         if not isinstance(item, Playable):
             raise TypeError("This queue is restricted to Playable objects.")
         return True
@@ -211,7 +211,7 @@ class Queue:
     @classmethod
     def _check_atomic(cls, item: Iterable[object]) -> TypeGuard[Iterable[Playable]]:
         for track in item:
-            cls._check_compatability(track)
+            cls._check_compatibility(track)
         return True
 
     def get(self) -> Playable:
@@ -317,7 +317,7 @@ class Queue:
         TypeError
             The track was not a :class:`wavelink.Playable`.
         """
-        self._check_compatability(value)
+        self._check_compatibility(value)
         self._items.insert(index, value)
         self._wakeup_next()
 
@@ -386,7 +386,7 @@ class Queue:
 
                 def try_compatibility(track: object) -> bool:
                     try:
-                        return self._check_compatability(track)
+                        return self._check_compatibility(track)
                     except TypeError:
                         return False
 
@@ -394,7 +394,7 @@ class Queue:
                 self._items.extend(passing_items)
                 added = len(passing_items)
         else:
-            self._check_compatability(item)
+            self._check_compatibility(item)
             self._items.append(item)
             added = 1
 
@@ -435,7 +435,7 @@ class Queue:
 
                 for track in item:
                     try:
-                        self._check_compatability(track)
+                        self._check_compatibility(track)
                     except TypeError:
                         pass
                     else:
@@ -445,7 +445,7 @@ class Queue:
                     await asyncio.sleep(0)
 
             else:
-                self._check_compatability(item)
+                self._check_compatibility(item)
                 self._items.append(item)
                 added += 1
                 await asyncio.sleep(0)
