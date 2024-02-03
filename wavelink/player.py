@@ -369,7 +369,7 @@ class Player(discord.VoiceProtocol):
             track._recommended = True
             added += await self.auto_queue.put_wait(track)
 
-        random.shuffle(self.auto_queue._queue)
+        random.shuffle(self.auto_queue._items)
         logger.debug(f'Player "{self.guild.id}" added "{added}" tracks to the auto_queue via AutoPlay.')
 
         # Probably don't need this here as it's likely to be cancelled instantly...
