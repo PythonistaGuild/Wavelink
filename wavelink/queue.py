@@ -113,6 +113,7 @@ class Queue:
 
         This property can be set with any :class:`~wavelink.QueueMode`.
 
+
         .. versionadded:: 3.0.0
         """
         return self._mode
@@ -495,6 +496,7 @@ class Queue:
         IndexError
             No track exists at the given index.
 
+
         ..versionadded:: 3.2.0
         """
         if not self:
@@ -529,6 +531,7 @@ class Queue:
             # Swap the first and second tracks in the queue.
             queue.swap(0, 1)
 
+
         .. versionadded:: 3.2.0
         """
         self[first], self[second] = self[second], self[first]
@@ -550,6 +553,7 @@ class Queue:
         ------
         ValueError
             The item was not found in the queue.
+
 
         .. versionadded:: 3.2.0
         """
@@ -658,6 +662,7 @@ class Queue:
         ------
         ValueError
             The item was not found in the queue.
+
 
         .. versionadded:: 3.2.0
         """
