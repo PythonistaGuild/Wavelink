@@ -497,7 +497,7 @@ class Queue:
             No track exists at the given index.
 
 
-        ..versionadded:: 3.2.0
+        .. versionadded:: 3.2.0
         """
         if not self:
             raise QueueEmpty("There are no items currently in this queue.")
@@ -698,6 +698,9 @@ class Queue:
         ------
         TypeError
             The track was not a :class:`wavelink.Playable` or ``None``.
+
+
+        .. versionadded:: 3.2.0
         """
         return self._loaded
 
