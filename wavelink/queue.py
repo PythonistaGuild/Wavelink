@@ -134,6 +134,9 @@ class Queue:
         -------
         int
             The amount of tracks in the queue.
+
+
+        .. versionadded:: 3.2.0
         """
 
         return len(self)
@@ -146,6 +149,9 @@ class Queue:
         -------
         bool
             Whether the queue is empty.
+
+
+        .. versionadded:: 3.2.0
         """
 
         return not bool(self)
@@ -288,6 +294,9 @@ class Queue:
             The queue was empty when retrieving a track.
         IndexError
             The index was out of range for the current queue.
+
+
+        .. versionadded:: 3.2.0
         """
 
         if not self:
@@ -316,6 +325,9 @@ class Queue:
         ------
         TypeError
             The track was not a :class:`wavelink.Playable`.
+
+
+        .. versionadded:: 3.2.0
         """
         self._check_compatibility(value)
         self._items.insert(index, value)
@@ -468,6 +480,11 @@ class Queue:
 
             # Deletes the track at index 1 (The second track).
             queue.delete(1)
+
+
+        .. versionchanged:: 3.2.0
+
+            The method is no longer a coroutine.
         """
 
         del self._items[index]
