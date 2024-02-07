@@ -373,14 +373,15 @@ class Player(discord.VoiceProtocol):
 
         logger.debug(f'Player "{self.guild.id}" added "{added}" tracks to the auto_queue via AutoPlay.')
 
-        if not self._current and self.auto_queue:
-            now: Playable = self.auto_queue.get()
-            self.auto_queue.history.put(now)
+        if not self._current:
+            try:
+                now: Playable = self.auto_queue.get()
+                self.auto_queue.history.put(now)
 
-            await self.play(now, add_history=False)
-        else:
-            logger.info(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
-            self._inactivity_start()
+                await self.play(now, add_history=False)
+            except wavelink.QueueEmpty:
+                logger.info(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
+                self._inactivity_start()
 
     @property
     def inactive_timeout(self) -> int | None:
