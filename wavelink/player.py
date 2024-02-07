@@ -352,7 +352,7 @@ class Player(discord.VoiceProtocol):
         filtered_r: list[Playable] = [t for r in results for t in r]
 
         if not filtered_r and not self.auto_queue:
-            logger.debug(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
+            logger.info(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
             self._inactivity_start()
             return
 
@@ -373,9 +373,12 @@ class Player(discord.VoiceProtocol):
 
         logger.debug(f'Player "{self.guild.id}" added "{added}" tracks to the auto_queue via AutoPlay.')
 
-        if not self._current:
+        if not self._current and self.auto_queue:
             now: Playable = self.auto_queue.get()
             await self.play(now, add_history=False)
+        else:
+            logger.info(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
+            self._inactivity_start()
 
     @property
     def inactive_timeout(self) -> int | None:
