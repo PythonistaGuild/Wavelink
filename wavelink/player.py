@@ -375,6 +375,8 @@ class Player(discord.VoiceProtocol):
 
         if not self._current and self.auto_queue:
             now: Playable = self.auto_queue.get()
+            self.auto_queue.history.put(now)
+
             await self.play(now, add_history=False)
         else:
             logger.info(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
