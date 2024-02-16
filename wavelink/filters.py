@@ -717,7 +717,7 @@ class Filters:
     def reset(self) -> None:
         """Method which resets this object to an original state.
 
-        Using this method will clear all indivdual filters, and assign the wavelink default classes.
+        This method will clear all individual filters, and assign the wavelink default classes.
         """
         self._reset()
 
