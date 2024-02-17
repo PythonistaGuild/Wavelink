@@ -83,6 +83,13 @@ class Player(discord.VoiceProtocol):
 
         Since the Player is a :class:`discord.VoiceProtocol`, it is attached to the various ``voice_client`` attributes
         in discord.py, including ``guild.voice_client``, ``ctx.voice_client`` and ``interaction.voice_client``.
+
+    Attributes
+    ----------
+    queue: :class:`~wavelink.Queue`
+        The queue associated with this player.
+    auto_queue: :class:`~wavelink.Queue`
+        The auto_queue associated with this player. This queue holds tracks that are recommended by the AutoPlay feature.
     """
 
     channel: VocalGuildChannel
@@ -344,17 +351,10 @@ class Player(discord.VoiceProtocol):
         # track for result in results for track in result...
         filtered_r: list[Playable] = [t for r in results for t in r]
 
-        if not filtered_r:
-            logger.debug(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
+        if not filtered_r and not self.auto_queue:
+            logger.info(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
             self._inactivity_start()
             return
-
-        if not self._current:
-            now: Playable = filtered_r.pop(1)
-            now._recommended = True
-            self.auto_queue.history.put(now)
-
-            await self.play(now, add_history=False)
 
         # Possibly adjust these thresholds?
         history: list[Playable] = (
@@ -362,6 +362,8 @@ class Player(discord.VoiceProtocol):
         )
 
         added: int = 0
+
+        random.shuffle(filtered_r)
         for track in filtered_r:
             if track in history:
                 continue
@@ -369,11 +371,17 @@ class Player(discord.VoiceProtocol):
             track._recommended = True
             added += await self.auto_queue.put_wait(track)
 
-        random.shuffle(self.auto_queue._queue)
         logger.debug(f'Player "{self.guild.id}" added "{added}" tracks to the auto_queue via AutoPlay.')
 
-        # Probably don't need this here as it's likely to be cancelled instantly...
-        self._inactivity_start()
+        if not self._current:
+            try:
+                now: Playable = self.auto_queue.get()
+                self.auto_queue.history.put(now)
+
+                await self.play(now, add_history=False)
+            except wavelink.QueueEmpty:
+                logger.info(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
+                self._inactivity_start()
 
     @property
     def inactive_timeout(self) -> int | None:
@@ -943,7 +951,7 @@ class Player(discord.VoiceProtocol):
 
         .. versionchanged:: 3.0.0
 
-            This method is now known as ``skip``, but the alias ``stop`` has been kept for backwards compatability.
+            This method is now known as ``skip``, but the alias ``stop`` has been kept for backwards compatibility.
         """
         return await self.skip(force=force)
 

@@ -257,15 +257,15 @@ class Websocket:
         logger.debug(f"{self.node!r} dispatched the event 'on_wavelink_{event}'")
 
     async def cleanup(self) -> None:
-        if self.socket:
-            try:
-                await self.socket.close()
-            except:
-                pass
-
         if self.keep_alive_task:
             try:
                 self.keep_alive_task.cancel()
+            except:
+                pass
+
+        if self.socket:
+            try:
+                await self.socket.close()
             except:
                 pass
 

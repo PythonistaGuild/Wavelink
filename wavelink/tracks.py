@@ -584,6 +584,53 @@ class Playlist:
             for name, value in attrs.items():
                 setattr(track, name, value)
 
+    @property
+    def extras(self) -> ExtrasNamespace:
+        """Property returning a :class:`~wavelink.ExtrasNamespace` of extras for this :class:`Playlist`.
+
+        You can set this property with a :class:`dict` of valid :class:`str` keys to any valid ``JSON`` value,
+        or a :class:`~wavelink.ExtrasNamespace`.
+
+        If a dict is passed, it will be converted into an :class:`~wavelink.ExtrasNamespace`,
+        which can be converted back to a dict with ``dict(...)``. Additionally, you can also use list or tuple on
+        :class:`~wavelink.ExtrasNamespace`.
+
+        The extras dict will be sent to Lavalink as the ``userData`` field for each track in the playlist.
+
+
+        .. warning::
+
+            This is only available when using Lavalink 4+ (**Non BETA**) versions.
+
+
+        Examples
+        --------
+
+            .. code:: python
+
+                playlist: wavelink.Search = wavelink.Playable.search("QUERY")
+                playlist.extras = {"requester_id": 1234567890}
+
+                # later...
+                print(track.extras.requester_id)
+                # or
+                print(dict(track.extras)["requester_id"])
+
+
+        .. versionadded:: 3.2.0
+        """
+        return self._extras
+
+    @extras.setter
+    def extras(self, __value: ExtrasNamespace | dict[str, Any]) -> None:
+        if isinstance(__value, ExtrasNamespace):
+            self._extras = __value
+        else:
+            self._extras = ExtrasNamespace(__value)
+
+        for track in self.tracks:
+            track.extras = __value
+
 
 class PlaylistInfo:
     """The wavelink PlaylistInfo container class.
