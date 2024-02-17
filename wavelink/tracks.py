@@ -592,7 +592,7 @@ class Playlist:
         or a :class:`~wavelink.ExtrasNamespace`.
 
         If a dict is passed, it will be converted into an :class:`~wavelink.ExtrasNamespace`,
-        which can be converted back to a dict with dict(...). Additionally, you can also use list or tuple on
+        which can be converted back to a dict with ``dict(...)``. Additionally, you can also use list or tuple on
         :class:`~wavelink.ExtrasNamespace`.
 
         The extras dict will be sent to Lavalink as the ``userData`` field for each track in the playlist.
@@ -612,9 +612,9 @@ class Playlist:
                 playlist.extras = {"requester_id": 1234567890}
 
                 # later...
-                print(playlist.extras.requester_id)
+                print(track.extras.requester_id)
                 # or
-                print(dict(playlist.extras)["requester_id"])
+                print(dict(track.extras)["requester_id"])
 
 
         .. versionadded:: 3.2.0
@@ -629,8 +629,7 @@ class Playlist:
             self._extras = ExtrasNamespace(__value)
 
         for track in self.tracks:
-            for name, value in dict(self._extras).items():
-                setattr(track, name, value)
+            track.extras = __value
 
 
 class PlaylistInfo:
