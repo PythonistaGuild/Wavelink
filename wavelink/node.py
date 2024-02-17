@@ -273,19 +273,30 @@ class Node:
         if not self._has_closed:
             await self.close()
 
-    async def close(self) -> None:
+    async def close(self, eject: bool = False) -> None:
         """Method to close this Node and cleanup.
 
         After this method has finished, the event ``on_wavelink_node_closed`` will be fired.
 
         This method renders the Node websocket disconnected and disconnects all players.
+
+        Parameters
+        ----------
+        eject: bool
+            If ``True``, this will remove the Node from the Pool. Defaults to ``False``.
+
+
+        .. versionchanged:: 3.2.1
+
+            Added the ``eject`` parameter. Fixed a bug where the connected Players were not being disconnected.
         """
         disconnected: list[Player] = []
 
-        for player in self._players.values():
+        for player in self._players.copy().values():
             try:
-                await player._destroy()
-            except LavalinkException:
+                await player.disconnect()
+            except Exception as e:
+                logger.debug("An error occured while disconnecting a player in the close method of %r: %s", self, e)
                 pass
 
             disconnected.append(player)
@@ -298,6 +309,9 @@ class Node:
         self._players = {}
 
         self._has_closed = True
+
+        if eject:
+            getattr(Pool, "_Pool__nodes").pop(self.identifier, None)
 
         # Dispatch Node Closed Event... node, list of disconnected players
         if self.client is not None:
