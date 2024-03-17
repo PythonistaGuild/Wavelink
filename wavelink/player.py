@@ -787,6 +787,7 @@ class Player(discord.VoiceProtocol):
 
         old_previous = self._previous
         self._previous = self._current
+        self.queue._loaded = track
 
         pause: bool
         if paused is not None:
@@ -809,6 +810,7 @@ class Player(discord.VoiceProtocol):
         try:
             await self.node._update_player(self.guild.id, data=request, replace=replace)
         except LavalinkException as e:
+            self.queue._loaded = old_previous
             self._current = None
             self._original = None
             self._previous = old_previous
