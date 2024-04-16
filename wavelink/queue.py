@@ -393,7 +393,6 @@ class Queue:
             if atomic:
                 self._check_atomic(item)
                 self._items.extend(item)
-                self._wakeup_next()
                 added = len(item)
             else:
 
@@ -444,6 +443,7 @@ class Queue:
                 if atomic:
                     self._check_atomic(item)
                     self._items.extend(item)
+                    self._wakeup_next()
                     return len(item)
 
                 for track in item:
