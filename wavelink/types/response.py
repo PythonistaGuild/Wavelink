@@ -21,15 +21,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import TYPE_CHECKING, Literal, TypedDict
 
-if TYPE_CHECKING:
-    from typing_extensions import Never, NotRequired
+from typing import Literal, TypedDict
 
-    from .filters import FilterPayload
-    from .state import PlayerState
-    from .stats import CPUStats, FrameStats, MemoryStats
-    from .tracks import PlaylistPayload, TrackPayload
+from typing_extensions import Never, NotRequired
+
+from .filters import FilterPayload
+from .state import PlayerState
+from .stats import CPUStats, FrameStats, MemoryStats
+from .tracks import PlaylistPayload, TrackPayload
 
 
 class ErrorResponse(TypedDict):

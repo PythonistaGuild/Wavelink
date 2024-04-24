@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -32,6 +33,7 @@ from typing import SupportsIndex, TypeGuard, overload
 from .enums import QueueMode
 from .exceptions import QueueEmpty
 from .tracks import Playable, Playlist
+
 
 __all__ = ("Queue",)
 
@@ -170,12 +172,10 @@ class Queue:
         return bool(self._items)
 
     @overload
-    def __getitem__(self, __index: SupportsIndex, /) -> Playable:
-        ...
+    def __getitem__(self, __index: SupportsIndex, /) -> Playable: ...
 
     @overload
-    def __getitem__(self, __index: slice, /) -> list[Playable]:
-        ...
+    def __getitem__(self, __index: slice, /) -> list[Playable]: ...
 
     def __getitem__(self, __index: SupportsIndex | slice, /) -> Playable | list[Playable]:
         return self._items[__index]
@@ -353,7 +353,7 @@ class Queue:
 
             try:
                 await waiter
-            except:  # noqa
+            except:
                 waiter.cancel()
 
                 try:

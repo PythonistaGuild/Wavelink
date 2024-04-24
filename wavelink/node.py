@@ -21,16 +21,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 from __future__ import annotations
 
 import logging
 import secrets
 import urllib.parse
-from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias
 
 import aiohttp
-import discord
 from discord.utils import classproperty
 
 from . import __version__
@@ -48,7 +47,12 @@ from .payloads import *
 from .tracks import Playable, Playlist
 from .websocket import Websocket
 
+
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    import discord
+
     from .player import Player
     from .types.request import Request, UpdateSessionRequest
     from .types.response import (
@@ -160,7 +164,7 @@ class Node:
         self._websocket: Websocket | None = None
 
         if inactive_player_timeout and inactive_player_timeout < 10:
-            logger.warn('Setting "inactive_player_timeout" below 10 seconds may result in unwanted side effects.')
+            logger.warning('Setting "inactive_player_timeout" below 10 seconds may result in unwanted side effects.')
 
         self._inactive_player_timeout = (
             inactive_player_timeout if inactive_player_timeout and inactive_player_timeout > 0 else None
@@ -267,7 +271,7 @@ class Node:
     async def _pool_closer(self) -> None:
         try:
             await self._session.close()
-        except:
+        except Exception:
             pass
 
         if not self._has_closed:
@@ -392,7 +396,7 @@ class Node:
                 try:
                     exc_data: ErrorResponse = await resp.json()
                 except Exception as e:
-                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    logger.warning("An error occured making a request on %r: %s", self, e)
                     raise NodeException(status=resp.status)
 
                 raise LavalinkException(data=exc_data)
@@ -423,7 +427,7 @@ class Node:
                 try:
                     exc_data: ErrorResponse = await resp.json()
                 except Exception as e:
-                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    logger.warning("An error occured making a request on %r: %s", self, e)
                     raise NodeException(status=resp.status)
 
                 raise LavalinkException(data=exc_data)
@@ -470,7 +474,7 @@ class Node:
                 try:
                     exc_data: ErrorResponse = await resp.json()
                 except Exception as e:
-                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    logger.warning("An error occured making a request on %r: %s", self, e)
                     raise NodeException(status=resp.status)
 
                 raise LavalinkException(data=exc_data)
@@ -531,7 +535,7 @@ class Node:
                 try:
                     exc_data: ErrorResponse = await resp.json()
                 except Exception as e:
-                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    logger.warning("An error occured making a request on %r: %s", self, e)
                     raise NodeException(status=resp.status)
 
                 raise LavalinkException(data=exc_data)
@@ -546,7 +550,7 @@ class Node:
             try:
                 exc_data: ErrorResponse = await resp.json()
             except Exception as e:
-                logger.warning(f"An error occured making a request on {self!r}: {e}")
+                logger.warning("An error occured making a request on %r: %s", self, e)
                 raise NodeException(status=resp.status)
 
             raise LavalinkException(data=exc_data)
@@ -563,7 +567,7 @@ class Node:
                 try:
                     exc_data: ErrorResponse = await resp.json()
                 except Exception as e:
-                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    logger.warning("An error occured making a request on %r: %s", self, e)
                     raise NodeException(status=resp.status)
 
                 raise LavalinkException(data=exc_data)
@@ -580,16 +584,14 @@ class Node:
                 try:
                     exc_data: ErrorResponse = await resp.json()
                 except Exception as e:
-                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    logger.warning("An error occured making a request on %r: %s", self, e)
                     raise NodeException(status=resp.status)
 
                 raise LavalinkException(data=exc_data)
 
-    async def _decode_track(self) -> TrackPayload:
-        ...
+    async def _decode_track(self) -> TrackPayload: ...
 
-    async def _decode_tracks(self) -> list[TrackPayload]:
-        ...
+    async def _decode_tracks(self) -> list[TrackPayload]: ...
 
     async def _fetch_info(self) -> InfoResponse:
         uri: str = f"{self.uri}/v4/info"
@@ -603,7 +605,7 @@ class Node:
                 try:
                     exc_data: ErrorResponse = await resp.json()
                 except Exception as e:
-                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    logger.warning("An error occured making a request on %r: %s", self, e)
                     raise NodeException(status=resp.status)
 
                 raise LavalinkException(data=exc_data)
@@ -644,7 +646,7 @@ class Node:
                 try:
                     exc_data: ErrorResponse = await resp.json()
                 except Exception as e:
-                    logger.warning(f"An error occured making a request on {self!r}: {e}")
+                    logger.warning("An error occured making a request on %r: %s", self, e)
                     raise NodeException(status=resp.status)
 
                 raise LavalinkException(data=exc_data)
@@ -683,7 +685,7 @@ class Node:
             try:
                 exc_data: ErrorResponse = await resp.json()
             except Exception as e:
-                logger.warning(f"An error occured making a request on {self!r}: {e}")
+                logger.warning("An error occured making a request on %r: %s", self, e)
                 raise NodeException(status=resp.status)
 
             raise LavalinkException(data=exc_data)
@@ -737,7 +739,7 @@ class Pool:
         All methods and attributes on this class are class level, not instance. Do not create an instance of this class.
     """
 
-    __nodes: dict[str, Node] = {}
+    __nodes: ClassVar[dict[str, Node]] = {}
     __cache: LFUCache | None = None
 
     @classmethod
@@ -788,7 +790,7 @@ class Pool:
                 continue
 
             if node.status in (NodeStatus.CONNECTING, NodeStatus.CONNECTED):
-                logger.error(f"Unable to connect {node!r} as it is already in a connecting or connected state.")
+                logger.error("Unable to connect %r as it is already in a connecting or connected state.", node)
                 continue
 
             try:
@@ -796,11 +798,11 @@ class Pool:
             except InvalidClientException as e:
                 logger.error(e)
             except AuthorizationFailedException:
-                logger.error(f"Failed to authenticate {node!r} on Lavalink with the provided password.")
+                logger.error("Failed to authenticate %r on Lavalink with the provided password.", node)
             except NodeException:
                 logger.error(
-                    f"Failed to connect to {node!r}. Check that your Lavalink major version is '4' "
-                    "and that you are trying to connect to Lavalink on the correct port."
+                    "Failed to connect to %r. Check that your Lavalink major version is '4' and that you are trying to connect to Lavalink on the correct port.",
+                    node,
                 )
             else:
                 cls.__nodes[node.identifier] = node
@@ -826,11 +828,11 @@ class Pool:
             except InvalidClientException as e:
                 logger.error(e)
             except AuthorizationFailedException:
-                logger.error(f"Failed to authenticate {node!r} on Lavalink with the provided password.")
+                logger.error("Failed to authenticate %r on Lavalink with the provided password.", node)
             except NodeException:
                 logger.error(
-                    f"Failed to connect to {node!r}. Check that your Lavalink major version is '4' "
-                    "and that you are trying to connect to Lavalink on the correct port."
+                    "Failed to connect to %r. Check that your Lavalink major version is '4' and that you are trying to connect to Lavalink on the correct port.",
+                    node,
                 )
 
         return cls.nodes

@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 __title__ = "WaveLink"
 __author__ = "PythonistaGuild, EvieePy"
 __license__ = "MIT"
@@ -31,8 +32,7 @@ __version__ = "3.3.0"
 from .enums import *
 from .exceptions import *
 from .filters import *
-from .lfu import CapacityZero as CapacityZero
-from .lfu import LFUCache as LFUCache
+from .lfu import CapacityZero as CapacityZero, LFUCache as LFUCache
 from .node import *
 from .payloads import *
 from .player import Player as Player

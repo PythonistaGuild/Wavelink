@@ -76,6 +76,7 @@ ignore = [
     "PTH123",
     "E203", 
     "E501",
+    "RUF006"
 ]
 
 [tool.ruff.lint.isort]
@@ -96,6 +97,7 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.pyright]
+exclude = ["venv"]
 ignore = ["test*.py", "examples/*.py", "docs/*"]
 useLibraryCodeForTypes = true
 typeCheckingMode = "strict"

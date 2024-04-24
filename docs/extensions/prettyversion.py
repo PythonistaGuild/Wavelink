@@ -1,8 +1,6 @@
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives, states
-from docutils.parsers.rst.roles import set_classes
+from docutils.parsers.rst import Directive
 from docutils.statemachine import StringList
-from sphinx.locale import _
 
 
 class pretty_version_added(nodes.General, nodes.Element):
