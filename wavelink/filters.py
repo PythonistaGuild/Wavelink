@@ -680,11 +680,38 @@ class Filters:
         self._vibrato = filters.get("vibrato", Vibrato({}))
         self._rotation = filters.get("rotation", Rotation({}))
         self._distortion = filters.get("distortion", Distortion({}))
-        self._channel_mix = filters.get("channelMix", ChannelMix({}))
-        self._low_pass = filters.get("lowPass", LowPass({}))
+        self._channel_mix = filters.get("channel_mix", ChannelMix({}))
+        self._low_pass = filters.get("low_pass", LowPass({}))
 
     def set_filters(self, **filters: Unpack[FiltersOptions]) -> None:
-        # TODO: document this later maybe?
+        """Set multiple filters at once to a standalone Filter object.
+        To set the filters to the player directly see :meth:`wavelink.Player.set_filters`
+
+        Parameters
+        ----------
+        volume: float
+            The Volume filter to apply to the player.
+        equalizer: :class:`wavelink.Equalizer`
+            The Equalizer filter to apply to the player.
+        karaoke: :class:`wavelink.Karaoke`
+            The Karaoke filter to apply to the player.
+        timescale: :class:`wavelink.Timescale`
+            The Timescale filter to apply to the player.
+        tremolo: :class:`wavelink.Tremolo`
+            The Tremolo filter to apply to the player.
+        vibrato: :class:`wavelink.Vibrato`
+            The Vibrato filter to apply to the player.
+        rotation: :class:`wavelink.Rotation`
+            The Rotation filter to apply to the player.
+        distortion: :class:`wavelink.Distortion`
+            The Distortion filter to apply to the player.
+        channel_mix: :class:`wavelink.ChannelMix`
+            The ChannelMix filter to apply to the player.
+        low_pass: :class:`wavelink.LowPass`
+            The LowPass filter to apply to the player.
+        reset: bool
+            Whether to reset all filters that were not specified.
+        """
 
         reset: bool = filters.get("reset", False)
         if reset:
@@ -699,8 +726,8 @@ class Filters:
         self._vibrato = filters.get("vibrato", self._vibrato)
         self._rotation = filters.get("rotation", self._rotation)
         self._distortion = filters.get("distortion", self._distortion)
-        self._channel_mix = filters.get("channelMix", self._channel_mix)
-        self._low_pass = filters.get("lowPass", self._low_pass)
+        self._channel_mix = filters.get("channel_mix", self._channel_mix)
+        self._low_pass = filters.get("low_pass", self._low_pass)
 
     def _reset(self) -> None:
         self._volume = None
@@ -723,7 +750,33 @@ class Filters:
 
     @classmethod
     def from_filters(cls, **filters: Unpack[FiltersOptions]) -> Self:
-        # TODO: document this later maybe?
+        """Creates a Filters object with specified filters.
+
+        Parameters
+        ----------
+        volume: float
+            The Volume filter to apply to the player.
+        equalizer: :class:`wavelink.Equalizer`
+            The Equalizer filter to apply to the player.
+        karaoke: :class:`wavelink.Karaoke`
+            The Karaoke filter to apply to the player.
+        timescale: :class:`wavelink.Timescale`
+            The Timescale filter to apply to the player.
+        tremolo: :class:`wavelink.Tremolo`
+            The Tremolo filter to apply to the player.
+        vibrato: :class:`wavelink.Vibrato`
+            The Vibrato filter to apply to the player.
+        rotation: :class:`wavelink.Rotation`
+            The Rotation filter to apply to the player.
+        distortion: :class:`wavelink.Distortion`
+            The Distortion filter to apply to the player.
+        channel_mix: :class:`wavelink.ChannelMix`
+            The ChannelMix filter to apply to the player.
+        low_pass: :class:`wavelink.LowPass`
+            The LowPass filter to apply to the player.
+        reset: bool
+            Whether to reset all filters that were not specified.
+        """
 
         self = cls()
         self._set_with_reset(filters)
