@@ -3,7 +3,6 @@ from __future__ import annotations
 import importlib
 import inspect
 import re
-from enum import Enum
 from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional, Sequence, Tuple
 
 from docutils import nodes

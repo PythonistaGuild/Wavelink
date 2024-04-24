@@ -21,13 +21,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 from __future__ import annotations
 
 import asyncio
 import logging
 import random
 import time
-from collections import deque
 from typing import TYPE_CHECKING, Any, TypeAlias
 
 import async_timeout
@@ -55,12 +55,23 @@ from .payloads import (
 from .queue import Queue
 from .tracks import Playable, Playlist
 
+
 if TYPE_CHECKING:
-    from discord.types.voice import GuildVoiceState as GuildVoiceStatePayload
-    from discord.types.voice import VoiceServerUpdate as VoiceServerUpdatePayload
+    from collections import deque
+
+    from discord.abc import Connectable
+    from discord.types.voice import (
+        GuildVoiceState as GuildVoiceStatePayload,
+        VoiceServerUpdate as VoiceServerUpdatePayload,
+    )
     from typing_extensions import Self
 
     from .node import Node
+    from .payloads import (
+        PlayerUpdateEventPayload,
+        TrackEndEventPayload,
+        TrackStartEventPayload,
+    )
     from .types.request import Request as RequestPayload
     from .types.state import PlayerVoiceState, VoiceState
 
@@ -228,21 +239,22 @@ class Player(discord.VoiceProtocol):
             self._error_count = 0
 
         if self.node.status is not NodeStatus.CONNECTED:
-            logger.warning(f'"Unable to use AutoPlay on Player for Guild "{self.guild}" due to disconnected Node.')
+            logger.warning(
+                '"Unable to use AutoPlay on Player for Guild "%s" due to disconnected Node.', str(self.guild)
+            )
             return
 
         if not isinstance(self.queue, Queue) or not isinstance(self.auto_queue, Queue):  # type: ignore
-            logger.warning(f'"Unable to use AutoPlay on Player for Guild "{self.guild}" due to unsupported Queue.')
+            logger.warning(
+                '"Unable to use AutoPlay on Player for Guild "%s" due to unsupported Queue.', str(self.guild)
+            )
             self._inactivity_start()
             return
 
         if self.queue.mode is QueueMode.loop:
             await self._do_partial(history=False)
 
-        elif self.queue.mode is QueueMode.loop_all:
-            await self._do_partial()
-
-        elif self._autoplay is AutoPlayMode.partial or self.queue:
+        elif self.queue.mode is QueueMode.loop_all or (self._autoplay is AutoPlayMode.partial or self.queue):
             await self._do_partial()
 
         elif self._autoplay is AutoPlayMode.enabled:
@@ -262,11 +274,18 @@ class Player(discord.VoiceProtocol):
 
             await self.play(track, add_history=history)
 
-    async def _do_recommendation(self):
+    async def _do_recommendation(
+        self,
+        *,
+        populate_track: wavelink.Playable | None = None,
+        max_population: int | None = None,
+    ) -> None:
         assert self.guild is not None
         assert self.queue.history is not None and self.auto_queue.history is not None
 
-        if len(self.auto_queue) > self._auto_cutoff + 1:
+        max_population_: int = max_population if max_population else self._auto_cutoff
+
+        if len(self.auto_queue) > self._auto_cutoff + 1 and not populate_track:
             # We still do the inactivity start here since if play fails and we have no more tracks...
             # we should eventually fire the inactivity event...
             self._inactivity_start()
@@ -285,6 +304,9 @@ class Player(discord.VoiceProtocol):
         _previous: deque[str] = self.__previous_seeds._queue  # type: ignore
         seeds: list[Playable] = [t for t in choices if t is not None and t.identifier not in _previous]
         random.shuffle(seeds)
+
+        if populate_track:
+            seeds.insert(0, populate_track)
 
         spotify: list[str] = [t.identifier for t in seeds if t.source == "spotify"]
         youtube: list[str] = [t.identifier for t in seeds if t.source == "youtube"]
@@ -338,12 +360,7 @@ class Player(discord.VoiceProtocol):
             if not search:
                 return []
 
-            tracks: list[Playable]
-            if isinstance(search, Playlist):
-                tracks = search.tracks.copy()
-            else:
-                tracks = search
-
+            tracks: list[Playable] = search.tracks.copy() if isinstance(search, Playlist) else search
             return tracks
 
         results: tuple[T_a, T_a] = await asyncio.gather(_search(spotify_query), _search(youtube_query))
@@ -352,7 +369,7 @@ class Player(discord.VoiceProtocol):
         filtered_r: list[Playable] = [t for r in results for t in r]
 
         if not filtered_r and not self.auto_queue:
-            logger.info(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
+            logger.info('Player "%s" could not load any songs via AutoPlay.', self.guild.id)
             self._inactivity_start()
             return
 
@@ -371,16 +388,19 @@ class Player(discord.VoiceProtocol):
             track._recommended = True
             added += await self.auto_queue.put_wait(track)
 
-        logger.debug(f'Player "{self.guild.id}" added "{added}" tracks to the auto_queue via AutoPlay.')
+            if added >= max_population_:
+                break
 
-        if not self._current:
+        logger.debug('Player "%s" added "%s" tracks to the auto_queue via AutoPlay.', self.guild.id, added)
+
+        if not self._current and not populate_track:
             try:
                 now: Playable = self.auto_queue.get()
                 self.auto_queue.history.put(now)
 
                 await self.play(now, add_history=False)
             except wavelink.QueueEmpty:
-                logger.info(f'Player "{self.guild.id}" could not load any songs via AutoPlay.')
+                logger.info('Player "%s" could not load any songs via AutoPlay.', self.guild.id)
                 self._inactivity_start()
 
     @property
@@ -424,7 +444,7 @@ class Player(discord.VoiceProtocol):
             return
 
         if value < 10:
-            logger.warn('Setting "inactive_timeout" below 10 seconds may result in unwanted side effects.')
+            logger.warning('Setting "inactive_timeout" below 10 seconds may result in unwanted side effects.')
 
         self._inactivity_wait = value
         self._inactivity_cancel()
@@ -615,7 +635,7 @@ class Player(discord.VoiceProtocol):
         else:
             self._connection_event.set()
 
-        logger.debug(f"Player {self.guild.id} is dispatching VOICE_UPDATE.")
+        logger.debug("Player %s is dispatching VOICE_UPDATE.", self.guild.id)
 
     async def connect(
         self, *, timeout: float = 10.0, reconnect: bool, self_deaf: bool = False, self_mute: bool = False
@@ -724,6 +744,8 @@ class Player(discord.VoiceProtocol):
         paused: bool | None = None,
         add_history: bool = True,
         filters: Filters | None = None,
+        populate: bool = False,
+        max_populate: int = 5,
     ) -> Playable:
         """Play the provided :class:`~wavelink.Playable`.
 
@@ -756,6 +778,23 @@ class Player(discord.VoiceProtocol):
         filters: Optional[:class:`~wavelink.Filters`]
             An Optional[:class:`~wavelink.Filters`] to apply when playing this track. Defaults to ``None``.
             If this is ``None`` the currently set filters on the player will be applied.
+        populate: bool
+            Whether the player should find and fill AutoQueue with recommended tracks based on the track provided.
+            Defaults to ``False``.
+
+            Populate will only search for recommended tracks when the current tracks has been accepted by Lavalink.
+            E.g. if this method does not raise an error.
+
+            You should consider when you use the ``populate`` keyword argument as populating the AutoQueue on every
+            request could potentially lead to a large amount of tracks being populated.
+        max_populate: int
+            The maximum amount of tracks that should be added to the AutoQueue when the ``populate`` keyword argument is
+            set to ``True``. This is NOT the exact amount of tracks that will be added. You should set this to a lower
+            amount to avoid the AutoQueue from being overfilled.
+
+            This argument has no effect when ``populate`` is set to ``False``.
+
+            Defaults to ``5``.
 
 
         Returns
@@ -772,6 +811,11 @@ class Player(discord.VoiceProtocol):
             Added the ``add_history`` keyword-only argument.
 
             Added the ``filters`` keyword-only argument.
+
+
+        .. versionchanged:: 3.3.0
+
+            Added the ``populate`` keyword-only argument.
         """
         assert self.guild is not None
 
@@ -789,11 +833,7 @@ class Player(discord.VoiceProtocol):
         self._previous = self._current
         self.queue._loaded = track
 
-        pause: bool
-        if paused is not None:
-            pause = paused
-        else:
-            pause = self._paused
+        pause: bool = paused if paused is not None else self._paused
 
         if filters:
             self._filters = filters
@@ -822,6 +862,9 @@ class Player(discord.VoiceProtocol):
         if add_history:
             assert self.queue.history is not None
             self.queue.history.put(track)
+
+        if populate:
+            await self._do_recommendation(populate_track=track, max_population=max_populate)
 
         return track
 

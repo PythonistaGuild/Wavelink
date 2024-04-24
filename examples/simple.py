@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 import asyncio
 import logging
 from typing import cast
@@ -46,10 +47,10 @@ class Bot(commands.Bot):
         await wavelink.Pool.connect(nodes=nodes, client=self, cache_capacity=100)
 
     async def on_ready(self) -> None:
-        logging.info(f"Logged in: {self.user} | {self.user.id}")
+        logging.info("Logged in: %s | %s", self.user, self.user.id)
 
     async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload) -> None:
-        logging.info(f"Wavelink Node connected: {payload.node!r} | Resumed: {payload.resumed}")
+        logging.info("Wavelink Node connected: %r | Resumed: %s", payload.node, payload.resumed)
 
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload) -> None:
         player: wavelink.Player | None = payload.player

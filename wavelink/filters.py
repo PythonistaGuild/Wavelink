@@ -21,23 +21,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, TypedDict
 
+
 if TYPE_CHECKING:
     from typing_extensions import Self, Unpack
 
-    from .types.filters import ChannelMix as ChannelMixPayload
-    from .types.filters import Distortion as DistortionPayload
-    from .types.filters import Equalizer as EqualizerPayload
-    from .types.filters import FilterPayload
-    from .types.filters import Karaoke as KaraokePayload
-    from .types.filters import LowPass as LowPassPayload
-    from .types.filters import Rotation as RotationPayload
-    from .types.filters import Timescale as TimescalePayload
-    from .types.filters import Tremolo as TremoloPayload
-    from .types.filters import Vibrato as VibratoPayload
+    from .types.filters import (
+        ChannelMix as ChannelMixPayload,
+        Distortion as DistortionPayload,
+        Equalizer as EqualizerPayload,
+        FilterPayload,
+        Karaoke as KaraokePayload,
+        LowPass as LowPassPayload,
+        Rotation as RotationPayload,
+        Timescale as TimescalePayload,
+        Tremolo as TremoloPayload,
+        Vibrato as VibratoPayload,
+    )
 
 
 __all__ = (

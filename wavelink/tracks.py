@@ -21,9 +21,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 from __future__ import annotations
 
-from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, TypeAlias, overload
 
 import yarl
@@ -33,7 +33,10 @@ import wavelink
 from .enums import TrackSource
 from .utils import ExtrasNamespace
 
+
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from .types.tracks import (
         PlaylistInfoPayload,
         PlaylistPayload,
@@ -533,12 +536,10 @@ class Playlist:
         return len(self.tracks)
 
     @overload
-    def __getitem__(self, index: int) -> Playable:
-        ...
+    def __getitem__(self, index: int) -> Playable: ...
 
     @overload
-    def __getitem__(self, index: slice) -> list[Playable]:
-        ...
+    def __getitem__(self, index: slice) -> list[Playable]: ...
 
     def __getitem__(self, index: int | slice) -> Playable | list[Playable]:
         return self.tracks[index]

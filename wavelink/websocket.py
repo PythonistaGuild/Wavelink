@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -35,6 +36,7 @@ from .enums import NodeStatus
 from .exceptions import AuthorizationFailedException, NodeException
 from .payloads import *
 from .tracks import Playable
+
 
 if TYPE_CHECKING:
     from .node import Node
@@ -93,8 +95,8 @@ class Websocket:
                 self.keep_alive_task.cancel()
             except Exception as e:
                 logger.debug(
-                    "Failed to cancel websocket keep alive while connecting. "
-                    f"This is most likely not a problem and will not affect websocket connection: '{e}'"
+                    "Failed to cancel websocket keep alive while connecting. This is most likely not a problem and will not affect websocket connection: '%s'",
+                    e,
                 )
 
         retries: int | None = self.node._retries
@@ -115,8 +117,10 @@ class Websocket:
                     raise NodeException from e
                 else:
                     logger.warning(
-                        f'An unexpected error occurred while connecting {self.node!r} to Lavalink: "{e}"\n'
-                        f"If this error persists or wavelink is unable to reconnect, please see: {github}"
+                        'An unexpected error occurred while connecting %r to Lavalink: "%s"\nIf this error persists or wavelink is unable to reconnect, please see: %s',
+                        self.node,
+                        e,
+                        github,
                     )
 
             if self.is_connected():
@@ -125,8 +129,9 @@ class Websocket:
 
             if retries == 0:
                 logger.warning(
-                    f"{self.node!r} was unable to successfully connect/reconnect to Lavalink after "
-                    f'"{retries + 1}" connection attempt. This Node has exhausted the retry count.'
+                    '%r was unable to successfully connect/reconnect to Lavalink after "%s" connection attempt. This Node has exhausted the retry count.',
+                    self.node,
+                    retries + 1,
                 )
 
                 await self.cleanup()
@@ -136,7 +141,7 @@ class Websocket:
                 retries -= 1
 
             delay: float = self.backoff.calculate()
-            logger.info(f'{self.node!r} retrying websocket connection in "{delay}" seconds.')
+            logger.info('%r retrying websocket connection in "%s" seconds.', self.node, delay)
 
             await asyncio.sleep(delay)
 
@@ -245,7 +250,7 @@ class Websocket:
                     other_payload: ExtraEventPayload = ExtraEventPayload(node=self.node, player=player, data=data)
                     self.dispatch("extra_event", other_payload)
             else:
-                logger.debug(f"'Received an unknown OP from Lavalink '{data['op']}'. Disregarding.")
+                logger.debug("'Received an unknown OP from Lavalink '%s'. Disregarding.", data["op"])
 
     def get_player(self, guild_id: str | int) -> Player | None:
         return self.node.get_player(int(guild_id))
@@ -254,19 +259,19 @@ class Websocket:
         assert self.node.client is not None
 
         self.node.client.dispatch(f"wavelink_{event}", *args, **kwargs)
-        logger.debug(f"{self.node!r} dispatched the event 'on_wavelink_{event}'")
+        logger.debug("%r dispatched the event 'on_wavelink_%s'", self.node, event)
 
     async def cleanup(self) -> None:
         if self.keep_alive_task:
             try:
                 self.keep_alive_task.cancel()
-            except:
+            except Exception:
                 pass
 
         if self.socket:
             try:
                 await self.socket.close()
-            except:
+            except Exception:
                 pass
 
         self.node._status = NodeStatus.DISCONNECTED
@@ -275,4 +280,4 @@ class Websocket:
 
         self.node._websocket = None
 
-        logger.debug(f"Successfully cleaned up the websocket for {self.node!r}")
+        logger.debug("Successfully cleaned up the websocket for %r", self.node)
