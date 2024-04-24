@@ -262,11 +262,13 @@ class Player(discord.VoiceProtocol):
 
             await self.play(track, add_history=history)
 
-    async def _do_recommendation(self):
+    async def _do_recommendation(self, *, populate_track: wavelink.Playable | None = None, max_population: int | None = None,):
         assert self.guild is not None
         assert self.queue.history is not None and self.auto_queue.history is not None
+        
+        max_population_: int = max_population if max_population else self._auto_cutoff
 
-        if len(self.auto_queue) > self._auto_cutoff + 1:
+        if len(self.auto_queue) > self._auto_cutoff + 1 and not populate_track:
             # We still do the inactivity start here since if play fails and we have no more tracks...
             # we should eventually fire the inactivity event...
             self._inactivity_start()
@@ -285,6 +287,9 @@ class Player(discord.VoiceProtocol):
         _previous: deque[str] = self.__previous_seeds._queue  # type: ignore
         seeds: list[Playable] = [t for t in choices if t is not None and t.identifier not in _previous]
         random.shuffle(seeds)
+        
+        if populate_track:
+            seeds.insert(0, populate_track)
 
         spotify: list[str] = [t.identifier for t in seeds if t.source == "spotify"]
         youtube: list[str] = [t.identifier for t in seeds if t.source == "youtube"]
@@ -370,10 +375,13 @@ class Player(discord.VoiceProtocol):
 
             track._recommended = True
             added += await self.auto_queue.put_wait(track)
+            
+            if added >= max_population_:
+                break
 
         logger.debug(f'Player "{self.guild.id}" added "{added}" tracks to the auto_queue via AutoPlay.')
 
-        if not self._current:
+        if not self._current and not populate_track:
             try:
                 now: Playable = self.auto_queue.get()
                 self.auto_queue.history.put(now)
@@ -724,6 +732,8 @@ class Player(discord.VoiceProtocol):
         paused: bool | None = None,
         add_history: bool = True,
         filters: Filters | None = None,
+        populate: bool = False,
+        max_populate: int = 5,
     ) -> Playable:
         """Play the provided :class:`~wavelink.Playable`.
 
@@ -756,6 +766,23 @@ class Player(discord.VoiceProtocol):
         filters: Optional[:class:`~wavelink.Filters`]
             An Optional[:class:`~wavelink.Filters`] to apply when playing this track. Defaults to ``None``.
             If this is ``None`` the currently set filters on the player will be applied.
+        populate: bool
+            Whether the player should find and fill AutoQueue with recommended tracks based on the track provided.
+            Defaults to ``False``.
+            
+            Populate will only search for recommended tracks when the current tracks has been accepted by Lavalink. 
+            E.g. if this method does not raise an error.
+            
+            You should consider when you use the ``populate`` keyword argument as populating the AutoQueue on every 
+            request could potentially lead to a large amount of tracks being populated.
+        max_populate: int
+            The maximum amount of tracks that should be added to the AutoQueue when the ``populate`` keyword argument is
+            set to ``True``. This is NOT the exact amount of tracks that will be added. You should set this to a lower
+            amount to avoid the AutoQueue from being overfilled.
+            
+            This argument has no effect when ``populate`` is set to ``False``.
+            
+            Defaults to ``5``.
 
 
         Returns
@@ -772,6 +799,11 @@ class Player(discord.VoiceProtocol):
             Added the ``add_history`` keyword-only argument.
 
             Added the ``filters`` keyword-only argument.
+        
+        
+        .. versionchanged:: 3.3.0
+
+            Added the ``populate`` keyword-only argument.
         """
         assert self.guild is not None
 
@@ -820,6 +852,9 @@ class Player(discord.VoiceProtocol):
         if add_history:
             assert self.queue.history is not None
             self.queue.history.put(track)
+        
+        if populate:
+            await self._do_recommendation(populate_track=track, max_population=max_populate)
 
         return track
 
