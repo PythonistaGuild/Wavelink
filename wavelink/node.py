@@ -126,6 +126,9 @@ class Node:
     inactive_player_timeout: int | None
         Set the default for :attr:`wavelink.Player.inactive_timeout` on every player that connects to this node.
         Defaults to ``300``.
+    inactive_channel_tokens: int | None
+        Sets the default for :attr:`wavelink.Player.inactive_channel_tokens` on every player that connects to this node.
+        Defaults to ``3``.
 
         See also: :func:`on_wavelink_inactive_player`.
     """
@@ -142,6 +145,7 @@ class Node:
         client: discord.Client | None = None,
         resume_timeout: int = 60,
         inactive_player_timeout: int | None = 300,
+        inactive_channel_tokens: int | None = 3,
     ) -> None:
         self._identifier = identifier or secrets.token_urlsafe(12)
         self._uri = uri.removesuffix("/")
@@ -169,6 +173,8 @@ class Node:
         self._inactive_player_timeout = (
             inactive_player_timeout if inactive_player_timeout and inactive_player_timeout > 0 else None
         )
+
+        self._inactive_channel_tokens = inactive_channel_tokens
 
     def __repr__(self) -> str:
         return f"Node(identifier={self.identifier}, uri={self.uri}, status={self.status}, players={len(self.players)})"

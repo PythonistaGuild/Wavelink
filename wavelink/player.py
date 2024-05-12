@@ -159,6 +159,9 @@ class Player(discord.VoiceProtocol):
         self._auto_lock: asyncio.Lock = asyncio.Lock()
         self._error_count: int = 0
 
+        self._inactive_channel_limit: int | None = self._node._inactive_channel_tokens
+        self._inactive_channel_count: int = self._inactive_channel_limit if self._inactive_channel_limit else 0
+
         self._filters: Filters = Filters()
 
         # Needed for the inactivity checks...
@@ -216,7 +219,21 @@ class Player(discord.VoiceProtocol):
         self._inactivity_cancel()
 
     async def _auto_play_event(self, payload: TrackEndEventPayload) -> None:
-        if self._autoplay is AutoPlayMode.disabled:
+        if not self.channel:
+            return
+
+        members: int = len([m for m in self.channel.members if not m.bot])
+        self._inactive_channel_count = (
+            self._inactive_channel_count - 1 if not members else self._inactive_channel_limit or 0
+        )
+
+        if self._inactive_channel_limit and self._inactive_channel_count <= 0:
+            self._inactive_channel_count = self._inactive_channel_limit  # Reset...
+
+            self._inactivity_cancel()
+            self.client.dispatch("wavelink_inactive_player", self)
+
+        elif self._autoplay is AutoPlayMode.disabled:
             self._inactivity_start()
             return
 
@@ -402,6 +419,49 @@ class Player(discord.VoiceProtocol):
             except wavelink.QueueEmpty:
                 logger.info('Player "%s" could not load any songs via AutoPlay.', self.guild.id)
                 self._inactivity_start()
+
+    @property
+    def inactive_channel_tokens(self) -> int | None:
+        """A settable property which returns the token limit as an ``int`` of the amount of tracks to play before firing
+        the :func:`on_wavelink_inactive_player` event when a channel is inactive.
+
+        This property could return ``None`` if the check has been disabled.
+
+        A channel is considered inactive when no real members (Members other than bots) are in the connected voice
+        channel. On each consecutive track played without a real member in the channel, this token bucket will reduce
+        by ``1``. After hitting ``0``, the :func:`on_wavelink_inactive_player` event will be fired and the token bucket
+        will reset to the set value. The default value for this property is ``3``.
+
+        This property can be set with any valid ``int`` or ``None``. If this property is set to ``<= 0`` or ``None``,
+        the check will be disabled.
+
+        Setting this property to ``1`` will fire the :func:`on_wavelink_inactive_player` event at the end of every track
+        if no real members are in the channel and you have not disconnected the player.
+
+        If this check successfully fires the :func:`on_wavelink_inactive_player` event, it will cancel any waiting
+        :attr:`inactive_timeout` checks until a new track is played.
+
+        The default for every player can be set on :class:`~wavelink.Node`.
+
+        - See: :class:`~wavelink.Node`
+        - See: :func:`on_wavelink_inactive_player`
+
+        .. warning::
+
+            Setting this property will reset the bucket.
+
+        .. versionadded:: 3.4.0
+        """
+        return self._inactive_channel_limit
+
+    @inactive_channel_tokens.setter
+    def inactive_channel_tokens(self, value: int | None) -> None:
+        if not value or value <= 0:
+            self._inactive_channel_limit = None
+            return
+
+        self._inactive_channel_limit = value
+        self._inactive_channel_count = value
 
     @property
     def inactive_timeout(self) -> int | None:
@@ -616,14 +676,11 @@ class Player(discord.VoiceProtocol):
         assert self.guild is not None
         data: VoiceState = self._voice_state["voice"]
 
-        try:
-            session_id: str = data["session_id"]
-            token: str = data["token"]
-        except KeyError:
-            return
-
+        session_id: str | None = data.get("session_id", None)
+        token: str | None = data.get("token", None)
         endpoint: str | None = data.get("endpoint", None)
-        if not endpoint:
+
+        if not session_id or not token or not endpoint:
             return
 
         request: RequestPayload = {"voice": {"sessionId": session_id, "token": token, "endpoint": endpoint}}
