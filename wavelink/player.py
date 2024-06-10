@@ -370,7 +370,7 @@ class Player(discord.VoiceProtocol):
                 return []
 
             try:
-                search: wavelink.Search = await Pool.fetch_tracks(query)
+                search: wavelink.Search = await Pool.fetch_tracks(query, node=self._node)
             except (LavalinkLoadException, LavalinkException):
                 return []
 
