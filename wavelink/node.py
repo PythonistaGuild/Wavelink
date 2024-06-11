@@ -126,6 +126,9 @@ class Node:
     inactive_player_timeout: int | None
         Set the default for :attr:`wavelink.Player.inactive_timeout` on every player that connects to this node.
         Defaults to ``300``.
+    inactive_channel_tokens: int | None
+        Sets the default for :attr:`wavelink.Player.inactive_channel_tokens` on every player that connects to this node.
+        Defaults to ``3``.
 
         See also: :func:`on_wavelink_inactive_player`.
     """
@@ -142,6 +145,7 @@ class Node:
         client: discord.Client | None = None,
         resume_timeout: int = 60,
         inactive_player_timeout: int | None = 300,
+        inactive_channel_tokens: int | None = 3,
     ) -> None:
         self._identifier = identifier or secrets.token_urlsafe(12)
         self._uri = uri.removesuffix("/")
@@ -169,6 +173,8 @@ class Node:
         self._inactive_player_timeout = (
             inactive_player_timeout if inactive_player_timeout and inactive_player_timeout > 0 else None
         )
+
+        self._inactive_channel_tokens = inactive_channel_tokens
 
     def __repr__(self) -> str:
         return f"Node(identifier={self.identifier}, uri={self.uri}, status={self.status}, players={len(self.players)})"
@@ -895,7 +901,7 @@ class Pool:
         return sorted(nodes, key=lambda n: n._total_player_count or len(n.players))[0]
 
     @classmethod
-    async def fetch_tracks(cls, query: str, /) -> list[Playable] | Playlist:
+    async def fetch_tracks(cls, query: str, /, *, node: Node | None = None) -> list[Playable] | Playlist:
         """Search for a list of :class:`~wavelink.Playable` or a :class:`~wavelink.Playlist`, with the given query.
 
         Parameters
@@ -903,6 +909,9 @@ class Pool:
         query: str
             The query to search tracks for. If this is not a URL based search you should provide the appropriate search
             prefix, e.g. "ytsearch:Rick Roll"
+        node: :class:`~wavelink.Node` | None
+            An optional :class:`~wavelink.Node` to use when fetching tracks. Defaults to ``None``, which selects the
+            most appropriate :class:`~wavelink.Node` automatically.
 
         Returns
         -------
@@ -923,6 +932,11 @@ class Pool:
             or an empty list if no results were found.
 
             This method no longer accepts the ``cls`` parameter.
+
+
+        .. versionadded:: 3.4.0
+
+            Added the ``node`` Keyword-Only argument.
         """
 
         # TODO: Documentation Extension for `.. positional-only::` marker.
@@ -934,8 +948,8 @@ class Pool:
             if potential:
                 return potential
 
-        node: Node = cls.get_node()
-        resp: LoadedResponse = await node._fetch_tracks(encoded_query)
+        node_: Node = node or cls.get_node()
+        resp: LoadedResponse = await node_._fetch_tracks(encoded_query)
 
         if resp["loadType"] == "track":
             track = Playable(data=resp["data"])

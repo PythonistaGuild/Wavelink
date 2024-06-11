@@ -37,6 +37,7 @@ from .utils import ExtrasNamespace
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
+    from .node import Node
     from .types.tracks import (
         PlaylistInfoPayload,
         PlaylistPayload,
@@ -323,7 +324,9 @@ class Playable:
         return self._raw_data
 
     @classmethod
-    async def search(cls, query: str, /, *, source: TrackSource | str | None = TrackSource.YouTubeMusic) -> Search:
+    async def search(
+        cls, query: str, /, *, source: TrackSource | str | None = TrackSource.YouTubeMusic, node: Node | None = None
+    ) -> Search:
         """Search for a list of :class:`~wavelink.Playable` or a :class:`~wavelink.Playlist`, with the given query.
 
         .. note::
@@ -355,6 +358,9 @@ class Playable:
             LavaSrc Spotify based search.
 
             Defaults to :attr:`wavelink.TrackSource.YouTubeMusic` which is equivalent to "ytmsearch:".
+        node: :class:`~wavelink.Node` | None
+            An optional :class:`~wavelink.Node` to use when searching for tracks. Defaults to ``None``, which uses
+            the :class:`~wavelink.Pool`'s automatic node selection.
 
 
         Returns
@@ -410,7 +416,7 @@ class Playable:
         check = yarl.URL(query)
 
         if check.host:
-            tracks: Search = await wavelink.Pool.fetch_tracks(query)
+            tracks: Search = await wavelink.Pool.fetch_tracks(query, node=node)
             return tracks
 
         if not prefix:
@@ -419,7 +425,7 @@ class Playable:
             assert not isinstance(prefix, TrackSource)
             term: str = f"{prefix.removesuffix(':')}:{query}"
 
-        tracks: Search = await wavelink.Pool.fetch_tracks(term)
+        tracks: Search = await wavelink.Pool.fetch_tracks(term, node=node)
         return tracks
 
 
