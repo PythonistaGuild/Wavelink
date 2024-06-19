@@ -387,6 +387,11 @@ Filters
 .. autoclass:: LowPass
     :members:
 
+.. attributetable:: PluginFilters
+
+.. autoclass:: PluginFilters
+    :members:
+
 
 Utils
 -----

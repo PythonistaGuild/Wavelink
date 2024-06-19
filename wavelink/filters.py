@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 
 if TYPE_CHECKING:
@@ -56,6 +56,7 @@ __all__ = (
     "Distortion",
     "ChannelMix",
     "LowPass",
+    "PluginFilters",
 )
 
 
@@ -70,6 +71,7 @@ class FiltersOptions(TypedDict, total=False):
     distortion: Distortion
     channel_mix: ChannelMix
     low_pass: LowPass
+    plugin_filters: PluginFilters
     reset: bool
 
 
@@ -583,6 +585,68 @@ class LowPass:
         return f"<LowPass: {self._payload}>"
 
 
+class PluginFilters:
+    """The PluginFilters class.
+
+    This class handles setting filters on plugins that support setting filter values.
+    See the documentation of the Lavalink Plugin for more information on the values that can be set.
+
+    This class takes in a ``dict[str, Any]`` usually in the form of:
+
+    .. code:: python3
+
+        {"pluginName": {"filterKey": "filterValue"}, ...}
+
+
+    .. warning::
+
+        Do NOT include the ``"pluginFilters"`` top level key when setting your values for this class.
+    """
+
+    def __init__(self, payload: dict[str, Any]) -> None:
+        self._payload = payload
+
+    def set(self, **options: dict[str, Any]) -> Self:
+        """Set the properties of this filter.
+
+        This method accepts keyword argument pairs OR you can alternatively unpack a dictionary.
+        See the documentation of the Lavalink Plugin for more information on the values that can be set.
+
+        Examples
+        --------
+
+        .. code:: python3
+
+            plugin_filters: PluginFilters = PluginFilters()
+            plugin_filters.set(pluginName={"filterKey": "filterValue", ...})
+
+            # OR...
+
+            plugin_filters.set(**{"pluginName": {"filterKey": "filterValue", ...}})
+        """
+        self._payload.update(options)
+        return self
+
+    def reset(self) -> Self:
+        """Reset this filter to its defaults."""
+        self._payload: dict[str, Any] = {}
+        return self
+
+    @property
+    def payload(self) -> dict[str, Any]:
+        """The raw payload associated with this filter.
+
+        This property returns a copy.
+        """
+        return self._payload.copy()
+
+    def __str__(self) -> str:
+        return "PluginFilters"
+
+    def __repr__(self) -> str:
+        return f"<PluginFilters: {self._payload}"
+
+
 class Filters:
     """The wavelink Filters class.
 
@@ -659,6 +723,7 @@ class Filters:
         self._distortion: Distortion = Distortion({})
         self._channel_mix: ChannelMix = ChannelMix({})
         self._low_pass: LowPass = LowPass({})
+        self._plugin_filters: PluginFilters = PluginFilters({})
 
         if data:
             self._create_from(data)
@@ -674,6 +739,7 @@ class Filters:
         self._distortion = Distortion(data.get("distortion", {}))
         self._channel_mix = ChannelMix(data.get("channelMix", {}))
         self._low_pass = LowPass(data.get("lowPass", {}))
+        self._plugin_filters = PluginFilters(data.get("pluginFilters", {}))
 
     def _set_with_reset(self, filters: FiltersOptions) -> None:
         self._volume = filters.get("volume")
@@ -686,6 +752,7 @@ class Filters:
         self._distortion = filters.get("distortion", Distortion({}))
         self._channel_mix = filters.get("channel_mix", ChannelMix({}))
         self._low_pass = filters.get("low_pass", LowPass({}))
+        self._plugin_filters = filters.get("plugin_filters", PluginFilters({}))
 
     def set_filters(self, **filters: Unpack[FiltersOptions]) -> None:
         """Set multiple filters at once to a standalone Filter object.
@@ -713,6 +780,8 @@ class Filters:
             The ChannelMix filter to apply to the player.
         low_pass: :class:`wavelink.LowPass`
             The LowPass filter to apply to the player.
+        plugin_filters: :class:`wavelink.PluginFilters`
+            The extra Plugin Filters to apply to the player. See :class:`~wavelink.PluginFilters` for more details.
         reset: bool
             Whether to reset all filters that were not specified.
         """
@@ -732,6 +801,7 @@ class Filters:
         self._distortion = filters.get("distortion", self._distortion)
         self._channel_mix = filters.get("channel_mix", self._channel_mix)
         self._low_pass = filters.get("low_pass", self._low_pass)
+        self._plugin_filters = filters.get("plugin_filters", self._plugin_filters)
 
     def _reset(self) -> None:
         self._volume = None
@@ -744,6 +814,7 @@ class Filters:
         self._distortion = Distortion({})
         self._channel_mix = ChannelMix({})
         self._low_pass = LowPass({})
+        self._plugin_filters = PluginFilters({})
 
     def reset(self) -> None:
         """Method which resets this object to an original state.
@@ -778,6 +849,8 @@ class Filters:
             The ChannelMix filter to apply to the player.
         low_pass: :class:`wavelink.LowPass`
             The LowPass filter to apply to the player.
+        plugin_filters: :class:`wavelink.PluginFilters`
+            The extra Plugin Filters to apply to the player. See :class:`~wavelink.PluginFilters` for more details.
         reset: bool
             Whether to reset all filters that were not specified.
         """
@@ -844,6 +917,11 @@ class Filters:
         """Property which returns the :class:`~wavelink.LowPass` filter associated with this Filters payload."""
         return self._low_pass
 
+    @property
+    def plugin_filters(self) -> PluginFilters:
+        """Property which returns the :class:`~wavelink.PluginFilters` filters associated with this Filters payload."""
+        return self._plugin_filters
+
     def __call__(self) -> FilterPayload:
         payload: FilterPayload = {
             "volume": self._volume,
@@ -856,6 +934,7 @@ class Filters:
             "distortion": self._distortion._payload,
             "channelMix": self._channel_mix._payload,
             "lowPass": self._low_pass._payload,
+            "pluginFilters": self._plugin_filters._payload,
         }
 
         for key, value in payload.copy().items():
@@ -869,5 +948,5 @@ class Filters:
             f"<Filters: volume={self._volume}, equalizer={self._equalizer!r}, karaoke={self._karaoke!r},"
             f" timescale={self._timescale!r}, tremolo={self._tremolo!r}, vibrato={self._vibrato!r},"
             f" rotation={self._rotation!r}, distortion={self._distortion!r}, channel_mix={self._channel_mix!r},"
-            f" low_pass={self._low_pass!r}>"
+            f" low_pass={self._low_pass!r}, plugin_filters={self._plugin_filters!r}>"
         )
