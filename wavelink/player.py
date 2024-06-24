@@ -169,8 +169,15 @@ class Player(discord.VoiceProtocol):
         self._inactivity_wait: int | None = self._node._inactive_player_timeout
 
     def _inactivity_task_callback(self, task: asyncio.Task[bool]) -> None:
-        result: bool = task.result()
-        cancelled: bool = task.cancelled()
+        cancelled: bool
+
+        try:
+            result: bool = task.result()
+        except asyncio.CancelledError:
+            cancelled = True
+            result = False
+        else:
+            cancelled = task.cancelled()
 
         if cancelled or result is False:
             logger.debug("Disregarding Inactivity Check Task <%s> as it was previously cancelled.", task.get_name())
