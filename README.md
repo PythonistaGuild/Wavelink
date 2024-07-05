@@ -26,11 +26,14 @@ Wavelink features a fully asynchronous API that's intuitive and easy to use.
 
 - Full asynchronous design.
 - Lavalink v4+ Supported with REST API.
-- discord.py v2.0.0+ Support.
+- ~~discord.py v2.0.0+ Support.~~
+- Pycord v2+
 - Advanced AutoPlay and track recommendations for continuous play.
 - Object orientated design with stateful objects and payloads.
 - Fully annotated and complies with Pyright strict typing.
 
+
+**NOTES**: It is developed exclusively for TAZ Bot!
 
 ## Getting Started
 
