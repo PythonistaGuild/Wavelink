@@ -13,8 +13,9 @@
 </div>
 
 
-Wavelink is a robust and powerful Lavalink wrapper for [Discord.py](https://github.com/Rapptz/discord.py)
+Wavelink is a robust and powerful Lavalink wrapper for [Discord.py patched for Pycord](https://github.com/Rapptz/discord.py)
 Wavelink features a fully asynchronous API that's intuitive and easy to use.
+NOTES: Patched by tienanh109 | Project canceled
 
 
 # Migrating from Version 2 to Version 3:
