@@ -246,6 +246,9 @@ class Websocket:
                     )
                     self.dispatch("websocket_closed", wcpayload)
 
+                    if player:
+                        asyncio.create_task(player._disconnected_wait(code, by_remote))
+
                 else:
                     other_payload: ExtraEventPayload = ExtraEventPayload(node=self.node, player=player, data=data)
                     self.dispatch("extra_event", other_payload)

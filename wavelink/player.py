@@ -168,6 +168,26 @@ class Player(discord.VoiceProtocol):
         self._inactivity_task: asyncio.Task[bool] | None = None
         self._inactivity_wait: int | None = self._node._inactive_player_timeout
 
+        self._should_wait: int = 10
+        self._reconnecting: asyncio.Event = asyncio.Event()
+        self._reconnecting.set()
+
+    async def _disconnected_wait(self, code: int, by_remote: bool) -> None:
+        if code != 4014 or not by_remote:
+            return
+
+        self._connected = False
+
+        if self._reconnecting.is_set():
+            await asyncio.sleep(self._should_wait)
+        else:
+            await self._reconnecting.wait()
+
+        if self._connected:
+            return
+
+        await self._destroy()
+
     def _inactivity_task_callback(self, task: asyncio.Task[bool]) -> None:
         cancelled: bool = False
 
@@ -695,6 +715,7 @@ class Player(discord.VoiceProtocol):
         except LavalinkException:
             await self.disconnect()
         else:
+            self._connected = True
             self._connection_event.set()
 
         logger.debug("Player %s is dispatching VOICE_UPDATE.", self.guild.id)
@@ -772,6 +793,7 @@ class Player(discord.VoiceProtocol):
             raise InvalidChannelStateException("Player tried to move without a valid guild.")
 
         self._connection_event.clear()
+        self._reconnecting.clear()
         voice: discord.VoiceState | None = self.guild.me.voice
 
         if self_deaf is None and voice:
@@ -786,6 +808,7 @@ class Player(discord.VoiceProtocol):
         await self.guild.change_voice_state(channel=channel, self_mute=self_mute, self_deaf=self_deaf)
 
         if channel is None:
+            self._reconnecting.set()
             return
 
         try:
@@ -794,6 +817,8 @@ class Player(discord.VoiceProtocol):
         except (asyncio.TimeoutError, asyncio.CancelledError):
             msg = f"Unable to connect to {channel} as it exceeded the timeout of {timeout} seconds."
             raise ChannelTimeoutException(msg)
+        finally:
+            self._reconnecting.set()
 
     async def play(
         self,
