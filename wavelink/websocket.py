@@ -88,6 +88,12 @@ class Websocket:
             self.node._spotify_enabled = True
 
     async def connect(self) -> None:
+        if self.node._status is NodeStatus.CONNECTED:
+            # Node was previously connected...
+            # We can dispatch an event to say the node was disconnected...
+            payload: NodeDisconnectedEventPayload = NodeDisconnectedEventPayload(node=self.node)
+            self.dispatch("node_disconnected", payload)
+
         self.node._status = NodeStatus.CONNECTING
 
         if self.keep_alive_task:
@@ -282,5 +288,8 @@ class Websocket:
         self.node._players = {}
 
         self.node._websocket = None
+
+        payload: NodeDisconnectedEventPayload = NodeDisconnectedEventPayload(node=self.node)
+        self.dispatch("node_disconnected", payload)
 
         logger.debug("Successfully cleaned up the websocket for %r", self.node)
