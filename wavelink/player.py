@@ -820,6 +820,7 @@ class Player(discord.VoiceProtocol):
         start: int
             The position to start playing the track at in milliseconds.
             Defaults to ``0`` which will start the track from the beginning.
+            If ``track.position`` has a non-zero position, that position will be used instead. 
         end: Optional[int]
             The position to end the track at in milliseconds.
             Defaults to ``None`` which means this track will play until the very end.
@@ -899,6 +900,9 @@ class Player(discord.VoiceProtocol):
 
         if filters:
             self._filters = filters
+
+        start = track.position or start
+        track._position = 0
 
         request: RequestPayload = {
             "track": {"encoded": track.encoded, "userData": dict(track.extras)},
