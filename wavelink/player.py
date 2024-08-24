@@ -820,7 +820,7 @@ class Player(discord.VoiceProtocol):
         start: int
             The position to start playing the track at in milliseconds.
             Defaults to ``0`` which will start the track from the beginning.
-            If ``track.position`` has a non-zero position, that position will be used instead. 
+            If ``track`` has a non-zero :attr:`~wavelink.Playable.position`, that position will be used instead.
         end: Optional[int]
             The position to end the track at in milliseconds.
             Defaults to ``None`` which means this track will play until the very end.
