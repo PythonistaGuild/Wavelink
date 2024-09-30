@@ -24,24 +24,27 @@ DEALINGS IN THE SOFTWARE.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar
+
+from .types.filters import (
+    ChannelMix as ChannelMixPayload,
+    Distortion as DistortionPayload,
+    Equalizer as EqualizerPayload,
+    FilterPayload,
+    Karaoke as KaraokePayload,
+    LowPass as LowPassPayload,
+    Rotation as RotationPayload,
+    Timescale as TimescalePayload,
+    Tremolo as TremoloPayload,
+    Vibrato as VibratoPayload,
+)
 
 
 if TYPE_CHECKING:
     from typing_extensions import Self, Unpack
 
-    from .types.filters import (
-        ChannelMix as ChannelMixPayload,
-        Distortion as DistortionPayload,
-        Equalizer as EqualizerPayload,
-        FilterPayload,
-        Karaoke as KaraokePayload,
-        LowPass as LowPassPayload,
-        Rotation as RotationPayload,
-        Timescale as TimescalePayload,
-        Tremolo as TremoloPayload,
-        Vibrato as VibratoPayload,
-    )
+
+FT = TypeVar("FT")
 
 
 __all__ = (
@@ -106,6 +109,19 @@ class ChannelMixOptions(TypedDict):
     left_to_right: float | None
     right_to_left: float | None
     right_to_right: float | None
+
+
+class _BaseFilter(Generic[FT]):
+    _payload: FT
+
+    def __init__(self, payload: FT) -> None:
+        self._payload = payload
+        self._remove_none()
+
+    def _remove_none(self) -> None:
+        # Lavalink doesn't allow nullable types in any filters, but they are still not required...
+        # Passing None makes it easier for the user to remove a field...
+        self._payload = {k: v for k, v in self._payload.items() if v is not None}  # type: ignore
 
 
 class Equalizer:
@@ -182,14 +198,14 @@ class Equalizer:
         return f"<Equalizer: {self._payload}>"
 
 
-class Karaoke:
+class Karaoke(_BaseFilter[KaraokePayload]):
     """Karaoke Filter class.
 
     Uses equalization to eliminate part of a band, usually targeting vocals.
     """
 
     def __init__(self, payload: KaraokePayload) -> None:
-        self._payload = payload
+        super().__init__(payload=payload)
 
     def set(self, **options: Unpack[KaraokeOptions]) -> Self:
         """Set the properties of the this filter.
@@ -214,6 +230,7 @@ class Karaoke:
             "filterBand": options.get("filter_band", self._payload.get("filterBand")),
             "filterWidth": options.get("filter_width", self._payload.get("filterWidth")),
         }
+        self._remove_none()
         return self
 
     def reset(self) -> Self:
@@ -236,14 +253,14 @@ class Karaoke:
         return f"<Karaoke: {self._payload}>"
 
 
-class Timescale:
+class Timescale(_BaseFilter[TimescalePayload]):
     """Timescale Filter class.
 
     Changes the speed, pitch, and rate.
     """
 
     def __init__(self, payload: TimescalePayload) -> None:
-        self._payload = payload
+        super().__init__(payload=payload)
 
     def set(self, **options: Unpack[TimescalePayload]) -> Self:
         """Set the properties of the this filter.
@@ -261,6 +278,7 @@ class Timescale:
             The rate.
         """
         self._payload.update(options)
+        self._remove_none()
         return self
 
     def reset(self) -> Self:
@@ -283,7 +301,7 @@ class Timescale:
         return f"<Timescale: {self._payload}>"
 
 
-class Tremolo:
+class Tremolo(_BaseFilter[TremoloPayload]):
     """The Tremolo Filter class.
 
     Uses amplification to create a shuddering effect, where the volume quickly oscillates.
@@ -291,7 +309,7 @@ class Tremolo:
     """
 
     def __init__(self, payload: TremoloPayload) -> None:
-        self._payload = payload
+        super().__init__(payload=payload)
 
     def set(self, **options: Unpack[TremoloPayload]) -> Self:
         """Set the properties of the this filter.
@@ -307,6 +325,7 @@ class Tremolo:
             The tremolo depth.
         """
         self._payload.update(options)
+        self._remove_none()
         return self
 
     def reset(self) -> Self:
@@ -329,14 +348,14 @@ class Tremolo:
         return f"<Tremolo: {self._payload}>"
 
 
-class Vibrato:
+class Vibrato(_BaseFilter[VibratoPayload]):
     """The Vibrato Filter class.
 
     Similar to tremolo. While tremolo oscillates the volume, vibrato oscillates the pitch.
     """
 
     def __init__(self, payload: VibratoPayload) -> None:
-        self._payload = payload
+        super().__init__(payload=payload)
 
     def set(self, **options: Unpack[VibratoPayload]) -> Self:
         """Set the properties of the this filter.
@@ -352,6 +371,7 @@ class Vibrato:
             The vibrato depth.
         """
         self._payload.update(options)
+        self._remove_none()
         return self
 
     def reset(self) -> Self:
@@ -374,7 +394,7 @@ class Vibrato:
         return f"<Vibrato: {self._payload}>"
 
 
-class Rotation:
+class Rotation(_BaseFilter[RotationPayload]):
     """The Rotation Filter class.
 
     Rotates the sound around the stereo channels/user headphones (aka Audio Panning).
@@ -382,7 +402,7 @@ class Rotation:
     """
 
     def __init__(self, payload: RotationPayload) -> None:
-        self._payload = payload
+        super().__init__(payload=payload)
 
     def set(self, **options: Unpack[RotationOptions]) -> Self:
         """Set the properties of the this filter.
@@ -396,6 +416,7 @@ class Rotation:
             The frequency of the audio rotating around the listener in Hz. ``0.2`` is similar to the example video.
         """
         self._payload: RotationPayload = {"rotationHz": options.get("rotation_hz", self._payload.get("rotationHz"))}
+        self._remove_none()
         return self
 
     def reset(self) -> Self:
@@ -418,14 +439,14 @@ class Rotation:
         return f"<Rotation: {self._payload}>"
 
 
-class Distortion:
+class Distortion(_BaseFilter[DistortionPayload]):
     """The Distortion Filter class.
 
     According to Lavalink "It can generate some pretty unique audio effects."
     """
 
     def __init__(self, payload: DistortionPayload) -> None:
-        self._payload = payload
+        super().__init__(payload=payload)
 
     def set(self, **options: Unpack[DistortionOptions]) -> Self:
         """Set the properties of the this filter.
@@ -462,6 +483,7 @@ class Distortion:
             "offset": options.get("offset", self._payload.get("offset")),
             "scale": options.get("scale", self._payload.get("scale")),
         }
+        self._remove_none()
         return self
 
     def reset(self) -> Self:
@@ -484,7 +506,7 @@ class Distortion:
         return f"<Distortion: {self._payload}>"
 
 
-class ChannelMix:
+class ChannelMix(_BaseFilter[ChannelMixPayload]):
     """The ChannelMix Filter class.
 
     Mixes both channels (left and right), with a configurable factor on how much each channel affects the other.
@@ -494,7 +516,7 @@ class ChannelMix:
     """
 
     def __init__(self, payload: ChannelMixPayload) -> None:
-        self._payload = payload
+        super().__init__(payload=payload)
 
     def set(self, **options: Unpack[ChannelMixOptions]) -> Self:
         """Set the properties of the this filter.
@@ -519,6 +541,7 @@ class ChannelMix:
             "rightToLeft": options.get("right_to_left", self._payload.get("rightToLeft")),
             "rightToRight": options.get("right_to_right", self._payload.get("rightToRight")),
         }
+        self._remove_none()
         return self
 
     def reset(self) -> Self:
@@ -541,7 +564,7 @@ class ChannelMix:
         return f"<ChannelMix: {self._payload}>"
 
 
-class LowPass:
+class LowPass(_BaseFilter[LowPassPayload]):
     """The LowPass Filter class.
 
     Higher frequencies get suppressed, while lower frequencies pass through this filter, thus the name low pass.
@@ -549,7 +572,7 @@ class LowPass:
     """
 
     def __init__(self, payload: LowPassPayload) -> None:
-        self._payload = payload
+        super().__init__(payload=payload)
 
     def set(self, **options: Unpack[LowPassPayload]) -> Self:
         """Set the properties of the this filter.
@@ -563,6 +586,7 @@ class LowPass:
             The smoothing factor.
         """
         self._payload.update(options)
+        self._remove_none()
         return self
 
     def reset(self) -> Self:
@@ -585,7 +609,7 @@ class LowPass:
         return f"<LowPass: {self._payload}>"
 
 
-class PluginFilters:
+class PluginFilters(_BaseFilter[dict[str, Any]]):
     """The PluginFilters class.
 
     This class handles setting filters on plugins that support setting filter values.
@@ -604,7 +628,7 @@ class PluginFilters:
     """
 
     def __init__(self, payload: dict[str, Any]) -> None:
-        self._payload = payload
+        super().__init__(payload=payload)
 
     def set(self, **options: dict[str, Any]) -> Self:
         """Set the properties of this filter.
@@ -625,6 +649,7 @@ class PluginFilters:
             plugin_filters.set(**{"pluginName": {"filterKey": "filterValue", ...}})
         """
         self._payload.update(options)
+        self._remove_none()
         return self
 
     def reset(self) -> Self:

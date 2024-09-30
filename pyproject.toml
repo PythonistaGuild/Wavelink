@@ -4,7 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wavelink"
+
 version = "3.5.0"
+
 authors = [
   { name="PythonistaGuild, EvieePy", email="evieepy@gmail.com" },
 ]
