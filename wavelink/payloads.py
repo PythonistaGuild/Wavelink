@@ -53,6 +53,7 @@ __all__ = (
     "PlayerUpdateEventPayload",
     "StatsEventPayload",
     "NodeReadyEventPayload",
+    "NodeDisconnectedEventPayload",
     "StatsEventMemory",
     "StatsEventCPU",
     "StatsEventFrames",
@@ -85,6 +86,19 @@ class NodeReadyEventPayload:
         self.node = node
         self.resumed = resumed
         self.session_id = session_id
+
+
+class NodeDisconnectedEventPayload:
+    """Payload received in the :func:`on_wavelink_node_disconnected` event.
+
+    Attributes
+    ----------
+    node: :class:`~wavelink.Node`
+        The node that has disconnected.
+    """
+
+    def __init__(self, node: Node) -> None:
+        self.node = node
 
 
 class TrackStartEventPayload:

@@ -41,6 +41,7 @@ from .enums import AutoPlayMode, NodeStatus, QueueMode
 from .exceptions import (
     ChannelTimeoutException,
     InvalidChannelStateException,
+    InvalidNodeException,
     LavalinkException,
     LavalinkLoadException,
     QueueEmpty,
@@ -73,7 +74,7 @@ if TYPE_CHECKING:
         TrackStartEventPayload,
     )
     from .types.request import Request as RequestPayload
-    from .types.state import PlayerVoiceState, VoiceState
+    from .types.state import PlayerBasicState, PlayerVoiceState, VoiceState
 
     VocalGuildChannel = discord.VoiceChannel | discord.StageChannel
 
@@ -167,6 +168,26 @@ class Player(discord.VoiceProtocol):
         # Needed for the inactivity checks...
         self._inactivity_task: asyncio.Task[bool] | None = None
         self._inactivity_wait: int | None = self._node._inactive_player_timeout
+
+        self._should_wait: int = 10
+        self._reconnecting: asyncio.Event = asyncio.Event()
+        self._reconnecting.set()
+
+    async def _disconnected_wait(self, code: int, by_remote: bool) -> None:
+        if code != 4014 or not by_remote:
+            return
+
+        self._connected = False
+
+        if self._reconnecting.is_set():
+            await asyncio.sleep(self._should_wait)
+        else:
+            await self._reconnecting.wait()
+
+        if self._connected:
+            return
+
+        await self._destroy()
 
     def _inactivity_task_callback(self, task: asyncio.Task[bool]) -> None:
         cancelled: bool = False
@@ -424,6 +445,89 @@ class Player(discord.VoiceProtocol):
             except wavelink.QueueEmpty:
                 logger.info('Player "%s" could not load any songs via AutoPlay.', self.guild.id)
                 self._inactivity_start()
+
+    @property
+    def state(self) -> PlayerBasicState:
+        """Property returning a dict of the current basic state of the player.
+
+        This property includes the ``voice_state`` received via Discord.
+
+        Returns
+        -------
+        PlayerBasicState
+
+        .. versionadded:: 3.5.0
+        """
+        data: PlayerBasicState = {
+            "voice_state": self._voice_state.copy(),
+            "position": self.position,
+            "connected": self.connected,
+            "current": self.current,
+            "paused": self.paused,
+            "volume": self.volume,
+            "filters": self.filters,
+        }
+        return data
+
+    async def switch_node(self, new_node: wavelink.Node, /) -> None:
+        """Method which attempts to switch the current node of the player.
+
+        This method initiates a live switch, and all player state will be moved from the current node to the provided
+        node.
+
+        .. warning::
+
+            Caution should be used when using this method. If this method fails, your player might be left in a stale
+            state. Consider handling cases where the player is unable to connect to the new node. To avoid stale state
+            in both wavelink and discord.py, it is recommended to disconnect the player when a RuntimeError occurs.
+
+        Parameters
+        ----------
+        new_node: :class:`wavelink.Node`
+            A positional only argument of a :class:`wavelink.Node`, which is the new node the player will attempt to
+            switch to. This must not be the same as the current node.
+
+        Raises
+        ------
+        InvalidNodeException
+            The provided node was identical to the players current node.
+        RuntimeError
+            The player was unable to connect properly to the new node. At this point your player might be in a stale
+            state. Consider trying another node, or :meth:`disconnect` the player.
+
+
+        .. versionadded:: 3.5.0
+        """
+        assert self._guild
+
+        if new_node.identifier == self.node.identifier:
+            msg: str = f"Player '{self._guild.id}' current node is identical to the passed node: {new_node!r}"
+            raise InvalidNodeException(msg)
+
+        await self._destroy(with_invalidate=False)
+        self._node = new_node
+
+        await self._dispatch_voice_update()
+        if not self.connected:
+            raise RuntimeError(f"Switching Node on player '{self._guild.id}' failed. Failed to switch voice_state.")
+
+        self.node._players[self._guild.id] = self
+
+        if not self._current:
+            await self.set_filters(self.filters)
+            await self.set_volume(self.volume)
+            await self.pause(self.paused)
+            return
+
+        await self.play(
+            self._current,
+            replace=True,
+            start=self.position,
+            volume=self.volume,
+            filters=self.filters,
+            paused=self.paused,
+        )
+        logger.debug("Switching nodes for player: '%s' was successful. New Node: %r", self._guild.id, self.node)
 
     @property
     def inactive_channel_tokens(self) -> int | None:
@@ -695,6 +799,7 @@ class Player(discord.VoiceProtocol):
         except LavalinkException:
             await self.disconnect()
         else:
+            self._connected = True
             self._connection_event.set()
 
         logger.debug("Player %s is dispatching VOICE_UPDATE.", self.guild.id)
@@ -772,6 +877,7 @@ class Player(discord.VoiceProtocol):
             raise InvalidChannelStateException("Player tried to move without a valid guild.")
 
         self._connection_event.clear()
+        self._reconnecting.clear()
         voice: discord.VoiceState | None = self.guild.me.voice
 
         if self_deaf is None and voice:
@@ -786,6 +892,7 @@ class Player(discord.VoiceProtocol):
         await self.guild.change_voice_state(channel=channel, self_mute=self_mute, self_deaf=self_deaf)
 
         if channel is None:
+            self._reconnecting.set()
             return
 
         try:
@@ -794,6 +901,8 @@ class Player(discord.VoiceProtocol):
         except (asyncio.TimeoutError, asyncio.CancelledError):
             msg = f"Unable to connect to {channel} as it exceeded the timeout of {timeout} seconds."
             raise ChannelTimeoutException(msg)
+        finally:
+            self._reconnecting.set()
 
     async def play(
         self,
@@ -1103,17 +1212,19 @@ class Player(discord.VoiceProtocol):
         except (AttributeError, KeyError):
             pass
 
-    async def _destroy(self) -> None:
+    async def _destroy(self, with_invalidate: bool = True) -> None:
         assert self.guild
 
-        self._invalidate()
+        if with_invalidate:
+            self._invalidate()
+
         player: Player | None = self.node._players.pop(self.guild.id, None)
 
         if player:
             try:
                 await self.node._destroy_player(self.guild.id)
-            except LavalinkException:
-                pass
+            except Exception as e:
+                logger.debug("Disregarding. Failed to send 'destroy_player' payload to Lavalink: %s", e)
 
     def _add_to_previous_seeds(self, seed: str) -> None:
         # Helper method to manage previous seeds.
