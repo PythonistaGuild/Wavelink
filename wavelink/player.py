@@ -178,11 +178,7 @@ class Player(discord.VoiceProtocol):
             return
 
         self._connected = False
-
-        if self._reconnecting.is_set():
-            await asyncio.sleep(self._should_wait)
-        else:
-            await self._reconnecting.wait()
+        await self._reconnecting.wait()
 
         if self._connected:
             return
