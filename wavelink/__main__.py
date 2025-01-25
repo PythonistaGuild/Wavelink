@@ -16,7 +16,7 @@ args = parser.parse_args()
 def get_debug_info() -> None:
     python_info = "\n".join(sys.version.split("\n"))
     java_version = subprocess.check_output(["java", "-version"], stderr=subprocess.STDOUT)
-    java_version = f'\n{" " * 8}- '.join(v for v in java_version.decode().split("\r\n") if v)
+    java_version = f"\n{' ' * 8}- ".join(v for v in java_version.decode().split("\r\n") if v)
 
     info: str = f"""
     wavelink: {wavelink.__version__}

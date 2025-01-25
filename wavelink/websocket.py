@@ -48,6 +48,7 @@ if TYPE_CHECKING:
 
 
 logger: logging.Logger = logging.getLogger(__name__)
+LOGGER_TRACK: logging.Logger = logging.getLogger("TrackException")
 
 
 class Websocket:
@@ -230,6 +231,15 @@ class Websocket:
 
                     excpayload: TrackExceptionEventPayload = TrackExceptionEventPayload(
                         player=player, track=track, exception=exception
+                    )
+
+                    LOGGER_TRACK.error(
+                        "A Lavalink TrackException was received on %r for player %r: %s, caused by: %s, with severity: %s",
+                        self.node,
+                        player,
+                        exception.get("message", ""),
+                        exception["cause"],
+                        exception["severity"],
                     )
                     self.dispatch("track_exception", excpayload)
 
