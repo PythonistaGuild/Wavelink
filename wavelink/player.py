@@ -178,13 +178,23 @@ class Player(discord.VoiceProtocol):
             return
 
         self._connected = False
+
+        # Wait for the reconnect event to be set.
         await self._reconnecting.wait()
+
+        # Verify the voice state to determine if a reconnect has occurred.
+        if self.guild and self.guild.me and self.guild.me.voice and self.guild.me.voice.channel:
+            # If the bot is connected to a new channel, mark as connected.
+            self._connected = True
+            self._connection_event.set()
+            logger.debug("Reconnected during move; skipping _destroy() in _disconnected_wait.")
+            return
 
         if self._connected:
             return
 
         await self._destroy()
-
+        
     def _inactivity_task_callback(self, task: asyncio.Task[bool]) -> None:
         cancelled: bool = False
 
