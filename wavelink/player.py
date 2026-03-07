@@ -769,6 +769,7 @@ class Player(discord.VoiceProtocol):
         self._connected = True
 
         self._voice_state["voice"]["session_id"] = data["session_id"]
+        self._voice_state["voice"]["channel_id"] = channel_id
         self.channel = self.client.get_channel(int(channel_id))  # type: ignore
 
     async def on_voice_server_update(self, data: VoiceServerUpdatePayload, /) -> None:
@@ -784,21 +785,31 @@ class Player(discord.VoiceProtocol):
         session_id: str | None = data.get("session_id", None)
         token: str | None = data.get("token", None)
         endpoint: str | None = data.get("endpoint", None)
+        channel_id: int | str | None = data.get("channel_id", None)
 
-        if not session_id or not token or not endpoint:
+        if not session_id or not token or not endpoint or not channel_id:
             return
 
-        request: RequestPayload = {"voice": {"sessionId": session_id, "token": token, "endpoint": endpoint}}
+        request: RequestPayload = {
+            "voice": {
+                "sessionId": session_id,
+                "token": token,
+                "endpoint": endpoint,
+                "channelId": str(channel_id),
+            },
+        }
 
         try:
             await self.node._update_player(self.guild.id, data=request)
         except LavalinkException:
+            logger.warning(
+                "Failed to dispatch voice update for Player <%s>. This may be due to an invalid session_id",
+                self.guild.id,
+            )
             await self.disconnect()
         else:
             self._connected = True
             self._connection_event.set()
-
-        logger.debug("Player %s is dispatching VOICE_UPDATE.", self.guild.id)
 
     async def connect(
         self, *, timeout: float = 10.0, reconnect: bool, self_deaf: bool = False, self_mute: bool = False

@@ -37,6 +37,7 @@ class VoiceRequest(TypedDict):
     token: str
     endpoint: str | None
     sessionId: str
+    channelId: NotRequired[int | str]
 
 
 class TrackRequest(TypedDict, total=False):
