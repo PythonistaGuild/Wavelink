@@ -45,27 +45,27 @@ if TYPE_CHECKING:
 
 
 __all__ = (
-    "TrackStartEventPayload",
-    "TrackEndEventPayload",
-    "TrackExceptionEventPayload",
-    "TrackStuckEventPayload",
-    "WebsocketClosedEventPayload",
-    "PlayerUpdateEventPayload",
-    "StatsEventPayload",
-    "NodeReadyEventPayload",
+    "ExtraEventPayload",
+    "GitResponsePayload",
+    "InfoResponsePayload",
     "NodeDisconnectedEventPayload",
-    "StatsEventMemory",
+    "NodeReadyEventPayload",
+    "PlayerResponsePayload",
+    "PlayerStatePayload",
+    "PlayerUpdateEventPayload",
+    "PluginResponsePayload",
     "StatsEventCPU",
     "StatsEventFrames",
+    "StatsEventMemory",
+    "StatsEventPayload",
     "StatsResponsePayload",
-    "GitResponsePayload",
+    "TrackEndEventPayload",
+    "TrackExceptionEventPayload",
+    "TrackStartEventPayload",
+    "TrackStuckEventPayload",
     "VersionResponsePayload",
-    "PluginResponsePayload",
-    "InfoResponsePayload",
-    "PlayerStatePayload",
     "VoiceStatePayload",
-    "PlayerResponsePayload",
-    "ExtraEventPayload",
+    "WebsocketClosedEventPayload",
 )
 
 
@@ -164,7 +164,7 @@ class TrackExceptionEventPayload:
     """
 
     def __init__(self, player: Player | None, track: Playable, exception: TrackExceptionPayload) -> None:
-        self.player = cast(wavelink.Player, player)
+        self.player = cast("wavelink.Player", player)
         self.track = track
         self.exception = exception
 
@@ -183,7 +183,7 @@ class TrackStuckEventPayload:
     """
 
     def __init__(self, player: Player | None, track: Playable, threshold: int) -> None:
-        self.player = cast(wavelink.Player, player)
+        self.player = cast("wavelink.Player", player)
         self.track = track
         self.threshold = threshold
 
@@ -228,7 +228,7 @@ class PlayerUpdateEventPayload:
     """
 
     def __init__(self, player: Player | None, state: PlayerState) -> None:
-        self.player = cast(wavelink.Player, player)
+        self.player = cast("wavelink.Player", player)
         self.time: int = state["time"]
         self.position: int = state["position"]
         self.connected: bool = state["connected"]
@@ -395,12 +395,15 @@ class VoiceStatePayload:
         The Discord voice endpoint connected to. Could be ``None``.
     session_id: str | None
         The Discord voice session ID autheticated with. Could be ``None``.
+    channel_id: str | None
+        The Discord voice channel ID. Required for ``DAVE``.
     """
 
     def __init__(self, data: VoiceStateResponse) -> None:
         self.token: str | None = data.get("token")
         self.endpoint: str | None = data.get("endpoint")
         self.session_id: str | None = data.get("sessionId")
+        self.channel_id: str | None = data.get("channelId")
 
 
 class PlayerResponsePayload:
