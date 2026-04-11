@@ -27,14 +27,14 @@ from __future__ import annotations
 import datetime
 from typing import TYPE_CHECKING, cast
 
-import wavelink
-
 from .enums import DiscordVoiceCloseType
 from .filters import Filters
 from .tracks import Playable
 
 
 if TYPE_CHECKING:
+    import wavelink
+
     from .node import Node
     from .player import Player
     from .types.filters import *
