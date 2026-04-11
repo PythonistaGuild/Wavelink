@@ -48,18 +48,18 @@ FT = TypeVar("FT")
 
 
 __all__ = (
-    "FiltersOptions",
-    "Filters",
+    "ChannelMix",
+    "Distortion",
     "Equalizer",
+    "Filters",
+    "FiltersOptions",
     "Karaoke",
+    "LowPass",
+    "PluginFilters",
+    "Rotation",
     "Timescale",
     "Tremolo",
     "Vibrato",
-    "Rotation",
-    "Distortion",
-    "ChannelMix",
-    "LowPass",
-    "PluginFilters",
 )
 
 

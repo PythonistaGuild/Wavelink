@@ -60,7 +60,7 @@ NotFound: Any = _NotFoundSentinel()
 
 
 class DLLNode:
-    __slots__ = ("value", "previous", "later")
+    __slots__ = ("later", "previous", "value")
 
     def __init__(self, value: Any | None = None, previous: DLLNode | None = None, later: DLLNode | None = None) -> None:
         self.value = value

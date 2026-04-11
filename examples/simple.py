@@ -86,7 +86,7 @@ async def play(ctx: commands.Context, *, query: str) -> None:
         return
 
     player: wavelink.Player
-    player = cast(wavelink.Player, ctx.voice_client)  # type: ignore
+    player = cast("wavelink.Player", ctx.voice_client)  # type: ignore
 
     if not player:
         try:
@@ -143,7 +143,7 @@ async def play(ctx: commands.Context, *, query: str) -> None:
 @bot.command()
 async def skip(ctx: commands.Context) -> None:
     """Skip the current song."""
-    player: wavelink.Player = cast(wavelink.Player, ctx.voice_client)
+    player: wavelink.Player = cast("wavelink.Player", ctx.voice_client)
     if not player:
         return
 
@@ -154,7 +154,7 @@ async def skip(ctx: commands.Context) -> None:
 @bot.command()
 async def nightcore(ctx: commands.Context) -> None:
     """Set the filter to a nightcore style."""
-    player: wavelink.Player = cast(wavelink.Player, ctx.voice_client)
+    player: wavelink.Player = cast("wavelink.Player", ctx.voice_client)
     if not player:
         return
 
@@ -168,7 +168,7 @@ async def nightcore(ctx: commands.Context) -> None:
 @bot.command(name="toggle", aliases=["pause", "resume"])
 async def pause_resume(ctx: commands.Context) -> None:
     """Pause or Resume the Player depending on its current state."""
-    player: wavelink.Player = cast(wavelink.Player, ctx.voice_client)
+    player: wavelink.Player = cast("wavelink.Player", ctx.voice_client)
     if not player:
         return
 
@@ -179,7 +179,7 @@ async def pause_resume(ctx: commands.Context) -> None:
 @bot.command()
 async def volume(ctx: commands.Context, value: int) -> None:
     """Change the volume of the player."""
-    player: wavelink.Player = cast(wavelink.Player, ctx.voice_client)
+    player: wavelink.Player = cast("wavelink.Player", ctx.voice_client)
     if not player:
         return
 
@@ -190,7 +190,7 @@ async def volume(ctx: commands.Context, value: int) -> None:
 @bot.command(aliases=["dc"])
 async def disconnect(ctx: commands.Context) -> None:
     """Disconnect the Player."""
-    player: wavelink.Player = cast(wavelink.Player, ctx.voice_client)
+    player: wavelink.Player = cast("wavelink.Player", ctx.voice_client)
     if not player:
         return
 

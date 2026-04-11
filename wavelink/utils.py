@@ -28,8 +28,8 @@ from typing import Any
 
 
 __all__ = (
-    "Namespace",
     "ExtrasNamespace",
+    "Namespace",
 )
 
 
