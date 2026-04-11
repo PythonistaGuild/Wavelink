@@ -32,16 +32,16 @@ if TYPE_CHECKING:
 
 
 __all__ = (
-    "WavelinkException",
-    "NodeException",
-    "InvalidClientException",
     "AuthorizationFailedException",
+    "ChannelTimeoutException",
+    "InvalidChannelStateException",
+    "InvalidClientException",
     "InvalidNodeException",
     "LavalinkException",
     "LavalinkLoadException",
-    "InvalidChannelStateException",
-    "ChannelTimeoutException",
+    "NodeException",
     "QueueEmpty",
+    "WavelinkException",
 )
 
 
@@ -82,6 +82,8 @@ class AuthorizationFailedException(WavelinkException):
 class InvalidNodeException(WavelinkException):
     """Exception raised when a :class:`Node` is tried to be retrieved from the
     :class:`Pool` without existing, or the ``Pool`` is empty.
+
+    This exception is also raised when providing an invalid node to :meth:`~wavelink.Player.switch_node`.
     """
 
 

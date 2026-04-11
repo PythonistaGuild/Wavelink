@@ -25,7 +25,7 @@ SOFTWARE.
 import enum
 
 
-__all__ = ("NodeStatus", "TrackSource", "DiscordVoiceCloseType", "AutoPlayMode", "QueueMode")
+__all__ = ("AutoPlayMode", "DiscordVoiceCloseType", "NodeStatus", "QueueMode", "TrackSource")
 
 
 class NodeStatus(enum.Enum):

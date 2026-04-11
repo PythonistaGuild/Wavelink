@@ -34,6 +34,19 @@ An event listener in a cog.
     This event can be called many times throughout your bots lifetime, as it will be called when Wavelink successfully
     reconnects to your node in the event of a disconnect.
 
+.. function:: on_wavelink_node_disconnected(payload: wavelink.NodeDisconnectedEventPayload)
+
+    Called when a Node has disconnected/lost connection to wavelink. **This is NOT** the same as a node being closed.
+    This event will however be called directly before the :func:`on_wavelink_node_closed` event.
+
+    The default behaviour is for wavelink to attempt to reconnect a disconnected Node. This event can change that
+    behaviour. If you want to close this node completely see: :meth:`Node.close`
+
+    This event can be used to manage currrently connected players to this Node.
+    See: :meth:`Player.switch_node`
+
+    .. versionadded:: 3.5.0
+
 .. function:: on_wavelink_stats_update(payload: wavelink.StatsEventPayload)
 
     Called when the ``stats`` OP is received by Lavalink.
@@ -128,12 +141,22 @@ Types
 
         tracks: wavelink.Search = await wavelink.Playable.search("Ocean Drive")
 
+.. attributetable:: PlayerBasicState
+
+.. autoclass:: PlayerBasicState
+
+
 
 Payloads
 ---------
 .. attributetable:: NodeReadyEventPayload
 
 .. autoclass:: NodeReadyEventPayload
+    :members:
+
+.. attributetable:: NodeDisconnectedEventPayload
+
+.. autoclass:: NodeDisconnectedEventPayload
     :members:
 
 .. attributetable:: TrackStartEventPayload
@@ -441,6 +464,8 @@ Exceptions
 
     Exception raised when a :class:`Node` is tried to be retrieved from the
     :class:`Pool` without existing, or the ``Pool`` is empty.
+
+    This exception is also raised when providing an invalid node to :meth:`Player.switch_node`.
 
 .. py:exception:: LavalinkException
 

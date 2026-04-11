@@ -48,6 +48,7 @@ if TYPE_CHECKING:
 
 
 logger: logging.Logger = logging.getLogger(__name__)
+LOGGER_TRACK: logging.Logger = logging.getLogger("TrackException")
 
 
 class Websocket:
@@ -88,6 +89,12 @@ class Websocket:
             self.node._spotify_enabled = True
 
     async def connect(self) -> None:
+        if self.node._status is NodeStatus.CONNECTED:
+            # Node was previously connected...
+            # We can dispatch an event to say the node was disconnected...
+            payload: NodeDisconnectedEventPayload = NodeDisconnectedEventPayload(node=self.node)
+            self.dispatch("node_disconnected", payload)
+
         self.node._status = NodeStatus.CONNECTING
 
         if self.keep_alive_task:
@@ -225,6 +232,15 @@ class Websocket:
                     excpayload: TrackExceptionEventPayload = TrackExceptionEventPayload(
                         player=player, track=track, exception=exception
                     )
+
+                    LOGGER_TRACK.error(
+                        "A Lavalink TrackException was received on %r for player %r: %s, caused by: %s, with severity: %s",
+                        self.node,
+                        player,
+                        exception.get("message", ""),
+                        exception["cause"],
+                        exception["severity"],
+                    )
                     self.dispatch("track_exception", excpayload)
 
                 elif data["type"] == "TrackStuckEvent":
@@ -245,6 +261,9 @@ class Websocket:
                         player=player, code=code, reason=reason, by_remote=by_remote
                     )
                     self.dispatch("websocket_closed", wcpayload)
+
+                    if player:
+                        asyncio.create_task(player._disconnected_wait(code, by_remote))
 
                 else:
                     other_payload: ExtraEventPayload = ExtraEventPayload(node=self.node, player=player, data=data)
@@ -279,5 +298,8 @@ class Websocket:
         self.node._players = {}
 
         self.node._websocket = None
+
+        payload: NodeDisconnectedEventPayload = NodeDisconnectedEventPayload(node=self.node)
+        self.dispatch("node_disconnected", payload)
 
         logger.debug("Successfully cleaned up the websocket for %r", self.node)

@@ -46,7 +46,7 @@ if TYPE_CHECKING:
     )
 
 
-__all__ = ("Search", "Album", "Artist", "Playable", "Playlist", "PlaylistInfo")
+__all__ = ("Album", "Artist", "Playable", "Playlist", "PlaylistInfo", "Search")
 
 
 _source_mapping: dict[TrackSource | str | None, str] = {
@@ -665,7 +665,7 @@ class PlaylistInfo:
         An optional ``str`` of the author of this playlist. Only available when a plugin is used.
     """
 
-    __slots__ = ("name", "selected", "tracks", "type", "url", "artwork", "author")
+    __slots__ = ("artwork", "author", "name", "selected", "tracks", "type", "url")
 
     def __init__(self, data: PlaylistPayload) -> None:
         info: PlaylistInfoPayload = data["info"]
