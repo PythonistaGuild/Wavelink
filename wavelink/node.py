@@ -807,7 +807,10 @@ class Pool:
                 logger.error("Failed to authenticate %r on Lavalink with the provided password.", node)
             except NodeException:
                 logger.error(
-                    "Failed to connect to %r. Check that your Lavalink major version is '4' and that you are trying to connect to Lavalink on the correct port.",
+                    (
+                        "Failed to connect to %r. Check that your Lavalink major version is"
+                        " '4' and that you are trying to connect to Lavalink on the correct port."
+                    ),
                     node,
                 )
             else:
@@ -837,7 +840,10 @@ class Pool:
                 logger.error("Failed to authenticate %r on Lavalink with the provided password.", node)
             except NodeException:
                 logger.error(
-                    "Failed to connect to %r. Check that your Lavalink major version is '4' and that you are trying to connect to Lavalink on the correct port.",
+                    (
+                        "Failed to connect to %r. Check that your Lavalink major version "
+                        "is '4' and that you are trying to connect to Lavalink on the correct port."
+                    ),
                     node,
                 )
 
@@ -985,7 +991,7 @@ class Pool:
             return []
 
     @classmethod
-    def cache(cls, capacity: int | None | bool = None) -> None:
+    def cache(cls, capacity: int | bool | None = None) -> None:
         if capacity in (None, False) or capacity <= 0:
             cls.__cache = None
             return

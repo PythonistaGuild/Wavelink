@@ -102,7 +102,10 @@ class Websocket:
                 self.keep_alive_task.cancel()
             except Exception as e:
                 logger.debug(
-                    "Failed to cancel websocket keep alive while connecting. This is most likely not a problem and will not affect websocket connection: '%s'",
+                    (
+                        "Failed to cancel websocket keep alive while connecting. "
+                        "This is most likely not a problem and will not affect websocket connection: '%s'"
+                    ),
                     e,
                 )
 
@@ -124,7 +127,10 @@ class Websocket:
                     raise NodeException from e
                 else:
                     logger.warning(
-                        'An unexpected error occurred while connecting %r to Lavalink: "%s"\nIf this error persists or wavelink is unable to reconnect, please see: %s',
+                        (
+                            'An unexpected error occurred while connecting %r to Lavalink: "%s"\n'
+                            "If this error persists or wavelink is unable to reconnect, please see: %s"
+                        ),
                         self.node,
                         e,
                         github,
@@ -136,7 +142,10 @@ class Websocket:
 
             if retries == 0:
                 logger.warning(
-                    '%r was unable to successfully connect/reconnect to Lavalink after "%s" connection attempt. This Node has exhausted the retry count.',
+                    (
+                        '%r was unable to successfully connect/reconnect to Lavalink after "%s" connection attempt. '
+                        "This Node has exhausted the retry count."
+                    ),
                     self.node,
                     retries + 1,
                 )
@@ -234,7 +243,10 @@ class Websocket:
                     )
 
                     LOGGER_TRACK.error(
-                        "A Lavalink TrackException was received on %r for player %r: %s, caused by: %s, with severity: %s",
+                        (
+                            "A Lavalink TrackException was received on %r for "
+                            "player %r: %s, caused by: %s, with severity: %s"
+                        ),
                         self.node,
                         player,
                         exception.get("message", ""),
