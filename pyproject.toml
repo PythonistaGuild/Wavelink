@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wavelink"
-version = "3.5.0"
+version = "3.5.1"
 
 authors = [
   { name="PythonistaGuild, EvieePy", email="evieepy@gmail.com" },
@@ -99,7 +99,7 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.pyright]
-exclude = ["venv"]
+exclude = ["venv", "**/node_modules", "**/__pycache__", "**/.*", ".venv"]
 ignore = ["test*.py", "examples/*.py", "docs/*"]
 useLibraryCodeForTypes = true
 typeCheckingMode = "strict"
