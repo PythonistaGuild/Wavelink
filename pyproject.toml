@@ -6,25 +6,23 @@ build-backend = "setuptools.build_meta"
 name = "wavelink"
 version = "3.5.1"
 
-authors = [
-  { name="PythonistaGuild, EvieePy", email="evieepy@gmail.com" },
-]
+authors = [{ name = "PythonistaGuild, EvieePy", email = "evieepy@gmail.com" }]
 dynamic = ["dependencies"]
 description = "A robust and powerful, fully asynchronous Lavalink wrapper built for discord.py in Python."
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
-        "License :: OSI Approved :: MIT License",
-        "Intended Audience :: Developers",
-        "Natural Language :: English",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3.12",
-        "Topic :: Internet",
-        "Topic :: Software Development :: Libraries",
-        "Topic :: Software Development :: Libraries :: Python Modules",
-        "Topic :: Utilities",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
 ]
 
 [project.urls]
@@ -34,10 +32,13 @@ classifiers = [
 packages = ["wavelink", "wavelink.types"]
 
 [tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
+dependencies = { file = ["requirements.txt"] }
 
 [tool.setuptools.package-data]
 wavelink = ["py.typed"]
+
+[dependency-groups]
+dev = ["ruff>=0.15.10"]
 
 [tool.ruff]
 line-length = 120
@@ -46,39 +47,28 @@ exclude = ["venv", "docs/"]
 
 [tool.ruff.lint]
 select = [
+    "ANN",
     "C4",
     "E",
     "F",
     "G",
     "I",
+    "PERF",
     "PTH",
     "RUF",
     "SIM",
-    "TCH",
+    "TC",
     "UP",
     "W",
-    "PERF",
-    "ANN",
 ]
 ignore = [
-    "F402",
-    "F403",
-    "F405",
-    "PERF203",
-    "RUF001",
-    "RUF009",
-    "SIM105",
-    "UP034",
-    "UP038",
-    "ANN101",
-    "ANN102",
-    "ANN401",
-    "UP031",
-    "PTH123",
-    "E203", 
-    "E501",
-    "RUF006",
-    "SIM910",
+    "ANN401",  # we allow `Any` type
+    "E203",    # we allow whitespace separation after commas, etc
+    "F403",    # allowing manual dict comprehension
+    "F405",    # star imports are used commonly here
+    "PERF203", # allowing try-except blocks in loops is allowed here, performance hit is negligible
+    "RUF006",  # due to the nature of the library we allow dangling tasks to be cleaned up eagerly
+    "SIM105",  # contextlib.suppress is a performance hit and try-except is preferred.
 ]
 
 [tool.ruff.lint.isort]
@@ -106,4 +96,3 @@ typeCheckingMode = "strict"
 reportImportCycles = false
 reportPrivateUsage = false
 pythonVersion = "3.10"
-
