@@ -1,10 +1,3 @@
-# Important:
-
-Wavelink is no longer maintained. Visit [Lavalink Client](https://lavalink.dev/clients) for a list of current libraries.
-
-
-
-
 <div align="center">
 
 
