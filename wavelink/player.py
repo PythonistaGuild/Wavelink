@@ -102,7 +102,7 @@ class Player(discord.VoiceProtocol):
         The queue associated with this player.
     auto_queue: :class:`~wavelink.Queue`
         The auto_queue associated with this player. This queue holds tracks that are recommended by the AutoPlay feature.
-    """
+    """  # noqa: E501 # documentation
 
     channel: VocalGuildChannel
 
@@ -278,15 +278,11 @@ class Player(discord.VoiceProtocol):
             self._error_count = 0
 
         if self.node.status is not NodeStatus.CONNECTED:
-            logger.warning(
-                '"Unable to use AutoPlay on Player for Guild "%s" due to disconnected Node.', str(self.guild)
-            )
+            logger.warning('"Unable to use AutoPlay on Player for Guild "%s" due to disconnected Node.', self.guild)
             return
 
         if not isinstance(self.queue, Queue) or not isinstance(self.auto_queue, Queue):  # type: ignore
-            logger.warning(
-                '"Unable to use AutoPlay on Player for Guild "%s" due to unsupported Queue.', str(self.guild)
-            )
+            logger.warning('"Unable to use AutoPlay on Player for Guild "%s" due to unsupported Queue.', self.guild)
             self._inactivity_start()
             return
 

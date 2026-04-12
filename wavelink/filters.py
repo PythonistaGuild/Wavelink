@@ -169,7 +169,7 @@ class Equalizer:
         To change specific bands, consider accessing :attr:`~wavelink.Equalizer.payload` first.
         """
         default: dict[int, EqualizerPayload] = {n: {"band": n, "gain": 0.0} for n in range(15)}
-        payload: list[EqualizerPayload] | None = options.get("bands", None)
+        payload: list[EqualizerPayload] | None = options.get("bands")
 
         if payload is None:
             self._payload = default
