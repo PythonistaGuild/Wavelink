@@ -1,84 +1,79 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "wavelink"
+module-root = ""
 
 [project]
 name = "wavelink"
-version = "3.5.0"
+version = "4.0.0a"
 
 authors = [
-  { name="PythonistaGuild, EvieePy", email="evieepy@gmail.com" },
+    { name="Evie. P.", email="evieepy@gmail.com"},
+    { name="PythonistaGuild" },
 ]
-dynamic = ["dependencies"]
 description = "A robust and powerful, fully asynchronous Lavalink wrapper built for discord.py in Python."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 classifiers = [
         "License :: OSI Approved :: MIT License",
         "Intended Audience :: Developers",
         "Natural Language :: English",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
         "Topic :: Internet",
         "Topic :: Software Development :: Libraries",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Utilities",
 ]
+dependencies = [
+    "picows>=1.17.0",
+]
 
 [project.urls]
-"Homepage" = "https://github.com/PythonistaGuild/Wavelink"
-
-[tool.setuptools]
-packages = ["wavelink", "wavelink.types"]
-
-[tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
-
-[tool.setuptools.package-data]
-wavelink = ["py.typed"]
+Homepage = "https://github.com/PythonistaGuild/Wavelink"
+"Issue Tracker" = "https://github.com/PythonistaGuild/Wavelink/issues"
+Documentation = "https://github.com/PythonistaGuild/Wavelink"
 
 [tool.ruff]
-line-length = 120
+line-length = 125
+target-version = "py312"
 indent-width = 4
-exclude = ["venv", "docs/"]
+exclude = ["venv", ".venv", ".venv*", "docs"]
 
 [tool.ruff.lint]
 select = [
-    "C4",
-    "E",
-    "F",
-    "G",
-    "I",
-    "PTH",
-    "RUF",
-    "SIM",
-    "TCH",
-    "UP",
-    "W",
-    "PERF",
-    "ANN",
+    "C4",    # flake8-comprehensions (C4)
+    "E",     # pycodestyle Error (E)
+    "F",     # Pyflakes (F)
+    "G",     # flake8-logging-format (G)
+    "I",     # isort (I)
+    "PTH",   # flake8-use-pathlib (PTH)
+    "RUF",   # Ruff-specific rules (RUF)
+    "SIM",   # flake8-simplify (SIM)
+    "TC",    # flake8-type-checking (TC)
+    "UP",    # pyupgrade (UP)
+    "W",     # pycodestyle Warning (W)
+    "PERF",  # Perflint (PERF)
+    "ANN",   # flake8-annotations (ANN)
 ]
 ignore = [
-    "F402",
-    "F403",
-    "F405",
-    "PERF203",
-    "RUF001",
-    "RUF009",
-    "SIM105",
-    "UP034",
-    "UP038",
-    "ANN101",
-    "ANN102",
-    "ANN401",
-    "UP031",
+    "F402",     # import-shadowed-by-loop-var
+    "F403",     # undefined-local-with-import-star
+    "F405",     # undefined-local-with-import-star-usage
+    "PERF203",  # try-except-in-loop
+    "RUF001",   # ambiguous-unicode-character-string
+    "RUF009",   # function-call-in-dataclass-default-argument
+    "SIM105",   # suppressible-exception
+    "UP034",    # extraneous-parentheses
+    "ANN401",   # any-type
     "PTH123",
-    "E203", 
-    "E501",
-    "RUF006",
-    "SIM910",
+    "E203",     # whitespace-before-punctuation
+    "E501",     # line-too-long
 ]
 
 [tool.ruff.lint.isort]
@@ -99,11 +94,29 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.pyright]
-exclude = ["venv"]
-ignore = ["test*.py", "examples/*.py", "docs/*"]
+exclude = [
+    ".venv",
+    "venv",
+    "docs",
+    "examples", 
+    "wavelink/__main__.py", 
+    "**/node_modules", 
+    "**/__pycache__", 
+    "**/.*",
+]
 useLibraryCodeForTypes = true
 typeCheckingMode = "strict"
 reportImportCycles = false
 reportPrivateUsage = false
-pythonVersion = "3.10"
+pythonVersion = "3.12"
 
+[dependency-groups]
+dev = [
+    "ruff>=0.15.7",
+    "pyright>=1.1.408",
+    "nextcord>=3.1.1",
+    "discord-py>=2.7.1",
+    "disnake>=2.12.0",
+    "pycord>=0.1.1",
+]
+speed = ["orjson"]
