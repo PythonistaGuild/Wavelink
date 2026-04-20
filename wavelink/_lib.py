@@ -43,4 +43,4 @@ if not has_discord:
 if not has_discord:
     raise ImportError("Unable to find a compatible discord library.")
 
-from discord.ext import commands  #type: ignore # noqa: F401
+from discord.ext import commands  #type: ignore # noqa: F401 E402
