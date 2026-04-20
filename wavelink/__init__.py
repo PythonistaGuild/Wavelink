@@ -19,4 +19,4 @@ __license__ = "MIT"
 __copyright__ = "Copyright 2019-Present (c) PythonistaGuild, EvieePy"
 __version__ = "4.0.0a"
 
-from .node import Pool as Pool, Node as Node
+from .node import Node as Node, Pool as Pool

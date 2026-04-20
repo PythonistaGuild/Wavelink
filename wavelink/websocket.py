@@ -18,7 +18,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
-from typing import no_type_check, TYPE_CHECKING, Coroutine, Any
+from typing import TYPE_CHECKING, Any, no_type_check
 
 from picows import WSCloseCode, WSFrame, WSListener, WSMsgType, WSTransport  # type: ignore
 
@@ -26,7 +26,9 @@ from .utils import JSON_LOADS, MISSING
 
 
 if TYPE_CHECKING:
-    from .types_.websocket import WSMsgT, EventT, ReadyMsgT, PlayerUpdateMsgT, StatsMsgT, EventMsgT
+    from collections.abc import Coroutine
+
+    from .types_.websocket import EventMsgT, PlayerUpdateMsgT, ReadyMsgT, StatsMsgT, WSMsgT
 
 
 LOGGER: logging.Logger = logging.Logger(__name__)

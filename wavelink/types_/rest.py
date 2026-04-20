@@ -12,11 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import Any, Never, NotRequired, TypedDict, Literal, TYPE_CHECKING
 
+from typing import Any, Literal, Never, NotRequired, TypedDict
 
-if TYPE_CHECKING:
-    from .websocket import TrackExceptionT
+from .websocket import TrackExceptionT
 
 
 type LoadResultT = Literal["track", "playlist", "search", "empty", "error"]
@@ -94,18 +93,19 @@ class PlayerStateT(TypedDict):
     connected: bool
     ping: int
 
+
 class VoiceStateT(TypedDict):
     token: str
     endpoint: str
     sessionId: str
     channelId: str | None
-    
+
+
 class PlayerResptT(TypedDict):
     guildId: str
     track: TrackRespT | None
     volume: int
     paused: bool
-    state: ...
-    voice: ...
+    state: PlayerStateT
+    voice: VoiceStateT
     filters: ...
-    

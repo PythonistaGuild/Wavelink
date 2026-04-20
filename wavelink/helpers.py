@@ -12,12 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from typing import TypeVar, TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from .node import Pool
+from typing import TypeVar
 
 from _lib import commands
+
+from .node import Pool
 
 
 T = TypeVar("T", bound=commands.Bot | commands.AutoShardedBot)
