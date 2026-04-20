@@ -12,6 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 has_discord = False
 
 
@@ -42,5 +43,4 @@ if not has_discord:
 if not has_discord:
     raise ImportError("Unable to find a compatible discord library.")
 
-
-from discord.ext import commands
+from discord.ext import commands  #type: ignore # noqa: F401
