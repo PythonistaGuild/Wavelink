@@ -12,71 +12,78 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 from __future__ import annotations
 
-from types import MappingProxyType
 from typing import Any
-from functools import cached_property
 
-import aiohttp
+from wavelink._lib import commands
 
-from wavelink._lib import discord, commands
 
-from .utils import MISSING
+__all__ = ("MusicBot", "Node", "Pool")
+
 
 class Node: ...
 
 
+# @cached_property
+# def headers(self) -> MappingProxyType[str, str]:
+#     return MappingProxyType({"Authorization": self._password})
+
+
 class Pool:
-    def __init__(self, client: discord.Client | commands.Bot, *, context_attr: str | None = MISSING, session: aiohttp.ClientSession = MISSING, password: str) -> None:
-        self._password = password
-        self._client = client
-        self._session = session if session is not MISSING else aiohttp.ClientSession()
-
-        # if context_attr is not None:
-        #     self._ctx_di(context_attr if context_attr is not MISSING else "wave")
-    
-    @cached_property
-    def headers(self) -> MappingProxyType[str, str]:
-        return MappingProxyType({"Authorization": self._password})
-
-    # def _ctx_di(self, attr: str) -> None:
-    #     meth = getattr(self._client, "get_context", None)
-    #     if not meth:
-    #         return
-
-    #     async def injected(*args: Any, **kwargs: Any) -> Any:
-    #         nonlocal attr
-
-    #         ctx = await meth(*args, **kwargs)
-    #         if hasattr(ctx, attr):
-    #             msg = (
-    #                 f"The provided 'context_attr' parameter passed to {self.__class__.__name__!r}, "
-    #                 "conflicts with an existing Context attribute."
-    #             )
-    #             raise AttributeError(msg)
-
-    #         setattr(ctx, attr, self)
-    #         return ctx
-
-    #     setattr(self._client, "get_context", injected)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self._thing = 123
+        super().__init__()
 
     def add_node(self) -> ...: ...
 
-    async def create_node(self) -> Node:
-        ...
-    
-    # /loadtracks
+    async def create_node(self) -> Node: ...
+
+    # GET /loadtracks
     async def load_tracks(self, identifier: str) -> ...: ...
-    
-    # /decodetrack
+
+    # GET /decodetrack
     async def decode_track(self, encoded: str) -> ...: ...
-    
-    # /decodetracks
+
+    # POST /decodetracks
     async def decode_tracks(self, encoded: list[str]) -> ...: ...
-    
-    # /sessions/{sessionId}/players
-    async def get_players(self) -> ...: ...
-    
-    # /sessions/{sessionId}/players/{guildId}
-    async def get_player(self) -> ...: ...
+
+    # GET /sessions/{sessionId}/players/{guildId}
+    async def fetch_player(self) -> ...: ...
+
+    # GET /sessions/{sessionId}/players
+    async def fetch_players(self) -> ...: ...
+
+    # PATCH /sessions/{sessionId}/players/{guildId}
+    async def update_player(self) -> ...: ...
+
+    # DELETE /sessions/{sessionId}/players/{guildId}
+    async def destroy_player(self) -> ...: ...
+
+    # PATCH /v4/sessions/{sessionId}
+    async def update_session(self) -> ...: ...
+
+    # GET /info
+    async def fetch_info(self) -> ...: ...
+
+    # GET /version (no /v4/)
+    async def fetch_version(self) -> ...: ...
+
+    # GET /stats
+    async def fetch_stats(self) -> ...: ...
+
+    # GET /routeplanner/status
+    async def fetch_route_planner_status(self) -> ...: ...
+
+    # POST /routeplanner/free/address
+    async def free_address(self) -> ...: ...
+
+    # POST /routeplanner/free/all
+    async def free_all_addresses(self) -> ...: ...
+
+
+class MusicBot(commands.Bot, Pool):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        Pool.__init__(self, *args, **kwargs)
