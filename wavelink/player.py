@@ -178,7 +178,14 @@ class Player(discord.VoiceProtocol):
             return
 
         self._connected = False
-        await self._reconnecting.wait()
+        self._connection_event.clear()
+
+        try:
+            async with async_timeout.timeout(1):
+                await self._connection_event.wait()
+        except TimeoutError:
+            self._connected = False
+            return
 
         if self._connected:
             return
