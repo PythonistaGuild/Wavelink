@@ -20,7 +20,7 @@ import logging
 import sys
 from typing import TYPE_CHECKING, Any, no_type_check
 
-from picows import WSCloseCode, WSFrame, WSListener, WSMsgType, WSTransport  # type: ignore
+from picows import WSCloseCode, WSFrame, WSListener, WSMsgType, WSTransport
 
 from .utils import JSON_LOADS, MISSING
 
@@ -28,6 +28,7 @@ from .utils import JSON_LOADS, MISSING
 if TYPE_CHECKING:
     from collections.abc import Coroutine
 
+    from .node import Node
     from .types_.websocket import EventMsgT, PlayerUpdateMsgT, ReadyMsgT, StatsMsgT, WSMsgT
 
 
@@ -95,7 +96,8 @@ class Websocket:
     _frame_listener: WebsocketFrame
     _transport: WSTransport
 
-    def __init__(self) -> None:
+    def __init__(self, node: Node, /) -> None:
+        self._node = node
         self._loop = asyncio.get_event_loop()
         self._session_id: str = MISSING
 
@@ -111,6 +113,9 @@ class Websocket:
 
     async def ws_player_update(self, data: PlayerUpdateMsgT) -> None: ...
 
-    async def ws_stats(self, data: StatsMsgT) -> None: ...
+    async def ws_stats(self, data: StatsMsgT) -> None:
+        data.pop("op")
+        updated: Any = data
+        self._node._update_stats(updated)
 
     async def ws_event(self, data: EventMsgT) -> None: ...
