@@ -2,8 +2,6 @@ name: Type Coverage and Linting
 
 on:
   push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
