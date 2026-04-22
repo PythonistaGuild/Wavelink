@@ -15,17 +15,24 @@ limitations under the License.
 
 from __future__ import annotations
 
+import inspect
 import secrets
 from functools import cached_property
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Never, Protocol, overload
 
+import aiohttp
+
 from ._lib import commands
+from .data import *
 from .utils import MISSING
 
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
+
+    from .types_.websocket import StatsDataT
+
 
 __all__ = ("MusicBot", "Node", "Pool")
 
@@ -36,10 +43,13 @@ class NodeStrategy(Protocol):
 
 
 class LoadBalancingStrategy(NodeStrategy):
-    def select(self, nodes: Mapping[str, Node]) -> Node | None: ...
+    def select(self, nodes: Mapping[str, Node]) -> Node | None:
+        return min(nodes.values(), key=lambda n: n.penalty())
 
 
 class NodeMapping:
+    __slots__ = ("_default_strategy", "_nodes")
+
     def __init__(self) -> None:
         self._default_strategy = LoadBalancingStrategy()
         self._nodes: dict[str, Node] = {}
@@ -83,30 +93,46 @@ class NodeMapping:
 
         return self._nodes.pop(key)
 
-    def select(self, strategy: NodeStrategy = MISSING) -> Node | None:
+    def select(self, strategy: NodeStrategy | type[NodeStrategy] = MISSING) -> Node | None:
         if strategy is MISSING:
             return self._default_strategy.select(self.proxy())
+
+        if inspect.isclass(strategy):
+            inst = strategy()
+            return inst.select(self.proxy())
 
         return strategy.select(self.proxy())
 
 
 class Node:
-    __slots__ = ("_identifier", "_max_players_priority", "_password", "_uri")
-
     def __init__(
         self,
         uri: str,
         *,
         password: str,
         identifier: str = MISSING,
+        client_id: int | None = None,
+        session: aiohttp.ClientSession | None = None,
     ) -> None:
         self._uri = uri
         self._password = password
         self._identifier = identifier if identifier is not MISSING else secrets.token_hex(16)
+        self._is_connected = False
+        self._stats: StatsData = MISSING
+        self._raw_stats: StatsDataT = {}
+        self._penalty_compound: int = 0
+        self._client_id = client_id
+        self._session = session
 
     def __repr__(self) -> str: ...
 
     def __str__(self) -> str: ...
+
+    def is_connected(self) -> bool:
+        return self._is_connected
+
+    def has_stats(self) -> bool:
+        return self._stats is not MISSING
 
     @property
     def identifier(self) -> str:
@@ -116,17 +142,131 @@ class Node:
     def headers(self) -> MappingProxyType[str, str]:
         return MappingProxyType({"Authorization": self._password})
 
+    async def _setup(self) -> None:
+        if not self._session:
+            self._session = aiohttp.ClientSession()
 
-class Pool:
-    def __init__(self, *, use_cache: bool = True, cache_ttl: float | None = None, max_cache: int | None = None) -> None:
-        self._nodes: list[Node] = []
-        self._node_map: dict[str, Node]
+        await self.setup_hook()
 
-    def add_node(self) -> ...: ...
+    async def setup_hook(self) -> None: ...
 
-    async def create_node(self) -> Node: ...
+    async def connect(self) -> ...:
+        if self._is_connected:
+            raise  # TODO: Exception...
 
-    def get_node(self) -> Node | None: ...
+        await self._setup()
+        # version = await self.fetch_version()
+
+    def _update_stats(self, stats: StatsDataT) -> None:
+        self._raw_stats = stats
+
+        # General
+        players = stats.get("players", 0)
+        playing = stats.get("playingPlayers", 0)
+        uptime = stats.get("uptime", 0)
+        frames = stats.get("frameStats", None)
+
+        # CPU
+        cpu = stats.pop("cpu")
+        cores = cpu.get("cores")
+        system = cpu.get("systemLoad")
+        lavalink = cpu.get("lavalinkLoad")
+
+        # Memory
+        mem = stats.pop("memory")
+
+        # Dataclasses
+        cpu_stats = CPUData(cores=cores, system=system, lavalink=lavalink)
+        mem_stats = MemoryData(**mem)
+        frame_stats = FrameData(**frames) if frames else None
+
+        data = StatsData(
+            players=players,
+            playing=playing,
+            uptime=uptime,
+            memory=mem_stats,
+            cpu=cpu_stats,
+            frames=frame_stats,
+        )
+        self._stats = data
+
+    def cpu_penalty(self) -> float:
+        # impacts the overall penalty score the highest...
+        # Audio processing is a CPU intensive task; adding a player to an already highly loaded CPU is going to impact
+        # experience much greater than adding a player to a node
+        # ...experiencing some network stutter with lower CPU usage for example.
+        # lavalink cpu usage is considered much more impactful than overall CPU usage
+        if self._stats is MISSING:
+            return 0
+
+        system = self._stats.cpu.system**2 * 10
+        lavalink = self._stats.cpu.lavalink**2 * 125
+        penalty = system + lavalink
+
+        return penalty
+
+    def memory_penalty(self) -> float:
+        # impacts overall penalty lightly-moderately using a gentle superlinear curve...
+        if self._stats is MISSING:
+            return 0
+
+        ratio = self._stats.memory.free / self._stats.memory.allocated
+        penalty = (1 - ratio) ** 1.5 * 5
+
+        return penalty
+
+    def frame_penalty(self) -> float:
+        # impacts overall penalty lightly-highly based on deficit and nulled frames...
+        # nulled frames are usually considered less impactful as they *usually* correlate to transient issues
+        # ... (e.g network issues, small cpu buffering, YouTube issues, etc...)
+        # deficit frames are weighted stronger as they can indicate longer term issues with the node
+        # ...being able to keep up.
+        if self._stats is MISSING or not self._stats.frames:
+            return 0
+
+        nulled = (self._stats.frames.nulled / 3000) * 300
+        deficit = (abs(self._stats.frames.deficit) / 3000) * 600
+        penalty = nulled + deficit
+
+        return penalty
+
+    def player_penalty(self) -> float:
+        if self._stats is MISSING:
+            return 0
+        # impacts the overall penalty lightly
+        # Resource stats are much more important than overall player counts (playing or not)
+        # This penalty score is mostly going to impact decisions on nodes that have close scores to prevent
+        # any one healthy node consuming more players than it should...
+        return self._stats.playing * 0.1
+
+    def penalty(self) -> float:
+        if self._stats is MISSING:
+            return 0.0
+
+        return self.cpu_penalty() + self.memory_penalty() + self.frame_penalty() + self.player_penalty()
+
+    @property
+    def penalty_compound(self) -> int:
+        return self._penalty_compound
+
+    @penalty_compound.setter
+    def penalty_compound(self, value: int, /) -> None:
+        # Min 0
+        self._penalty_compound = max(0, value)
+
+    def composite_penalty(self) -> float:
+        return self.penalty() + self._penalty_compound
+
+    def is_disqualified(self) -> bool:
+        # Even with penalty scores, it's possible to have nodes that are too close to resource thresholds...
+        # E.g. It's unrealistic to add a player to a node with > ~95% Lavalink CPU load or near consuming it's
+        # allocated memory...
+        # This check allows us to in such instances completely disqualify a node from player consideration...
+        ...
+
+    async def request(self) -> ...: ...
+
+    async def request_json(self) -> ...: ...
 
     # GET /loadtracks
     async def load_tracks(self, identifier: str) -> ...: ...
@@ -171,6 +311,26 @@ class Pool:
 
     # POST /routeplanner/free/all
     async def free_all_addresses(self) -> ...: ...
+
+
+class Pool:
+    def __init__(self, *, use_cache: bool = True, cache_ttl: float | None = None, max_cache: int | None = None) -> None:
+        self._nodes: NodeMapping = NodeMapping()
+
+    def add_node(self, node: Node) -> None:
+        # TODO: Exception...
+        if not node.is_connected():
+            raise
+
+        self._nodes[node.identifier] = node
+
+    async def create_node(self) -> Node: ...
+
+    def get_node(self, identifier: str, /) -> Node | None:
+        return self._nodes.get(identifier)
+
+    def get_best_node(self, strategy: NodeStrategy | type[NodeStrategy] = MISSING, /) -> Node | None:
+        return self._nodes.select(strategy)
 
 
 class MusicBot(commands.Bot, Pool):
