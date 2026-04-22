@@ -39,12 +39,12 @@ __all__ = ("MusicBot", "Node", "Pool")
 
 class NodeStrategy(Protocol):
     def select(self, nodes: Mapping[str, Node]) -> Node | None:
-        raise NotImplementedError
+        ...
 
 
 class LoadBalancingStrategy(NodeStrategy):
     def select(self, nodes: Mapping[str, Node]) -> Node | None:
-        return min(nodes.values(), key=lambda n: n.penalty())
+        return min(nodes.values(), key=lambda n: n.penalty(), default=None)
 
 
 class NodeMapping:
