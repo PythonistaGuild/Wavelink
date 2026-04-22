@@ -35,7 +35,6 @@ type TrackExceptionSeverityT = Literal["common", "suspicious", "fault"]
 
 class ReadyMsgT(TypedDict):
     op: Literal["ready"]
-    guildId: str
     resumed: bool
     sessionId: str
 
@@ -74,7 +73,6 @@ class StatsFrameT(TypedDict):
 
 class StatsMsgT(TypedDict):
     op: Literal["stats"]
-    guildId: str
     players: int
     playingPlayers: int
     uptime: int
@@ -144,6 +142,15 @@ class WebSocketClosedEventT(EventMsgT):
     code: int
     reason: str
     byRemote: bool
+
+
+class StatsDataT(TypedDict, total=False):
+    players: int
+    playingPlayers: int
+    uptime: int
+    memory: StatsMemoryT
+    cpu: StatsCPUT
+    frameStats: StatsFrameT | None
 
 
 type WSMsgT = ReadyMsgT | PlayerUpdateMsgT | StatsMsgT | EventMsgT
