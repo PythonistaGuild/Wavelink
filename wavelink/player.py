@@ -174,6 +174,7 @@ class Player(discord.VoiceProtocol):
         self._reconnecting.set()
 
     async def _disconnected_wait(self, code: int, by_remote: bool) -> None:
+
         if code != 4014 or not by_remote:
             return
 
@@ -763,6 +764,7 @@ class Player(discord.VoiceProtocol):
         self._ping = payload.ping
 
     async def on_voice_state_update(self, data: GuildVoiceStatePayload, /) -> None:
+        logger.debug("Player %s received Voice State Update: %s", self.guild, data)
         channel_id = data["channel_id"]
 
         if not channel_id:
@@ -776,6 +778,8 @@ class Player(discord.VoiceProtocol):
         self.channel = self.client.get_channel(int(channel_id))  # type: ignore
 
     async def on_voice_server_update(self, data: VoiceServerUpdatePayload, /) -> None:
+        logger.debug("Player %s received Voice Server Update: %s", self.guild, data)
+
         self._voice_state["voice"]["token"] = data["token"]
         self._voice_state["voice"]["endpoint"] = data["endpoint"]
 
@@ -808,7 +812,12 @@ class Player(discord.VoiceProtocol):
         logger.debug("Player %s is dispatching VOICE_UPDATE.", self.guild.id)
 
     async def connect(
-        self, *, timeout: float = 10.0, reconnect: bool, self_deaf: bool = False, self_mute: bool = False
+        self,
+        *,
+        timeout: float = 10.0,
+        reconnect: bool,
+        self_deaf: bool = False,
+        self_mute: bool = False,
     ) -> None:
         """
 
