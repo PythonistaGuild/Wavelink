@@ -18,15 +18,22 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, no_type_check
+from typing import TYPE_CHECKING, Any, cast, no_type_check
 
-from picows import WSCloseCode, WSFrame, WSListener, WSMsgType, WSTransport
+from picows import (
+    WSCloseCode,
+    WSFrame,
+    WSListener,
+    WSMsgType,
+    WSTransport,
+    ws_connect,  # type: ignore
+)
 
 from .utils import JSON_LOADS, MISSING
 
 
 if TYPE_CHECKING:
-    from collections.abc import Coroutine
+    from collections.abc import Coroutine, Mapping
 
     from .node import Node
     from .types_.websocket import EventMsgT, PlayerUpdateMsgT, ReadyMsgT, StatsMsgT, WSMsgT
@@ -55,7 +62,7 @@ class WebsocketFrame(WSListener):
 
         match data:
             case {"op": "ready"}:
-                coro = self._socket.ws_resumed(data)
+                coro = self._socket.ws_ready(data)
             case {"op": "playerUpdate"}:
                 coro = self._socket.ws_player_update(data)
             case {"op": "stats"}:
@@ -100,16 +107,43 @@ class Websocket:
         self._node = node
         self._loop = asyncio.get_event_loop()
         self._session_id: str = MISSING
+        self._connected: bool = False
+        self._closing: bool = False
 
     def listener_factory(self) -> WebsocketFrame:
         listener = WebsocketFrame(self)
         return listener
 
-    async def connect(self) -> ...: ...
+    async def connect(self, headers: Mapping[str, str]) -> ...:
+        uri = f"{self._node._uri.removesuffix('/')}/v4/websocket"
+        uri = uri.replace("https://", "wss://").replace("http://", "ws://")
+        transport, listener = await ws_connect(self.listener_factory, uri, extra_headers=headers)
 
-    async def close(self) -> ...: ...
+        self._transport = transport
+        self._frame_listener = cast("WebsocketFrame", listener)
+        self._connected = True
 
-    async def ws_resumed(self, data: ReadyMsgT) -> None: ...
+    async def close(self) -> ...:
+        if self._closing:
+            return
+
+        self._closing = True
+        self._transport.disconnect(graceful=True)
+
+        try:
+            async with asyncio.Timeout(3):
+                await self._transport.wait_disconnected()
+        except TimeoutError:
+            # TODO: Logging...
+            ...
+
+        self._connected = False
+        self._frame_listener = MISSING
+        self._transport = MISSING
+
+    async def ws_ready(self, data: ReadyMsgT) -> None:
+        session = data["sessionId"]
+        self._node._session_id = session
 
     async def ws_player_update(self, data: PlayerUpdateMsgT) -> None: ...
 
