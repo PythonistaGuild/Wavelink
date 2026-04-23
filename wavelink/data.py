@@ -24,7 +24,7 @@ __all__ = ("CPUData", "FrameData", "MemoryData", "StatsData")
 @dataclass
 class MemoryData:
     free: int
-    user: int
+    used: int
     allocated: int
     reservable: int
 
