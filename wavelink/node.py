@@ -15,6 +15,7 @@ limitations under the License.
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import secrets
 from functools import cached_property
@@ -118,8 +119,9 @@ class Node:
         client_id: int,
         identifier: str = MISSING,
         http_session: aiohttp.ClientSession | None = None,
-        max_retries: int | None = 5,
-        should_resume: bool = True,
+        reconnect: bool = True,
+        max_reconnects: int | None = 5,
+        resume: bool = True,
         resume_timeout: int = 60,
     ) -> None:
         self._uri = uri
@@ -133,11 +135,12 @@ class Node:
         self._raw_stats: StatsDataT = {}
         self._penalty_compound: int = 0
 
-        self._max_tries = max(0, max_retries or 0)
+        self._should_reconnect = reconnect
+        self._max_reconnects: int | None = max(0, max_reconnects) if max_reconnects else None
         self._ua = f"Wavelink/{wavelink.__version__} ({client_id})"
         self._session_id: str | None = None
-        self._should_resume = should_resume
-        self._resume_timeout = min(max(0, resume_timeout), self.MAX_RESUME)
+        self._should_resume = resume
+        self._resume_timeout = min(max(1, resume_timeout), self.MAX_RESUME)
 
     def __repr__(self) -> str: ...
 
@@ -168,16 +171,19 @@ class Node:
         if not self._http:
             self._http = aiohttp.ClientSession()
 
+        # TODO: Version check?
+        # version = await self.fetch_version()
+
         await self.setup_hook()
 
     async def setup_hook(self) -> None: ...
 
-    async def connect(self, headers: Mapping[str, str] | None = None) -> ...:
+    async def connect(self, headers: Mapping[str, str] | None = None, *, soft: bool = False) -> ...:
         if self._is_connected:
             raise  # TODO: Exception...
 
-        await self._setup()
-        # version = await self.fetch_version()
+        if not soft:
+            await self._setup()
 
         ws = Websocket(self)
         await ws.connect(headers or self.ws_headers())
@@ -188,9 +194,34 @@ class Node:
         backoff = Backoff(maximum_time=20)
         headers = self.ws_headers(session_id=self._session_id if self._should_resume else None)
 
-        await self._socket.close()
+        if self._socket:
+            await self._socket.close()
+            self._socket = None
+
+        self._is_connected = False
+
+        tries = self._max_reconnects
         while True:
-            ...
+            if tries is not None and tries == 0:
+                break
+
+            try:
+                await self.connect(headers, soft=True)
+            except Exception:
+                # TODO: Catch proper exceptions...
+                ...
+            else:
+                break
+
+            if tries is not None:
+                tries -= 1
+
+            delay = backoff.calculate()
+            await asyncio.sleep(delay)
+
+        if not self._is_connected:
+            # TODO: Proper exception...
+            raise
 
     def _update_stats(self, stats: StatsDataT) -> None:
         self._raw_stats = stats
@@ -362,10 +393,16 @@ class Pool:
 
     async def create_node(self) -> Node: ...
 
-    def get_node(self, identifier: str, /) -> Node | None:
-        return self._nodes.get(identifier)
+    def get_node(
+        self,
+        identifier: str | None = None,
+        /,
+        *,
+        strategy: NodeStrategy | type[NodeStrategy] = MISSING,
+    ) -> Node | None:
+        if identifier:
+            return self._nodes.get(identifier)
 
-    def get_best_node(self, strategy: NodeStrategy | type[NodeStrategy] = MISSING, /) -> Node | None:
         return self._nodes.select(strategy)
 
 
