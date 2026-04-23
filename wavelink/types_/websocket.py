@@ -54,7 +54,7 @@ class PlayerUpdateMsgT(TypedDict):
 
 class StatsMemoryT(TypedDict):
     free: int
-    user: int
+    used: int
     allocated: int
     reservable: int
 
