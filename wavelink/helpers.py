@@ -13,15 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from typing import TypeVar
+from __future__ import annotations
 
-from _lib import commands
+from typing import TYPE_CHECKING, Any
 
-from .node import Pool
-
-
-T = TypeVar("T", bound=commands.Bot | commands.AutoShardedBot)
+from ._lib import commands
 
 
-class Context(commands.Context[T]):
+if TYPE_CHECKING:
+    from .node import Pool
+
+
+class Context(commands.Context[Any]):
     wave: Pool
