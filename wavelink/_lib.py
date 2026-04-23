@@ -77,36 +77,3 @@ if TYPE_CHECKING:
 
         discord = cast("disco", lib)  # type: ignore
         commands = cast("discocom", lib_commands)  # type: ignore
-
-
-# has_discord = False
-
-
-# try:
-#     import discord
-
-#     has_discord = True
-# except ImportError:
-#     pass
-
-# if not has_discord:
-#     try:
-#         import disnake as discord
-
-#         has_discord = True
-#     except ImportError:
-#         pass
-
-# if not has_discord:
-#     try:
-#         import nextcord as discord
-
-#         has_discord = True
-#     except ImportError:
-#         pass
-
-
-# if not has_discord:
-#     raise ImportError("Unable to find a compatible discord library.")
-
-# from discord.ext import commands  # type: ignore
