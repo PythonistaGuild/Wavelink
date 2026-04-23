@@ -19,7 +19,7 @@ import inspect
 import secrets
 from functools import cached_property
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Never, Protocol, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Never, Protocol, overload
 
 import aiohttp
 
@@ -108,7 +108,7 @@ class NodeMapping:
 
 
 class Node:
-    MAX_RESUME: int = 120
+    MAX_RESUME: ClassVar[int] = 120
 
     def __init__(
         self,
