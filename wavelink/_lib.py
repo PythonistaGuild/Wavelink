@@ -13,34 +13,100 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-has_discord = False
+from __future__ import annotations
+
+import importlib
+import importlib.util
+import sys
+from typing import TYPE_CHECKING, cast
 
 
-try:
-    import discord
-
-    has_discord = True
-except ImportError:
-    pass
-
-if not has_discord:
-    try:
-        import disnake as discord
-
-        has_discord = True
-    except ImportError:
-        pass
-
-if not has_discord:
-    try:
-        import nextcord as discord
-
-        has_discord = True
-    except ImportError:
-        pass
+if TYPE_CHECKING:
+    from importlib.machinery import ModuleSpec
 
 
-if not has_discord:
+spec: ModuleSpec | None = None
+cspec: ModuleSpec | None = None
+
+
+for _lib in ("discord", "disnake", "nextcord"):
+    spec = importlib.util.find_spec(_lib)
+
+    if spec is not None:
+        cspec = importlib.util.find_spec(f"{_lib}.ext.commands")
+        break
+
+if spec is None or cspec is None:
     raise ImportError("Unable to find a compatible discord library.")
 
-from discord.ext import commands  # type: ignore # noqa: F401 E402
+
+assert spec.loader
+assert cspec.loader
+
+lib = importlib.util.module_from_spec(spec)
+lib_commands = importlib.util.module_from_spec(cspec)
+
+sys.modules[spec.name] = lib
+sys.modules[cspec.name] = lib_commands
+
+spec.loader.exec_module(lib)
+cspec.loader.exec_module(lib_commands)
+
+
+discord = lib
+commands = lib_commands
+
+
+if TYPE_CHECKING:
+    if spec.name == "disnake":
+        import disnake as dsna  # type: ignore
+        from disnake.ext import commands as snakecom  # type: ignore
+
+        discord = cast("dsna", lib)  # type: ignore
+        commands = cast("snakecom", lib_commands)  # type: ignore
+
+    elif spec.name == "nextcord":
+        import nextcord as nxtc  # type: ignore
+        from nextcord.ext import commands as nextcom  # type: ignore
+
+        discord = cast("nxtc", lib)  # type: ignore
+        commands = cast("nextcom", lib_commands)  # type: ignore
+    else:
+        import discord as disco  # type: ignore
+        from discord.ext import commands as discocom  # type: ignore
+
+        discord = cast("disco", lib)  # type: ignore
+        commands = cast("discocom", lib_commands)  # type: ignore
+
+
+# has_discord = False
+
+
+# try:
+#     import discord
+
+#     has_discord = True
+# except ImportError:
+#     pass
+
+# if not has_discord:
+#     try:
+#         import disnake as discord
+
+#         has_discord = True
+#     except ImportError:
+#         pass
+
+# if not has_discord:
+#     try:
+#         import nextcord as discord
+
+#         has_discord = True
+#     except ImportError:
+#         pass
+
+
+# if not has_discord:
+#     raise ImportError("Unable to find a compatible discord library.")
+
+# from discord.ext import commands  # type: ignore
