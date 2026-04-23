@@ -23,9 +23,13 @@ from typing import TYPE_CHECKING, Any, Never, Protocol, overload
 
 import aiohttp
 
+import wavelink
+
 from ._lib import commands
+from .backoff import Backoff
 from .data import *
 from .utils import MISSING
+from .websocket import Websocket
 
 
 if TYPE_CHECKING:
@@ -38,8 +42,7 @@ __all__ = ("MusicBot", "Node", "Pool")
 
 
 class NodeStrategy(Protocol):
-    def select(self, nodes: Mapping[str, Node]) -> Node | None:
-        ...
+    def select(self, nodes: Mapping[str, Node]) -> Node | None: ...
 
 
 class LoadBalancingStrategy(NodeStrategy):
@@ -105,24 +108,36 @@ class NodeMapping:
 
 
 class Node:
+    MAX_RESUME: int = 120
+
     def __init__(
         self,
         uri: str,
         *,
         password: str,
+        client_id: int,
         identifier: str = MISSING,
-        client_id: int | None = None,
-        session: aiohttp.ClientSession | None = None,
+        http_session: aiohttp.ClientSession | None = None,
+        max_retries: int | None = 5,
+        should_resume: bool = True,
+        resume_timeout: int = 60,
     ) -> None:
         self._uri = uri
         self._password = password
         self._identifier = identifier if identifier is not MISSING else secrets.token_hex(16)
+        self._client_id = client_id
         self._is_connected = False
+        self._http = http_session
+
         self._stats: StatsData = MISSING
         self._raw_stats: StatsDataT = {}
         self._penalty_compound: int = 0
-        self._client_id = client_id
-        self._session = session
+
+        self._max_tries = max(0, max_retries or 0)
+        self._ua = f"Wavelink/{wavelink.__version__} ({client_id})"
+        self._session_id: str | None = None
+        self._should_resume = should_resume
+        self._resume_timeout = min(max(0, resume_timeout), self.MAX_RESUME)
 
     def __repr__(self) -> str: ...
 
@@ -142,20 +157,40 @@ class Node:
     def headers(self) -> MappingProxyType[str, str]:
         return MappingProxyType({"Authorization": self._password})
 
+    def ws_headers(self, session_id: str | None = None) -> MappingProxyType[str, str]:
+        headers = {"Authorization": self._password, "User-Id": str(self._client_id), "Client-Name": self._ua}
+        if session_id:
+            headers["Session-Id"] = session_id
+
+        return MappingProxyType(headers)
+
     async def _setup(self) -> None:
-        if not self._session:
-            self._session = aiohttp.ClientSession()
+        if not self._http:
+            self._http = aiohttp.ClientSession()
 
         await self.setup_hook()
 
     async def setup_hook(self) -> None: ...
 
-    async def connect(self) -> ...:
+    async def connect(self, headers: Mapping[str, str] | None = None) -> ...:
         if self._is_connected:
             raise  # TODO: Exception...
 
         await self._setup()
         # version = await self.fetch_version()
+
+        ws = Websocket(self)
+        await ws.connect(headers or self.ws_headers())
+        self._socket = ws
+        self._is_connected = True
+
+    async def _reconnect(self) -> None:
+        backoff = Backoff(maximum_time=20)
+        headers = self.ws_headers(session_id=self._session_id if self._should_resume else None)
+
+        await self._socket.close()
+        while True:
+            ...
 
     def _update_stats(self, stats: StatsDataT) -> None:
         self._raw_stats = stats
@@ -313,8 +348,9 @@ class Node:
     async def free_all_addresses(self) -> ...: ...
 
 
+# TODO: Correct arg typings...
 class Pool:
-    def __init__(self, *, use_cache: bool = True, cache_ttl: float | None = None, max_cache: int | None = None) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._nodes: NodeMapping = NodeMapping()
 
     def add_node(self, node: Node) -> None:
