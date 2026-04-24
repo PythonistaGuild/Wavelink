@@ -17,8 +17,21 @@ from __future__ import annotations
 
 import importlib
 import importlib.util
-import sys
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
+
+
+__all__ = (
+    "Client",
+    "Connectable",
+    "Guild",
+    "GuildChannel",
+    "GuildVoiceStatePayload",
+    "StageChannel",
+    "VoiceChannel",
+    "VoiceProtocol",
+    "VoiceServerUpdatePayload",
+    "commands",
+)
 
 
 if TYPE_CHECKING:
@@ -28,11 +41,12 @@ if TYPE_CHECKING:
 spec: ModuleSpec | None = None
 cspec: ModuleSpec | None = None
 
-
+found = None
 for _lib in ("discord", "disnake", "nextcord"):
     spec = importlib.util.find_spec(_lib)
 
     if spec is not None:
+        found = _lib
         cspec = importlib.util.find_spec(f"{_lib}.ext.commands")
         break
 
@@ -40,40 +54,36 @@ if spec is None or cspec is None:
     raise ImportError("Unable to find a compatible discord library.")
 
 
-assert spec.loader
-assert cspec.loader
+if found == "nextcord":
+    from nextcord import Client, Guild, StageChannel, VoiceChannel, VoiceProtocol, version_info
+    from nextcord.abc import Connectable, GuildChannel
+    from nextcord.ext import commands
 
-lib = importlib.util.module_from_spec(spec)
-lib_commands = importlib.util.module_from_spec(cspec)
+    if TYPE_CHECKING:
+        from nextcord.types.voice import (
+            GuildVoiceState as GuildVoiceStatePayload,
+            VoiceServerUpdate as VoiceServerUpdatePayload,
+        )
 
-sys.modules[spec.name] = lib
-sys.modules[cspec.name] = lib_commands
+elif found == "disnake":
+    from disnake import Client, Guild, StageChannel, VoiceChannel, VoiceProtocol, version_info
+    from disnake.abc import Connectable, GuildChannel
+    from disnake.ext import commands
 
-spec.loader.exec_module(lib)
-cspec.loader.exec_module(lib_commands)
+    if TYPE_CHECKING:
+        if version_info >= (2, 6):
+            from disnake.types.gateway import VoiceServerUpdateEvent as VoiceServerUpdatePayload
+        else:
+            from disnake.types.voice import VoiceServerUpdate as VoiceServerUpdatePayload  # type: ignore
+        from disnake.types.voice import GuildVoiceState as GuildVoiceStatePayload
 
+else:
+    from discord import Client, Guild, StageChannel, VoiceChannel, VoiceProtocol, version_info
+    from discord.abc import Connectable, GuildChannel
+    from discord.ext import commands
 
-discord = lib
-commands = lib_commands
-
-
-if TYPE_CHECKING:
-    if spec.name == "disnake":
-        import disnake as dsna  # type: ignore
-        from disnake.ext import commands as snakecom  # type: ignore
-
-        discord = cast("dsna", lib)  # type: ignore
-        commands = cast("snakecom", lib_commands)  # type: ignore
-
-    elif spec.name == "nextcord":
-        import nextcord as nxtc  # type: ignore
-        from nextcord.ext import commands as nextcom  # type: ignore
-
-        discord = cast("nxtc", lib)  # type: ignore
-        commands = cast("nextcom", lib_commands)  # type: ignore
-    else:
-        import discord as disco  # type: ignore
-        from discord.ext import commands as discocom  # type: ignore
-
-        discord = cast("disco", lib)  # type: ignore
-        commands = cast("discocom", lib_commands)  # type: ignore
+    if TYPE_CHECKING:
+        from discord.types.voice import (
+            GuildVoiceState as GuildVoiceStatePayload,  # noqa: TC004
+            VoiceServerUpdate as VoiceServerUpdatePayload,  # noqa: TC004
+        )
