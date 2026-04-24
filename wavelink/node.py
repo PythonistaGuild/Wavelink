@@ -16,11 +16,11 @@ limitations under the License.
 from __future__ import annotations
 
 import asyncio
-import inspect
+import logging
 import secrets
 from functools import cached_property
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, Never, Protocol, overload
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import aiohttp
 
@@ -29,83 +29,74 @@ import wavelink
 from ._lib import commands
 from .backoff import Backoff
 from .data import *
-from .utils import MISSING
+from .utils import JSON_LOADS, MISSING, NodeMapping
 from .websocket import Websocket
 
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, MutableMapping
 
+    from aiohttp.client import _RequestContextManager
+
+    from .helpers import NodeStrategy
+    from .types_.rest import HTTPMethod
     from .types_.websocket import StatsDataT
 
 
 __all__ = ("MusicBot", "Node", "Pool")
 
 
-class NodeStrategy(Protocol):
-    def select(self, nodes: Mapping[str, Node]) -> Node | None: ...
+LOGGER: logging.Logger = logging.getLogger(__name__)
 
 
-class LoadBalancingStrategy(NodeStrategy):
-    def select(self, nodes: Mapping[str, Node]) -> Node | None:
-        return min(nodes.values(), key=lambda n: n.penalty(), default=None)
+class Route:
+    PREFIX: ClassVar[str] = "/v4"
+    NO_PREFIX: ClassVar[list[str]] = ["version"]  # Only one exists; list for future proofing?
 
+    def __init__(
+        self,
+        uri: str,
+        path: str,
+        /,
+        *,
+        method: HTTPMethod | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        params: Mapping[str, Any] | None = None,
+        data: Mapping[Any, Any] | None = None,
+    ) -> None:
+        self._uri = uri.lower().removesuffix("/")
+        self._path = path.lower().removesuffix("/").removeprefix("/")
+        self._method: HTTPMethod = method or "GET"
+        self._extra_headers = extra_headers or {}
+        self._params = params or {}
+        self._data = data
+        self._url = f"{self._uri}{self.PREFIX if self._path not in self.NO_PREFIX else '/'}{self._path}"
 
-class NodeMapping:
-    __slots__ = ("_default_strategy", "_nodes")
+    def request(self, client: aiohttp.ClientSession, *, headers: MutableMapping[str, str]) -> _RequestContextManager:
+        headers.update(self._extra_headers)
 
-    def __init__(self) -> None:
-        self._default_strategy = LoadBalancingStrategy()
-        self._nodes: dict[str, Node] = {}
+        req = client.request(self._method, url=self._url, headers=headers, params=self._params, json=self._data or None)
+        return req
 
-    def __setitem__(self, key: str, node: Node) -> None:
-        self._nodes[key] = node
+    @property
+    def url(self) -> str:
+        return self._url
 
-    def __getitem__(self, key: str) -> Node:
-        return self._nodes[key]
+    @property
+    def path(self) -> str:
+        return self._path
 
-    def __delitem__(self, key: str) -> None:
-        del self._nodes[key]
+    @property
+    def method(self) -> HTTPMethod:
+        return self._method
 
-    def proxy(self) -> MappingProxyType[str, Node]:
-        return MappingProxyType(self._nodes)
+    @property
+    def extra_headers(self) -> MappingProxyType[str, str]:
+        return MappingProxyType(self._extra_headers)
 
-    @overload
-    def get(self, key: str, /) -> Node: ...
-
-    @overload
-    def get[DT](self, key: str, /, default: DT) -> Node | DT: ...
-
-    @overload
-    def get(self, key: str, /, default: None = None) -> Node | None: ...
-
-    def get[DT](self, key: str, /, default: DT | None = None) -> Node | DT | None:
-        return self._nodes.get(key, default)
-
-    @overload
-    def pop(self, key: str, /) -> Node: ...
-
-    @overload
-    def pop[DT](self, key: str, /, default: DT) -> Node | DT: ...
-
-    @overload
-    def pop(self, key: str, /, default: Never = MISSING) -> Node: ...
-
-    def pop[DT](self, key: str, /, default: DT = MISSING) -> Node | DT:
-        if default is not MISSING:
-            return self._nodes.pop(key, default)
-
-        return self._nodes.pop(key)
-
-    def select(self, strategy: NodeStrategy | type[NodeStrategy] = MISSING) -> Node | None:
-        if strategy is MISSING:
-            return self._default_strategy.select(self.proxy())
-
-        if inspect.isclass(strategy):
-            inst = strategy()
-            return inst.select(self.proxy())
-
-        return strategy.select(self.proxy())
+    @extra_headers.setter
+    def extra_headers(self, value: Mapping[str, str], /) -> None:
+        self._extra_headers = value
 
 
 class Node:
@@ -142,6 +133,8 @@ class Node:
         self._should_resume = resume
         self._resume_timeout = min(max(1, resume_timeout), self.MAX_RESUME)
 
+        self._is_closing: bool = False
+
     def __repr__(self) -> str: ...
 
     def __str__(self) -> str: ...
@@ -157,8 +150,8 @@ class Node:
         return self._identifier
 
     @cached_property
-    def headers(self) -> MappingProxyType[str, str]:
-        return MappingProxyType({"Authorization": self._password})
+    def headers(self) -> MutableMapping[str, str]:
+        return {"Authorization": self._password}
 
     def ws_headers(self, session_id: str | None = None) -> MappingProxyType[str, str]:
         headers = {"Authorization": self._password, "User-Id": str(self._client_id), "Client-Name": self._ua}
@@ -171,8 +164,15 @@ class Node:
         if not self._http:
             self._http = aiohttp.ClientSession()
 
-        # TODO: Version check?
-        # version = await self.fetch_version()
+        version = await self.fetch_version()
+        splat = version.split(".")
+        major = splat[0]
+
+        if major != "4":
+            LOGGER.warning(
+                "Potentially unsupported version of Lavalink found. Wavelink supports Lavalink >= 4.0.0. Found: %s",
+                version,
+            )
 
         await self.setup_hook()
 
@@ -222,6 +222,31 @@ class Node:
         if not self._is_connected:
             # TODO: Proper exception...
             raise
+
+    async def close(self) -> None:
+        if self._is_closing or not self._is_connected:
+            return
+
+        self._is_closing = True
+
+        if self._http:
+            try:
+                await self._http.close()
+            except Exception as e:
+                LOGGER.debug("Unable to gracefully close 'aiohttp.ClientSession' on %s: %s", self, e)
+
+        if self._socket:
+            try:
+                await self._socket.close()
+            except Exception as e:
+                LOGGER.debug("Unable to gracefully close 'Websocket' on %s: %s", self, e)
+
+        self._stats = MISSING
+        self._raw_stats = {}
+        self._session_id = None
+        self._is_connected = False
+
+        self._is_closing = False
 
     def _update_stats(self, stats: StatsDataT) -> None:
         self._raw_stats = stats
@@ -330,9 +355,36 @@ class Node:
         # This check allows us to in such instances completely disqualify a node from player consideration...
         ...
 
-    async def request(self) -> ...: ...
+    async def request(self, route: Route) -> bytes | None:
+        assert self._http
+        data: bytes | None = None
 
-    async def request_json(self) -> ...: ...
+        async with route.request(self._http, headers=self.headers) as resp:
+            if resp.status == 204:
+                return
+
+            # TODO: Exception...
+            if resp.status >= 500:
+                resp.raise_for_status()
+
+            try:
+                data = await resp.read()
+            except Exception:
+                # TODO ...
+                ...
+
+            if resp.status >= 300 and not data:
+                resp.raise_for_status()
+
+        return data
+
+    async def request_json(self, route: Route) -> Any:
+        bites = await self.request(route)
+
+        if not bites:
+            return {}
+
+        return JSON_LOADS(bites)
 
     # GET /loadtracks
     async def load_tracks(self, identifier: str) -> ...: ...
@@ -364,7 +416,9 @@ class Node:
     async def fetch_info(self) -> ...: ...
 
     # GET /version (no /v4/)
-    async def fetch_version(self) -> ...: ...
+    async def fetch_version(self) -> str:
+        route = Route(self._uri, "/version", method="GET")
+        return (await self.request(route) or b"").decode("UTF-8")
 
     # GET /stats
     async def fetch_stats(self) -> ...: ...
@@ -383,15 +437,23 @@ class Node:
 class Pool:
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._nodes: NodeMapping = NodeMapping()
+        self._is_closing: bool = False
 
     def add_node(self, node: Node) -> None:
+        # TODO: Exception...
+        if self._is_closing:
+            raise
+
         # TODO: Exception...
         if not node.is_connected():
             raise
 
         self._nodes[node.identifier] = node
 
-    async def create_node(self) -> Node: ...
+    async def create_node(self) -> ...:
+        # TODO: Exception...
+        if self._is_closing:
+            raise
 
     def get_node(
         self,
@@ -405,8 +467,21 @@ class Pool:
 
         return self._nodes.select(strategy)
 
+    async def shutdown(self) -> None:
+        if self._is_closing:
+            return
+
+        self._is_closing = True
+
+        for node in self._nodes.values():
+            await node.close()
+
 
 class MusicBot(commands.Bot, Pool):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         Pool.__init__(self, *args, **kwargs)
+
+    async def close(self) -> None:
+        await self.shutdown()
+        await super().close()
