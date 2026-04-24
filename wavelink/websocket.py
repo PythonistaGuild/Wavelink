@@ -39,7 +39,10 @@ if TYPE_CHECKING:
     from .types_.websocket import EventMsgT, PlayerUpdateMsgT, ReadyMsgT, StatsMsgT, WSMsgT
 
 
-LOGGER: logging.Logger = logging.Logger(__name__)
+# Disable Picows Logging
+logging.getLogger("picows").setLevel(logging.ERROR)
+
+LOGGER: logging.Logger = logging.getLogger(__name__)
 PY_314: bool = sys.version_info >= (3, 14)
 
 
@@ -81,6 +84,7 @@ class WebsocketFrame(WSListener):
             return
 
         coro = None
+        data = None
         if frame.msg_type is WSMsgType.TEXT:
             data = JSON_LOADS(frame.get_payload_as_bytes())
             coro = self._get_method(data)
@@ -88,6 +92,7 @@ class WebsocketFrame(WSListener):
             coro = self.on_close_code(transport, frame.get_close_code())
 
         if not coro:
+            LOGGER.debug("Unable to find suitable callback for Websocket message: %s", data)
             return
 
         t = asyncio.create_task(coro, eager_start=True) if PY_314 else asyncio.create_task(coro)
@@ -114,7 +119,9 @@ class Websocket:
         listener = WebsocketFrame(self)
         return listener
 
-    async def connect(self, headers: Mapping[str, str]) -> ...:
+    async def connect(self, headers: Mapping[str, str]) -> None:
+        LOGGER.debug("Attempting to connect %s Websocket.", self)
+
         uri = f"{self._node._uri.removesuffix('/')}/v4/websocket"
         uri = uri.replace("https://", "wss://").replace("http://", "ws://")
         transport, listener = await ws_connect(self.listener_factory, uri, extra_headers=headers)
@@ -123,33 +130,43 @@ class Websocket:
         self._frame_listener = cast("WebsocketFrame", listener)
         self._connected = True
 
-    async def close(self) -> ...:
+        LOGGER.debug("Successfully connected %s Websocket.", self)
+
+    async def close(self) -> None:
         if self._closing:
             return
+
+        LOGGER.debug("Attempting to gracefully close %s Websocket.", self)
 
         self._closing = True
         self._transport.disconnect(graceful=True)
 
         try:
-            async with asyncio.Timeout(3):
+            async with asyncio.timeout(3):
                 await self._transport.wait_disconnected()
         except TimeoutError:
-            # TODO: Logging...
-            ...
+            LOGGER.warning("Unable to gracefully close %s Websocket connection.", self)
 
         self._connected = False
         self._frame_listener = MISSING
         self._transport = MISSING
 
     async def ws_ready(self, data: ReadyMsgT) -> None:
+        LOGGER.debug("%s received websocket READY message: %s", self, data)
+
         session = data["sessionId"]
         self._node._session_id = session
 
-    async def ws_player_update(self, data: PlayerUpdateMsgT) -> None: ...
+    async def ws_player_update(self, data: PlayerUpdateMsgT) -> None:
+        LOGGER.debug("%s received websocket PLAYER_UPDATE message: %s", self, data)
 
     async def ws_stats(self, data: StatsMsgT) -> None:
+        LOGGER.debug("%s received websocket STATS message: %s", self, data)
+
         data.pop("op")
         updated: Any = data
+
         self._node._update_stats(updated)
 
-    async def ws_event(self, data: EventMsgT) -> None: ...
+    async def ws_event(self, data: EventMsgT) -> None:
+        LOGGER.debug("%s received websocket EVENT message: %s", self, data)
