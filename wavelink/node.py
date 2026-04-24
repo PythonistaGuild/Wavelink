@@ -201,10 +201,7 @@ class Node:
         self._is_connected = False
 
         tries = self._max_reconnects
-        while True:
-            if tries is not None and tries == 0:
-                break
-
+        while tries is None or tries != 0:
             try:
                 await self.connect(headers, soft=True)
             except Exception:
