@@ -109,3 +109,6 @@ class PlayerResptT(TypedDict):
     state: PlayerStateT
     voice: VoiceStateT
     filters: ...
+
+
+type HTTPMethod = Literal["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "CONNECT", "TRACE"]
