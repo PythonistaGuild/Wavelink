@@ -71,7 +71,7 @@ class Route:
         self._extra_headers = extra_headers or {}
         self._params = params or {}
         self._data = data
-        self._url = f"{self._uri}{self.PREFIX if self._path not in self.NO_PREFIX else '/'}{self._path}"
+        self._url = f"{self._uri}{self.PREFIX if self._path not in self.NO_PREFIX else ''}/{self._path}"
 
     def request(self, client: aiohttp.ClientSession, *, headers: MutableMapping[str, str]) -> _RequestContextManager:
         headers.update(self._extra_headers)
@@ -354,6 +354,8 @@ class Node:
         ...
 
     async def request(self, route: Route) -> bytes | None:
+        # TODO: Better error messages...
+
         assert self._http
         data: bytes | None = None
 
@@ -364,7 +366,7 @@ class Node:
                 return
 
             # TODO: Exception...
-            if resp.status >= 500:
+            if status >= 500:
                 raise HTTPException(status=status)
 
             try:
@@ -372,11 +374,11 @@ class Node:
             except Exception as e:
                 raise WavelinkException("%r error processing data in request %r: %s", self, route, e)
 
-            if resp.status >= 300 and data:
+            if status >= 300 and data:
                 raise LavalinkError(data=JSON_LOADS(data))
 
-            elif resp.status >= 300 and not data:
-                resp.raise_for_status()
+            elif status >= 300 and not data:
+                raise HTTPException(status=status)
 
         return data
 
@@ -389,7 +391,15 @@ class Node:
         return JSON_LOADS(bites)
 
     # GET /loadtracks
-    async def load_tracks(self, identifier: str) -> ...: ...
+    async def load_tracks(self, identifier: str, /) -> ...:
+        # TODO: data types...
+        # TODO: Exception
+        if not identifier:
+            raise
+
+        route = Route(self._uri, "/loadtracks", params={"identifier": identifier})
+        data = await self.request_json(route=route)
+        return data
 
     search = load_tracks
 
