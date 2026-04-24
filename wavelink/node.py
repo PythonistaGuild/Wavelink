@@ -29,6 +29,7 @@ import wavelink
 from ._lib import commands
 from .backoff import Backoff
 from .data import *
+from .exceptions import *
 from .utils import JSON_LOADS, MISSING, NodeMapping
 from .websocket import Websocket
 
@@ -357,20 +358,24 @@ class Node:
         data: bytes | None = None
 
         async with route.request(self._http, headers=self.headers) as resp:
-            if resp.status == 204:
+            status = resp.status
+
+            if status == 204:
                 return
 
             # TODO: Exception...
             if resp.status >= 500:
-                resp.raise_for_status()
+                raise HTTPException(status=status)
 
             try:
                 data = await resp.read()
-            except Exception:
-                # TODO ...
-                ...
+            except Exception as e:
+                raise WavelinkException("%r error processing data in request %r: %s", self, route, e)
 
-            if resp.status >= 300 and not data:
+            if resp.status >= 300 and data:
+                raise LavalinkError(data=JSON_LOADS(data))
+
+            elif resp.status >= 300 and not data:
                 resp.raise_for_status()
 
         return data
