@@ -13,5 +13,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from .types_.rest import ErrorRespT
+
+
+__all__ = ("HTTPException", "LavalinkError", "WavelinkException")
+
 
 class WavelinkException(Exception): ...
+
+
+class HTTPException(Exception):
+    def __init__(self, msg: str | None = None, /, *, status: int) -> None:
+        super().__init__(msg)
+        self.status = status
+
+
+class LavalinkError(Exception):
+    def __init__(self, msg: str | None = None, /, *, data: ErrorRespT) -> None:
+        super().__init__(f"{msg or data['error']}: {data}")
+        self.timestamp = data["timestamp"]
+        self.status = data["status"]
+        self.error = data["error"]
+        self.trace = data.get("trace")
+        self.message = data["message"]
+        self.path = data["path"]
