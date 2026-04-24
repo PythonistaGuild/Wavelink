@@ -37,8 +37,20 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 
+from __future__ import annotations
+
+import inspect
 import json
-from typing import Any, Literal
+from types import MappingProxyType
+from typing import TYPE_CHECKING, Any, Literal, Never, overload
+
+from .helpers import LoadBalancingStrategy, NodeStrategy
+
+
+if TYPE_CHECKING:
+    from collections.abc import ItemsView, Iterator, MutableMapping, ValuesView
+
+    from .node import Node
 
 
 __all__ = ("JSON_LOADS", "MISSING")
@@ -69,3 +81,75 @@ class _MissingSentinel:
 
 
 MISSING: Any = _MissingSentinel()
+
+
+class NodeMapping:
+    __slots__ = ("_default_strategy", "_nodes")
+
+    def __init__(self) -> None:
+        self._default_strategy = LoadBalancingStrategy()
+        self._nodes: dict[str, Node] = {}
+
+    def __setitem__(self, key: str, node: Node) -> None:
+        self._nodes[key] = node
+
+    def __getitem__(self, key: str) -> Node:
+        return self._nodes[key]
+
+    def __delitem__(self, key: str) -> None:
+        del self._nodes[key]
+
+    def __iter__(self) -> Iterator[str]:
+        return self._nodes.__iter__()
+
+    def __len__(self) -> int:
+        return len(self._nodes)
+
+    def proxy(self) -> MappingProxyType[str, Node]:
+        return MappingProxyType(self._nodes)
+
+    def values(self) -> ValuesView[Node]:
+        return self._nodes.values()
+
+    def items(self) -> ItemsView[str, Node]:
+        return self._nodes.items()
+
+    def copy(self) -> MutableMapping[str, Node]:
+        return dict(self._nodes)
+
+    @overload
+    def get(self, key: str, /) -> Node: ...
+
+    @overload
+    def get[DT](self, key: str, /, default: DT) -> Node | DT: ...
+
+    @overload
+    def get(self, key: str, /, default: None = None) -> Node | None: ...
+
+    def get[DT](self, key: str, /, default: DT | None = None) -> Node | DT | None:
+        return self._nodes.get(key, default)
+
+    @overload
+    def pop(self, key: str, /) -> Node: ...
+
+    @overload
+    def pop[DT](self, key: str, /, default: DT) -> Node | DT: ...
+
+    @overload
+    def pop(self, key: str, /, default: Never = MISSING) -> Node: ...
+
+    def pop[DT](self, key: str, /, default: DT = MISSING) -> Node | DT:
+        if default is not MISSING:
+            return self._nodes.pop(key, default)
+
+        return self._nodes.pop(key)
+
+    def select(self, strategy: NodeStrategy | type[NodeStrategy] = MISSING) -> Node | None:
+        if strategy is MISSING:
+            return self._default_strategy.select(self.proxy())
+
+        if inspect.isclass(strategy):
+            inst = strategy()
+            return inst.select(self.proxy())
+
+        return strategy.select(self.proxy())

@@ -15,14 +15,25 @@ limitations under the License.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 from ._lib import commands
 
 
 if TYPE_CHECKING:
-    from .node import Pool
+    from collections.abc import Mapping
+
+    from .node import Node, Pool
 
 
 class Context(commands.Context[Any]):
     wave: Pool
+
+
+class NodeStrategy(Protocol):
+    def select(self, nodes: Mapping[str, Node]) -> Node | None: ...
+
+
+class LoadBalancingStrategy(NodeStrategy):
+    def select(self, nodes: Mapping[str, Node]) -> Node | None:
+        return min(nodes.values(), key=lambda n: n.penalty(), default=None)
