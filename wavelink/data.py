@@ -21,7 +21,7 @@ from dataclasses import dataclass
 __all__ = ("CPUData", "FrameData", "MemoryData", "StatsData")
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class MemoryData:
     free: int
     used: int
@@ -29,21 +29,21 @@ class MemoryData:
     reservable: int
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class CPUData:
     cores: int
     system: float
     lavalink: float
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class FrameData:
     sent: int
     nulled: int
     deficit: int
 
 
-@dataclass
+@dataclass(slots=True, frozen=True)
 class StatsData:
     players: int
     playing: int
