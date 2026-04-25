@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from collections.abc import Mapping, MutableMapping
 from typing import Any, Literal, Never, NotRequired, TypedDict
 
 from .websocket import TrackExceptionT
@@ -47,8 +48,8 @@ class TrackInfoRespT(TypedDict):
 class TrackRespT(TypedDict):
     encoded: str
     info: TrackInfoRespT
-    pluginInfo: dict[Any, Any]
-    userData: dict[Any, Any]
+    pluginInfo: Mapping[Any, Any]
+    userData: MutableMapping[Any, Any]
 
 
 class PlaylistInfoRespT(TypedDict):
@@ -63,7 +64,7 @@ class TrackResultT(TypedDict):
 
 class PlaylistResultDataT(TypedDict):
     info: PlaylistInfoRespT
-    pluginInfo: dict[Any, Any]
+    pluginInfo: Mapping[Any, Any]
     tracks: list[TrackRespT]
 
 
@@ -79,7 +80,7 @@ class SearchResultT(TypedDict):
 
 class EmptyResultT(TypedDict):
     loadType: Literal["empty"]
-    data: dict[Never, Never]
+    data: Mapping[Never, Never]
 
 
 class ErrorResultT(TypedDict):
@@ -112,3 +113,4 @@ class PlayerResptT(TypedDict):
 
 
 type HTTPMethod = Literal["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "CONNECT", "TRACE"]
+type LoadResultDataT = TrackResultT | PlaylistResultT | SearchResultT | EmptyResultT | ErrorResultT
