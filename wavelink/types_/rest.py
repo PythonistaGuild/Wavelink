@@ -112,5 +112,16 @@ class PlayerResptT(TypedDict):
     filters: ...
 
 
+class UpdateSessionRespT(TypedDict):
+    resuming: bool
+    timeout: int
+
+
 type HTTPMethod = Literal["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "CONNECT", "TRACE"]
 type LoadResultDataT = TrackResultT | PlaylistResultT | SearchResultT | EmptyResultT | ErrorResultT
+
+
+# Requests
+class UpdateSessionReqT(TypedDict, total=False):
+    resuming: bool
+    timeout: int
