@@ -132,7 +132,10 @@ class Track:
 
 
 class Search:
-    def __init__(self, data: LoadResultDataT) -> None:
+    __slots__ = ("_first", "_query", "_result", "_tracks")
+
+    def __init__(self, query: str | None = None, *, data: LoadResultDataT) -> None:
+        self._query = query
         self._result: LoadResult = LoadResult(data["loadType"])
         self._first: Track | None = None
         self._tracks: list[Track] = []
@@ -151,6 +154,9 @@ class Search:
             case _:
                 # NOTE: Covered at request + default
                 pass
+
+    def __repr__(self) -> str:
+        return f"Search(query={self._query!r}, tracks={len(self._tracks)}, first={self._first})"
 
     @property
     def result(self) -> LoadResult:
