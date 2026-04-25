@@ -13,23 +13,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from .types_.rest import ErrorRespT
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 
-__all__ = ("HTTPException", "LavalinkError", "WavelinkException")
+if TYPE_CHECKING:
+    from .types_.rest import ErrorRespT, TrackExceptionT
+
+
+__all__ = ("HTTPException", "LavalinkError", "NodeDisconnectedError", "TrackException", "WavelinkException")
 
 
 class WavelinkException(Exception): ...
 
 
 class HTTPException(Exception):
-    def __init__(self, msg: str | None = None, /, *, status: int) -> None:
+    def __init__(self, msg: str = "", /, *, status: int) -> None:
         super().__init__(msg or "")
         self.status = status
 
 
 class LavalinkError(Exception):
-    def __init__(self, msg: str | None = None, /, *, data: ErrorRespT) -> None:
+    def __init__(self, msg: str = "", /, *, data: ErrorRespT) -> None:
         super().__init__(f"{msg or data['error']}: {data}")
         self.timestamp = data["timestamp"]
         self.status = data["status"]
@@ -37,3 +43,15 @@ class LavalinkError(Exception):
         self.trace = data.get("trace")
         self.message = data["message"]
         self.path = data["path"]
+
+
+class NodeDisconnectedError(WavelinkException): ...
+
+
+class TrackException(WavelinkException):
+    def __init__(self, msg: str = "", /, *, data: TrackExceptionT) -> None:
+        super().__init__(msg)
+        self.message = data["message"]
+        self.severity = data["severity"]
+        self.cause = data["cause"]
+        self.trace = data["causeStackTrace"]
