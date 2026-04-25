@@ -31,3 +31,11 @@ class LoadResult(StrEnum):
     search   = "search"    # A search result has been loaded
     empty    = "empty"     # There has been no matches for your identifier
     error    = "error"     # Loading has failed with an error
+
+
+class Source(StrEnum):
+    youtube = "ytsearch"
+    youtube_music = "ytmsearch"
+    soundcloud = "scsearch"
+    spotify = "spsearch"
+    local = "local"
