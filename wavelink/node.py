@@ -30,6 +30,7 @@ from ._lib import commands
 from .backoff import Backoff
 from .data import *
 from .exceptions import *
+from .tracks import Search
 from .utils import JSON_LOADS, MISSING, NodeMapping
 from .websocket import Websocket
 
@@ -402,6 +403,18 @@ class Node:
         data: LoadResultDataT = await self.request_json(route=route)
         return data
 
+    async def load_tracks(self, identifier: str, /) -> Search:
+        data: LoadResultDataT = await self.raw_load_tracks(identifier)
+
+        if data["loadType"] == "error":
+            inner = data["data"]
+            cause = inner["cause"]
+            raise TrackException(f"Unable to load tracks with search: {identifier!r}: {cause}", data=inner)
+
+        return Search(data)
+
+    search = load_tracks
+
     # GET /decodetrack
     async def raw_decode_track(self, encoded: str) -> ...: ...
 
@@ -455,9 +468,8 @@ class Pool:
         if self._is_closing:
             raise
 
-        # TODO: Exception...
         if not node.is_connected():
-            raise
+            raise NodeDisconnectedError(f"{node!r} is not currently connected. Please connect the Node before adding.")
 
         self._nodes[node.identifier] = node
 
