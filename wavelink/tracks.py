@@ -44,6 +44,7 @@ class Track:
         self._isrc = info["isrc"]
         self._source_name = info["sourceName"]
         self._start = self._position
+        self._end: int | None = self._length
         self._user_data = data["userData"]
 
         # TODO: Plugin stuff...
@@ -98,8 +99,21 @@ class Track:
         self._start = max(0, self._start - other)
         return self
 
-    def set_start(self, value: int) -> None:
+    @property
+    def start(self) -> int:
+        return self._start
+
+    @start.setter
+    def start(self, value: int) -> None:
         self._start = max(0, min(self._length, value))
+
+    @property
+    def end(self) -> int | None:
+        return self._end
+
+    @end.setter
+    def end(self, value: int | None) -> None:
+        self._end = max(1, min(self._length, value)) if value is not None else None
 
     def hms(self, ms: int) -> tuple[int, int, int]:
         seconds, _ = divmod(ms, 1000)
