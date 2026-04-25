@@ -40,7 +40,8 @@ if TYPE_CHECKING:
     from aiohttp.client import _RequestContextManager
 
     from .helpers import NodeStrategy
-    from .types_.rest import HTTPMethod
+    from .player import Player
+    from .types_.rest import HTTPMethod, LoadResultDataT
     from .types_.websocket import StatsDataT
 
 
@@ -116,6 +117,7 @@ class Node:
         resume: bool = True,
         resume_timeout: int = 60,
     ) -> None:
+        self._players: MutableMapping[int, Player] = {}
         self._uri = uri
         self._password = password
         self._identifier = identifier if identifier is not MISSING else secrets.token_hex(16)
@@ -391,32 +393,29 @@ class Node:
         return JSON_LOADS(bites)
 
     # GET /loadtracks
-    async def load_tracks(self, identifier: str, /) -> ...:
+    async def raw_load_tracks(self, identifier: str, /) -> LoadResultDataT:
         # TODO: data types...
-        # TODO: Exception
         if not identifier:
-            raise
+            raise ValueError("The 'identifier' parameter cannot be empty.")
 
         route = Route(self._uri, "/loadtracks", params={"identifier": identifier})
-        data = await self.request_json(route=route)
+        data: LoadResultDataT = await self.request_json(route=route)
         return data
 
-    search = load_tracks
-
     # GET /decodetrack
-    async def decode_track(self, encoded: str) -> ...: ...
+    async def raw_decode_track(self, encoded: str) -> ...: ...
 
     # POST /decodetracks
-    async def decode_tracks(self, encoded: list[str]) -> ...: ...
+    async def raw_decode_tracks(self, encoded: list[str]) -> ...: ...
 
     # GET /sessions/{sessionId}/players/{guildId}
-    async def fetch_player(self) -> ...: ...
+    async def raw_fetch_player(self) -> ...: ...
 
     # GET /sessions/{sessionId}/players
-    async def fetch_players(self) -> ...: ...
+    async def raw_fetch_players(self) -> ...: ...
 
     # PATCH /sessions/{sessionId}/players/{guildId}
-    async def update_player(self) -> ...: ...
+    async def raw_update_player(self) -> ...: ...
 
     # DELETE /sessions/{sessionId}/players/{guildId}
     async def destroy_player(self) -> ...: ...
@@ -425,7 +424,7 @@ class Node:
     async def update_session(self) -> ...: ...
 
     # GET /info
-    async def fetch_info(self) -> ...: ...
+    async def raw_fetch_info(self) -> ...: ...
 
     # GET /version (no /v4/)
     async def fetch_version(self) -> str:
@@ -433,10 +432,10 @@ class Node:
         return (await self.request(route) or b"").decode("UTF-8")
 
     # GET /stats
-    async def fetch_stats(self) -> ...: ...
+    async def raw_fetch_stats(self) -> ...: ...
 
     # GET /routeplanner/status
-    async def fetch_route_planner_status(self) -> ...: ...
+    async def raw_fetch_route_planner_status(self) -> ...: ...
 
     # POST /routeplanner/free/address
     async def free_address(self) -> ...: ...
@@ -487,6 +486,8 @@ class Pool:
 
         for node in self._nodes.values():
             await node.close()
+
+    async def search(self) -> ...: ...
 
 
 class MusicBot(commands.Bot, Pool):
