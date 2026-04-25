@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
     from .helpers import NodeStrategy
     from .player import Player
-    from .types_.rest import HTTPMethod, LoadResultDataT
+    from .types_.rest import HTTPMethod, LoadResultDataT, UpdateSessionReqT, UpdateSessionRespT
     from .types_.websocket import StatsDataT
 
 
@@ -434,7 +434,12 @@ class Node:
     async def destroy_player(self) -> ...: ...
 
     # PATCH /v4/sessions/{sessionId}
-    async def update_session(self) -> ...: ...
+    async def update_session(self) -> UpdateSessionRespT:
+        req: UpdateSessionReqT = {"resuming": self._should_resume, "timeout": self._resume_timeout}
+        route = Route(self._uri, f"/sessions/{self._session_id}", method="PATCH", data=req)
+
+        data = await self.request_json(route)
+        return data
 
     # GET /info
     async def raw_fetch_info(self) -> ...: ...
