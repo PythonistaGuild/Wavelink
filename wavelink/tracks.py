@@ -17,12 +17,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Self
 
+from .enums import LoadResult
+
 
 # from types import SimpleNamespace
 
 
 if TYPE_CHECKING:
-    from .types_.rest import TrackInfoRespT, TrackRespT
+    from .types_.rest import LoadResultDataT, TrackInfoRespT, TrackRespT
 
 
 class Track:
@@ -113,3 +115,37 @@ class Track:
     def clock_position(self) -> str:
         h, m, s = self.hms(self._position)
         return f"{h:02}:{m:02}:{s:02}"
+
+
+class Search:
+    def __init__(self, data: LoadResultDataT) -> None:
+        self._result: LoadResult = LoadResult(data["loadType"])
+        self._first: Track | None = None
+        self._tracks: list[Track] = []
+
+        match data:
+            case {"loadType": "track"}:
+                track = Track(data=data["data"])
+                self._tracks = [track]
+                self._first = track
+            case {"loadType": "search"}:
+                self._tracks = [Track(data=d) for d in data["data"]]
+                self._first = self._tracks[0]
+            case {"loadType": "playlist"}:
+                # TODO: ...
+                ...
+            case _:
+                # NOTE: Covered at request + default
+                pass
+
+    @property
+    def result(self) -> LoadResult:
+        return self._result
+
+    @property
+    def tracks(self) -> list[Track]:
+        return self._tracks
+
+    @property
+    def first(self) -> Track | None:
+        return self._first
