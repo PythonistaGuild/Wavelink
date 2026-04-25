@@ -21,6 +21,7 @@ import secrets
 from functools import cached_property
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, ClassVar
+from urllib.parse import urlparse
 
 import aiohttp
 
@@ -29,6 +30,7 @@ import wavelink
 from ._lib import commands
 from .backoff import Backoff
 from .data import *
+from .enums import Source
 from .exceptions import *
 from .tracks import Search
 from .utils import JSON_LOADS, MISSING, NodeMapping
@@ -411,7 +413,7 @@ class Node:
             cause = inner["cause"]
             raise TrackException(f"Unable to load tracks with search: {identifier!r}: {cause}", data=inner)
 
-        return Search(data)
+        return Search(identifier, data=data)
 
     search = load_tracks
 
@@ -504,7 +506,31 @@ class Pool:
         for node in self._nodes.values():
             await node.close()
 
-    async def search(self) -> ...: ...
+    def _is_url(self, value: str, /) -> bool:
+        try:
+            result = urlparse(value)
+            return all((result.scheme, result.netloc))
+        except Exception:
+            return False
+
+    async def search(
+        self,
+        search: str,
+        /,
+        *,
+        source: Source | str = Source.youtube_music,
+        node: Node | None = None,
+    ) -> Search:
+        # TODO: Exception...
+        node = node or self.get_node()
+        if not node:
+            raise
+
+        if self._is_url(search) or source is Source.local:
+            return await node.search(search)
+
+        identifier = f"{source.removesuffix(':')}:{search}"
+        return await node.search(identifier)
 
 
 class MusicBot(commands.Bot, Pool):
