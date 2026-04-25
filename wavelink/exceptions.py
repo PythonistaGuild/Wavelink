@@ -24,7 +24,7 @@ class WavelinkException(Exception): ...
 
 class HTTPException(Exception):
     def __init__(self, msg: str | None = None, /, *, status: int) -> None:
-        super().__init__(msg)
+        super().__init__(msg or "")
         self.status = status
 
 
