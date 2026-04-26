@@ -35,8 +35,10 @@ from .utils import JSON_LOADS, MISSING
 if TYPE_CHECKING:
     from collections.abc import Coroutine, Mapping
 
+    from wavelink.types_.websocket import EventT
+
     from .node import Node
-    from .types_.websocket import EventMsgT, PlayerUpdateMsgT, ReadyMsgT, StatsMsgT, WSMsgT
+    from .types_.websocket import PlayerUpdateMsgT, ReadyMsgT, StatsMsgT, WSMsgT
 
 
 # Disable Picows Logging
@@ -168,5 +170,8 @@ class Websocket:
 
         self._node._update_stats(updated)
 
-    async def ws_event(self, data: EventMsgT) -> None:
+    async def ws_event(self, data: EventT) -> None:
         LOGGER.debug("%s received websocket EVENT message: %s", self, data)
+
+        if data["type"] == "WebSocketClosedEvent":
+            ...
