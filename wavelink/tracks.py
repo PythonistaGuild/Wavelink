@@ -100,6 +100,14 @@ class Track:
         return self
 
     @property
+    def identifier(self) -> str:
+        return self._identifier
+
+    @property
+    def encoded(self) -> str:
+        return self._encoded
+
+    @property
     def start(self) -> int:
         return self._start
 
