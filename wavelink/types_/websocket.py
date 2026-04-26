@@ -153,5 +153,5 @@ class StatsDataT(TypedDict, total=False):
     frameStats: StatsFrameT | None
 
 
-type WSMsgT = ReadyMsgT | PlayerUpdateMsgT | StatsMsgT | EventMsgT
 type EventT = TrackStartEventT | TrackEndEventT | TrackExceptionEventT | TrackStuckEventT | WebSocketClosedEventT
+type WSMsgT = ReadyMsgT | PlayerUpdateMsgT | StatsMsgT | EventT
