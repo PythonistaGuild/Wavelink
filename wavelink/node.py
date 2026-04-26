@@ -44,7 +44,14 @@ if TYPE_CHECKING:
 
     from .helpers import NodeStrategy
     from .player import Player
-    from .types_.rest import HTTPMethod, LoadResultDataT, UpdateSessionReqT, UpdateSessionRespT
+    from .types_.rest import (
+        HTTPMethod,
+        LoadResultDataT,
+        PlayerRespT,
+        UpdatePlayerReqT,
+        UpdateSessionReqT,
+        UpdateSessionRespT,
+    )
     from .types_.websocket import StatsDataT
 
 
@@ -431,18 +438,22 @@ class Node:
     async def raw_fetch_players(self) -> ...: ...
 
     # PATCH /sessions/{sessionId}/players/{guildId}
-    async def raw_update_player(self) -> ...: ...
+    async def update_player(self, guild_id: str | int, /, *, data: UpdatePlayerReqT, no_replace: bool = True) -> PlayerRespT:
+        path = f"/sessions/{self._session_id}/players/{guild_id}"
+        route = Route(self._uri, path, method="PATCH", params={"noReplace": str(no_replace).lower()}, data=data)
+
+        result = await self.request_json(route)
+        return result
 
     # DELETE /sessions/{sessionId}/players/{guildId}
     async def destroy_player(self) -> ...: ...
 
     # PATCH /v4/sessions/{sessionId}
-    async def update_session(self) -> UpdateSessionRespT:
-        req: UpdateSessionReqT = {"resuming": self._should_resume, "timeout": self._resume_timeout}
-        route = Route(self._uri, f"/sessions/{self._session_id}", method="PATCH", data=req)
+    async def update_session(self, data: UpdateSessionReqT) -> UpdateSessionRespT:
+        route = Route(self._uri, f"/sessions/{self._session_id}", method="PATCH", data=data)
 
-        data = await self.request_json(route)
-        return data
+        result = await self.request_json(route)
+        return result
 
     # GET /info
     async def raw_fetch_info(self) -> ...: ...
