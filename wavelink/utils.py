@@ -39,6 +39,7 @@ DEALINGS IN THE SOFTWARE.
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import json
 from types import MappingProxyType
@@ -51,6 +52,7 @@ if TYPE_CHECKING:
     from collections.abc import ItemsView, Iterator, MutableMapping, ValuesView
 
     from .node import Node
+    from .types_.rest import VoiceStateT
 
 
 __all__ = ("JSON_LOADS", "MISSING")
@@ -153,3 +155,54 @@ class NodeMapping:
             return inst.select(self.proxy())
 
         return strategy.select(self.proxy())
+
+
+class VoiceUpdateCondition:
+    __slots__ = ("_event", "_waiting", "channelId", "endpoint", "sessionId", "token")
+
+    def __init__(self) -> None:
+        self._event = asyncio.Event()
+        self._waiting: bool = False
+
+        self.channelId: str | None = MISSING
+        self.endpoint: str = MISSING
+        self.token: str = MISSING
+        self.sessionId: str = MISSING
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if not hasattr(self, name):
+            return super().__setattr__(name, value)
+
+        super().__setattr__(name, value)
+
+        if all(c is not MISSING for c in (self.channelId, self.endpoint, self.token, self.sessionId)):
+            self._event.set()
+        else:
+            self._event.clear()
+
+    @property
+    def waiting(self) -> bool:
+        return self._waiting
+
+    async def wait(self) -> None:
+        self._waiting = True
+        await self._event.wait()
+        self._event.clear()
+        self._waiting = False
+
+    def clear(self) -> None:
+        self._event.clear()
+
+    def set(self) -> None:
+        self._event.set()
+
+    def reset(self) -> None:
+        self._event.clear()
+
+        self.channelId: str | None = MISSING
+        self.endpoint: str = MISSING
+        self.token: str = MISSING
+        self.sessionId: str = MISSING
+
+    def as_dict(self) -> VoiceStateT:
+        return {"channelId": self.channelId, "endpoint": self.endpoint, "token": self.token, "sessionId": self.sessionId}
