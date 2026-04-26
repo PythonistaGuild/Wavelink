@@ -379,11 +379,12 @@ class Node:
             except Exception as e:
                 raise WavelinkException("%r error processing data in request %r: %s", self, route, e)
 
-            if status >= 300 and data:
-                raise LavalinkError(data=JSON_LOADS(data))
+            if status >= 300:
+                if data:
+                    raise LavalinkError(data=JSON_LOADS(data))
 
-            elif status >= 300 and not data:
-                raise HTTPException(status=status)
+                else:
+                    raise HTTPException(status=status)
 
         return data
 
