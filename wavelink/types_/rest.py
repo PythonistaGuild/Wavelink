@@ -102,7 +102,7 @@ class VoiceStateT(TypedDict):
     channelId: str | None
 
 
-class PlayerResptT(TypedDict):
+class PlayerRespT(TypedDict):
     guildId: str
     track: TrackRespT | None
     volume: int
@@ -125,3 +125,19 @@ type LoadResultDataT = TrackResultT | PlaylistResultT | SearchResultT | EmptyRes
 class UpdateSessionReqT(TypedDict, total=False):
     resuming: bool
     timeout: int
+
+
+class UpdateTrackT(TypedDict):
+    encoded: str
+    identifier: str
+    userData: Mapping[Any, Any]
+
+
+class UpdatePlayerReqT(TypedDict, total=False):
+    track: UpdateTrackT
+    position: int
+    endTime: int
+    volume: int
+    paused: bool
+    filters: ...
+    voice: VoiceStateT
