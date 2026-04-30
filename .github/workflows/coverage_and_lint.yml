@@ -44,7 +44,7 @@ jobs:
 
       - name: Setup Ruff
         if: ${{ steps.install-deps.outcome == 'success' }}
-        uses: astral-sh/ruff-action@v3.6.1
+        uses: astral-sh/ruff-action@v4.0.0
       - name: Ruff check
         if: ${{ steps.install-deps.outcome == 'success' }}
         run: "ruff check ."
