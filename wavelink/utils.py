@@ -42,6 +42,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+from contextlib import asynccontextmanager
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Literal, Never, overload
 
@@ -49,7 +50,7 @@ from .helpers import LoadBalancingStrategy, NodeStrategy
 
 
 if TYPE_CHECKING:
-    from collections.abc import ItemsView, Iterator, MutableMapping, ValuesView
+    from collections.abc import AsyncGenerator, ItemsView, Iterator, MutableMapping, ValuesView
 
     from .node import Node
     from .types_.rest import VoiceStateT
@@ -179,6 +180,12 @@ class VoiceUpdateCondition:
             self._event.set()
         else:
             self._event.clear()
+
+    @asynccontextmanager
+    async def timeout(self, delay: float, /) -> AsyncGenerator[asyncio.Timeout]:
+        async with asyncio.timeout(delay) as to:
+            yield to
+            await self._event.wait()
 
     @property
     def waiting(self) -> bool:
