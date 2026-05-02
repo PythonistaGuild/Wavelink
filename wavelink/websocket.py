@@ -173,5 +173,14 @@ class Websocket:
     async def ws_event(self, data: EventT) -> None:
         LOGGER.debug("%s received websocket EVENT message: %s", self, data)
 
-        if data["type"] == "WebSocketClosedEvent":
-            ...
+        match data:
+            case {"type": "TrackStartEvent"}:
+                self._node._dispatch("track_start", data)
+            case {"type": "TrackEndEvent"}:
+                self._node._dispatch("track_end", data)
+            case {"type": "TrackExceptionEvent"}:
+                self._node._dispatch("track_exception", data)
+            case {"type": "TrackStuckEvent"}:
+                self._node._dispatch("track_stuck", data)
+            case {"type": "WebSocketClosedEvent"}:
+                self._node._dispatch("websocket_closed", data)
