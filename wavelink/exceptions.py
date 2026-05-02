@@ -45,7 +45,19 @@ class LavalinkError(Exception):
         self.path = data["path"]
 
 
-class NodeDisconnectedError(WavelinkException): ...
+class NodeError(WavelinkException): ...
+
+
+class NodeDisconnectedError(NodeError): ...
+
+
+class NodeNotFound(NodeError): ...
+
+
+class PlayerError(WavelinkException): ...
+
+
+class InvalidPlayerState(PlayerError): ...
 
 
 class TrackException(WavelinkException):
