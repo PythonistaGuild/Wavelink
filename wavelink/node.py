@@ -484,7 +484,7 @@ class Node:
         if not cls:
             return
 
-        return cls(data)
+        return cls(self, data=data)
 
     def _dispatch(self, name: str, data: Any) -> None:
         payload = self._event_factory(name, data)
