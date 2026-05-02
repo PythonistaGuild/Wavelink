@@ -129,8 +129,8 @@ class UpdateSessionReqT(TypedDict, total=False):
 
 class UpdateTrackT(TypedDict):
     encoded: str
-    identifier: str
-    userData: Mapping[Any, Any]
+    identifier: NotRequired[str]
+    userData: NotRequired[Mapping[Any, Any]]
 
 
 class UpdatePlayerReqT(TypedDict, total=False):
