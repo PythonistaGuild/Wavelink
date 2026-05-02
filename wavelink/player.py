@@ -15,15 +15,16 @@ limitations under the License.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from ._lib import VoiceProtocol
+from .exceptions import InvalidPlayerState, NodeNotFound
 from .node import MusicBot
 from .utils import MISSING, VoiceUpdateCondition
 
 
 if TYPE_CHECKING:
-    from ._lib import Client, Connectable, Guild, GuildVoiceStatePayload, VoiceServerUpdatePayload
+    from ._lib import Client, Connectable, Guild, GuildVoiceStatePayload, VoiceChannel, VoiceServerUpdatePayload
     from .node import Node
     from .types_.rest import UpdatePlayerReqT
     from .types_.websocket import WebSocketClosedEventT
@@ -35,15 +36,22 @@ class Player(VoiceProtocol):
 
         node = node or self._get_node()
         if not node:
-            # TODO: Exception...
-            raise
+            raise NodeNotFound(f"No Node was provided or could be found and used for {self!r}.")
 
         self._node: Node = node
-
         self._guild: Guild | None = None
         self._guild_id: int | None = None
 
         self._condition = VoiceUpdateCondition()
+        self._should_reconnect = MISSING
+
+    def __repr__(self) -> str:
+        # TODO: ...
+        return super().__repr__()
+
+    def __str__(self) -> str:
+        # TODO: ...
+        return super().__str__()
 
     def _get_node(self) -> Node | None:
         if isinstance(self.client, MusicBot):
@@ -58,10 +66,7 @@ class Player(VoiceProtocol):
         except Exception:
             pass
 
-    async def _node_close(self, data: WebSocketClosedEventT) -> ...:
-        # by_discord = data["byRemote"]
-        # code = data["code"]
-        ...
+    async def _node_close(self, data: WebSocketClosedEventT) -> None: ...
 
     async def on_voice_server_update(self, data: VoiceServerUpdatePayload) -> None:
         endpoint = data["endpoint"]
@@ -87,6 +92,9 @@ class Player(VoiceProtocol):
             # TODO: ...
             ...
 
+        if self._guild:
+            self.channel = self._guild.get_channel(int(channel_id))  # type: ignore
+
         original = self._condition.channelId
         self._condition.channelId = channel_id
         self._condition.sessionId = data["session_id"]
@@ -108,18 +116,20 @@ class Player(VoiceProtocol):
         self,
         *,
         timeout: float = 10.0,
-        reconnect: bool,
+        reconnect: bool = True,
         self_deaf: bool = False,
         self_mute: bool = False,
     ) -> None:
         if self.channel is MISSING:
-            raise
+            raise InvalidPlayerState(f"No valid channel could be found to connect for {self!r}.")
 
+        channel = cast("VoiceChannel", self.channel)
         if not self._guild:
-            self._guild = self.channel.guild
+            self._guild = channel.guild
 
-        assert self._guild is not None
-        await self._guild.change_voice_state(channel=self.channel, self_mute=self_mute, self_deaf=self_deaf)
+        self._should_reconnect = reconnect
+        async with self._condition.timeout(timeout):
+            await self._guild.change_voice_state(channel=channel, self_mute=self_mute, self_deaf=self_deaf)
 
-    async def play(self, track: ...) -> None:
-        await self._node.update_player(self._guild_id, data={"track": {"encoded": track.encoded}})
+    # async def play(self, track: ...) -> None:
+    #     await self._node.update_player(self._guild_id, data={"track": {"encoded": track.encoded}})
