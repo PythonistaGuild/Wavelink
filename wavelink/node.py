@@ -27,6 +27,7 @@ import aiohttp
 from async_utils import task_cache
 
 import wavelink
+from wavelink.types_.rest import InfoRespT
 
 from ._lib import commands
 from .backoff import Backoff
@@ -150,14 +151,12 @@ class Node:
         self._session_id: str | None = None
         self._should_resume = resume
         self._resume_timeout = min(max(1, resume_timeout), self.MAX_RESUME)
-
         self._is_closing: bool = False
 
         self._tasks: set[asyncio.Task[None]] = set()
 
-    def __repr__(self) -> str: ...
-
-    def __str__(self) -> str: ...
+    def __repr__(self) -> str:
+        return f"Node(id={self._identifier!r}, session_id={self._session_id!r}, players={len(self._players)})"
 
     def is_connected(self) -> bool:
         return self._is_connected
@@ -264,9 +263,7 @@ class Node:
         self._is_connected = False
         self._is_closing = False
 
-    def _update_stats(self, stats: StatsDataT) -> None:
-        self._raw_stats = stats
-
+    def _update_stats(self, stats: StatsDataT, *, update: bool = True) -> StatsData:
         # General
         players = stats.get("players", 0)
         playing = stats.get("playingPlayers", 0)
@@ -295,7 +292,12 @@ class Node:
             cpu=cpu_stats,
             frames=frame_stats,
         )
-        self._stats = data
+
+        if update:
+            self._raw_stats = stats
+            self._stats = data
+
+        return data
 
     def cpu_penalty(self) -> float:
         # impacts the overall penalty score the highest...
@@ -365,15 +367,9 @@ class Node:
         return self.penalty() + self._penalty_compound
 
     def is_disqualified(self) -> bool:
-        # Even with penalty scores, it's possible to have nodes that are too close to resource thresholds...
-        # E.g. It's unrealistic to add a player to a node with > ~95% Lavalink CPU load or near consuming it's
-        # allocated memory...
-        # This check allows us to in such instances completely disqualify a node from player consideration...
-        ...
+        return False
 
     async def request(self, route: Route) -> bytes | None:
-        # TODO: Better error messages...
-
         assert self._http
         data: bytes | None = None
 
@@ -382,9 +378,7 @@ class Node:
 
             if status == 204:
                 return
-
-            # TODO: Exception...
-            if status >= 500:
+            elif status >= 500:
                 raise HTTPException(status=status)
 
             try:
@@ -438,10 +432,14 @@ class Node:
     async def raw_decode_tracks(self, encoded: list[str]) -> ...: ...
 
     # GET /sessions/{sessionId}/players/{guildId}
-    async def raw_fetch_player(self) -> ...: ...
+    async def raw_fetch_player(self, guild_id: str | int, /) -> PlayerRespT:
+        route = Route(self._uri, f"/sessions/{self._session_id}/players/{guild_id}")
+        return await self.request_json(route)
 
     # GET /sessions/{sessionId}/players
-    async def raw_fetch_players(self) -> ...: ...
+    async def raw_fetch_players(self) -> list[PlayerRespT]:
+        route = Route(self._uri, f"/sessions/{self._session_id}/players")
+        return await self.request_json(route)
 
     # PATCH /sessions/{sessionId}/players/{guildId}
     async def update_player(self, guild_id: str | int, /, *, data: UpdatePlayerReqT, no_replace: bool = True) -> PlayerRespT:
@@ -452,9 +450,11 @@ class Node:
         return result
 
     # DELETE /sessions/{sessionId}/players/{guildId}
-    async def destroy_player(self) -> ...: ...
+    async def destroy_player(self, guild_id: str | int, /) -> None:
+        route = Route(self._uri, f"sessions/{self._session_id}/players/{guild_id}")
+        await self.request(route)
 
-    # PATCH /v4/sessions/{sessionId}
+    # PATCH /sessions/{sessionId}
     async def update_session(self, data: UpdateSessionReqT) -> UpdateSessionRespT:
         route = Route(self._uri, f"/sessions/{self._session_id}", method="PATCH", data=data)
 
@@ -462,7 +462,9 @@ class Node:
         return result
 
     # GET /info
-    async def raw_fetch_info(self) -> ...: ...
+    async def raw_fetch_info(self) -> InfoRespT:
+        route = Route(self._uri, "/info", method="GET")
+        return await self.request_json(route)
 
     # GET /version (no /v4/)
     async def fetch_version(self) -> str:
@@ -470,7 +472,13 @@ class Node:
         return (await self.request(route) or b"").decode("UTF-8")
 
     # GET /stats
-    async def raw_fetch_stats(self) -> ...: ...
+    async def raw_fetch_stats(self) -> StatsDataT:
+        route = Route(self._uri, f"/stats", method="GET")
+        return await self.request_json(route)
+
+    async def fetch_stats(self, *, update: bool = False) -> StatsData:
+        raw = await self.raw_fetch_stats()
+        return self._update_stats(raw, update=update)
 
     # GET /routeplanner/status
     async def raw_fetch_route_planner_status(self) -> ...: ...
@@ -507,6 +515,16 @@ class Node:
 
     def get_player(self, guild_id: int, /) -> Player | None:
         return self._players.get(guild_id)
+
+    async def on_track_start(self, payload: TrackStartPayload) -> None: ...
+
+    async def on_track_end(self, payload: TrackEndPayload) -> None: ...
+
+    async def on_track_stuck(self, payload: TrackStuckPayload) -> None: ...
+
+    async def on_track_exception(self, payload: TrackExceptionPayload) -> None: ...
+
+    async def on_websocket_closed(self, payload: WebsocketClosedPayload) -> None: ...
 
 
 # TODO: Correct arg typings...
