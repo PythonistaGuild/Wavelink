@@ -129,7 +129,14 @@ class Player(VoiceProtocol):
 
     async def disconnect(self, *, force: bool) -> None: ...
 
-    async def play(self, track: Track | Search, *, volume: int | None = None, paused: bool | None = None, replace: bool = False) -> None:
+    async def play(
+        self,
+        track: Track | Search,
+        *,
+        volume: int | None = None,
+        paused: bool | None = None,
+        replace: bool = False,
+    ) -> None:
         playable = track.first if isinstance(track, Search) else track
         if not playable:
             # TODO: Exception
