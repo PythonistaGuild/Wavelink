@@ -129,7 +129,7 @@ class Player(VoiceProtocol):
 
     async def disconnect(self, *, force: bool) -> None: ...
 
-    async def play(self, track: Track | Search, *, volume: int | None = None, paused: bool | None = None) -> None:
+    async def play(self, track: Track | Search, *, volume: int | None = None, paused: bool | None = None, replace: bool = False) -> None:
         playable = track.first if isinstance(track, Search) else track
         if not playable:
             # TODO: Exception
@@ -150,7 +150,7 @@ class Player(VoiceProtocol):
         if paused is not None:
             data["paused"] = paused
 
-        await self._node.update_player(self._guild.id, data=data)
+        await self._node.update_player(self._guild.id, data=data, no_replace=not replace)
 
     async def pause(self) -> ...: ...
 
