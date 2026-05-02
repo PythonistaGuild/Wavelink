@@ -31,6 +31,7 @@ from ._lib import commands
 from .backoff import Backoff
 from .data import *
 from .enums import Source
+from .events import *
 from .exceptions import *
 from .tracks import Search
 from .utils import JSON_LOADS, MISSING, NodeMapping
@@ -42,6 +43,7 @@ if TYPE_CHECKING:
 
     from aiohttp.client import _RequestContextManager
 
+    from ._lib import Client
     from .helpers import NodeStrategy
     from .player import Player
     from .types_.rest import (
@@ -63,7 +65,7 @@ LOGGER: logging.Logger = logging.getLogger(__name__)
 
 class Route:
     PREFIX: ClassVar[str] = "/v4"
-    NO_PREFIX: ClassVar[list[str]] = ["version"]  # Only one exists; list for future proofing?
+    NO_PREFIX: ClassVar[tuple[str, ...]] = ("version",)  # Only one exists; tuple for future proofing?
 
     def __init__(
         self,
@@ -120,6 +122,7 @@ class Node:
         *,
         password: str,
         client_id: int,
+        client: Client | commands.Bot = MISSING,
         identifier: str = MISSING,
         http_session: aiohttp.ClientSession | None = None,
         reconnect: bool = True,
@@ -132,6 +135,7 @@ class Node:
         self._password = password
         self._identifier = identifier if identifier is not MISSING else secrets.token_hex(16)
         self._client_id = client_id
+        self._client = client
         self._is_connected = False
         self._http = http_session
 
@@ -147,6 +151,8 @@ class Node:
         self._resume_timeout = min(max(1, resume_timeout), self.MAX_RESUME)
 
         self._is_closing: bool = False
+
+        self._tasks: set[asyncio.Task[None]] = set()
 
     def __repr__(self) -> str: ...
 
@@ -255,7 +261,6 @@ class Node:
         self._raw_stats = {}
         self._session_id = None
         self._is_connected = False
-
         self._is_closing = False
 
     def _update_stats(self, stats: StatsDataT) -> None:
@@ -298,7 +303,7 @@ class Node:
         # ...experiencing some network stutter with lower CPU usage for example.
         # lavalink cpu usage is considered much more impactful than overall CPU usage
         if self._stats is MISSING:
-            return 0
+            return float("inf")
 
         system = self._stats.cpu.system**2 * 10
         lavalink = self._stats.cpu.lavalink**2 * 125
@@ -309,7 +314,7 @@ class Node:
     def memory_penalty(self) -> float:
         # impacts overall penalty lightly-moderately using a gentle superlinear curve...
         if self._stats is MISSING:
-            return 0
+            return float("inf")
 
         ratio = self._stats.memory.free / self._stats.memory.allocated
         penalty = (1 - ratio) ** 1.5 * 5
@@ -323,7 +328,7 @@ class Node:
         # deficit frames are weighted stronger as they can indicate longer term issues with the node
         # ...being able to keep up.
         if self._stats is MISSING or not self._stats.frames:
-            return 0
+            return float("inf")
 
         nulled = (self._stats.frames.nulled / 3000) * 300
         deficit = (abs(self._stats.frames.deficit) / 3000) * 600
@@ -333,7 +338,7 @@ class Node:
 
     def player_penalty(self) -> float:
         if self._stats is MISSING:
-            return 0
+            return float("inf")
         # impacts the overall penalty lightly
         # Resource stats are much more important than overall player counts (playing or not)
         # This penalty score is mostly going to impact decisions on nodes that have close scores to prevent
@@ -342,7 +347,7 @@ class Node:
 
     def penalty(self) -> float:
         if self._stats is MISSING:
-            return 0.0
+            return float("inf")
 
         return self.cpu_penalty() + self.memory_penalty() + self.frame_penalty() + self.player_penalty()
 
@@ -405,7 +410,6 @@ class Node:
 
     # GET /loadtracks
     async def raw_load_tracks(self, identifier: str, /) -> LoadResultDataT:
-        # TODO: data types...
         if not identifier:
             raise ValueError("The 'identifier' parameter cannot be empty.")
 
@@ -474,6 +478,33 @@ class Node:
 
     # POST /routeplanner/free/all
     async def free_all_addresses(self) -> ...: ...
+
+    def _event_factory(self, name: str, data: Any) -> type | None:
+        cls = _BasePayload._registry.get(name)
+        if not cls:
+            return
+
+        return cls(data)
+
+    def _dispatch(self, name: str, data: Any) -> None:
+        payload = self._event_factory(name, data)
+
+        if self._client is not MISSING:
+            event = f"wavelink_{name}"
+            self._client.dispatch(event, payload) if payload else self._client.dispatch(event)
+
+        func = getattr(self, f"on_{name}", None)
+        if not func:
+            return
+
+        coro = func(payload) if payload else func()
+        t = asyncio.create_task(coro, name=f"Wavelink:NodeEvent-{name}")
+
+        self._tasks.add(t)
+        t.add_done_callback(self._tasks.discard)
+
+    def get_player(self, guild_id: int, /) -> Player | None:
+        return self._players.get(guild_id)
 
 
 # TODO: Correct arg typings...
