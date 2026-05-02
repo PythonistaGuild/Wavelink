@@ -25,10 +25,11 @@ from .enums import LoadResult
 
 if TYPE_CHECKING:
     from .types_.rest import LoadResultDataT, TrackInfoRespT, TrackRespT
+    from .types_.websocket import TrackT
 
 
 class Track:
-    def __init__(self, data: TrackRespT) -> None:
+    def __init__(self, data: TrackRespT | TrackT) -> None:
         self._encoded: str = data["encoded"]
 
         info: TrackInfoRespT = data["info"]
