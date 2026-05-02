@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, cast
 from ._lib import VoiceProtocol
 from .exceptions import InvalidPlayerState, NodeNotFound
 from .node import MusicBot
+from .tracks import Search, Track
 from .utils import MISSING, VoiceUpdateCondition
 
 
@@ -46,12 +47,7 @@ class Player(VoiceProtocol):
         self._should_reconnect = MISSING
 
     def __repr__(self) -> str:
-        # TODO: ...
-        return super().__repr__()
-
-    def __str__(self) -> str:
-        # TODO: ...
-        return super().__str__()
+        return f"Player(guild={self._guild}, channel={self.channel})"
 
     def _get_node(self) -> Node | None:
         if isinstance(self.client, MusicBot):
@@ -131,5 +127,45 @@ class Player(VoiceProtocol):
         async with self._condition.timeout(timeout):
             await self._guild.change_voice_state(channel=channel, self_mute=self_mute, self_deaf=self_deaf)
 
-    # async def play(self, track: ...) -> None:
-    #     await self._node.update_player(self._guild_id, data={"track": {"encoded": track.encoded}})
+    async def disconnect(self, *, force: bool) -> None: ...
+
+    async def play(self, track: Track | Search, *, volume: int | None = None, paused: bool | None = None) -> None:
+        playable = track.first if isinstance(track, Search) else track
+        if not playable:
+            # TODO: Exception
+            raise
+
+        if not self._guild or not self.channel:
+            raise InvalidPlayerState("Unable to play requested track. No connected Voice Channel.")
+
+        data: UpdatePlayerReqT = {
+            "endTime": playable.end,
+            "position": playable.start,
+            "track": {"encoded": playable.encoded},
+        }
+
+        if volume is not None:
+            data["volume"] = volume
+
+        if paused is not None:
+            data["paused"] = paused
+
+        await self._node.update_player(self._guild.id, data=data)
+
+    async def pause(self) -> ...: ...
+
+    resume = pause
+
+    async def skip(self) -> ...: ...
+
+    async def stop(self) -> ...: ...
+
+    async def set_volume(self) -> ...: ...
+
+    async def mute(self) -> ...: ...
+
+    async def deafen(self) -> ...: ...
+
+    async def move(self) -> ...: ...
+
+    async def search_play(self) -> ...: ...
