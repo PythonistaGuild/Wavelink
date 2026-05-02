@@ -34,8 +34,8 @@ class LoadResult(StrEnum):
 
 
 class Source(StrEnum):
-    youtube = "ytsearch"
+    youtube       = "ytsearch"
     youtube_music = "ytmsearch"
-    soundcloud = "scsearch"
-    spotify = "spsearch"
-    local = "local"
+    soundcloud    = "scsearch"
+    spotify       = "spsearch"
+    local         = "local"
