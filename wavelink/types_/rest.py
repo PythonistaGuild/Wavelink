@@ -117,6 +117,37 @@ class UpdateSessionRespT(TypedDict):
     timeout: int
 
 
+class VersionInfoT(TypedDict):
+    semver: str
+    major: int
+    minor: int
+    patch: int
+    preRelease: str | None
+    build: str | None
+
+
+class GitInfoT(TypedDict):
+    branch: str
+    commit: str
+    commitTime: str
+
+
+class PluginInfoT(TypedDict):
+    name: str
+    version: str
+
+
+class InfoRespT(TypedDict):
+    version: VersionInfoT
+    buildTime: int
+    git: GitInfoT
+    jvm: str
+    lavaplayer: str
+    sourceManagers: list[str]
+    filters: list[str]
+    plugins: list[PluginInfoT]
+
+
 type HTTPMethod = Literal["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "CONNECT", "TRACE"]
 type LoadResultDataT = TrackResultT | PlaylistResultT | SearchResultT | EmptyResultT | ErrorResultT
 
