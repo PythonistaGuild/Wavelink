@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from urllib.parse import urlparse
 
 import aiohttp
+from async_utils import task_cache
 
 import wavelink
 
@@ -417,6 +418,7 @@ class Node:
         data: LoadResultDataT = await self.request_json(route=route)
         return data
 
+    @task_cache.taskcache(ttl=60 * 60)
     async def load_tracks(self, identifier: str, /) -> Search:
         data: LoadResultDataT = await self.raw_load_tracks(identifier)
 
