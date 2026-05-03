@@ -46,6 +46,8 @@ class Player(VoiceProtocol):
         self._condition = VoiceUpdateCondition()
         self._should_reconnect = MISSING
 
+        self._is_playing: bool = False
+
     def __repr__(self) -> str:
         return f"Player(guild={self._guild}, channel={self.channel})"
 
@@ -127,6 +129,8 @@ class Player(VoiceProtocol):
         async with self._condition.timeout(timeout):
             await self._guild.change_voice_state(channel=channel, self_mute=self_mute, self_deaf=self_deaf)
 
+        self._node._players[self._guild.id] = self
+
     async def disconnect(self, *, force: bool) -> None: ...
 
     async def play(
@@ -135,7 +139,7 @@ class Player(VoiceProtocol):
         *,
         volume: int | None = None,
         paused: bool | None = None,
-        replace: bool = False,
+        replace: bool = True,
     ) -> None:
         playable = track.first if isinstance(track, Search) else track
         if not playable:
@@ -153,7 +157,72 @@ class Player(VoiceProtocol):
 
         if volume is not None:
             data["volume"] = volume
+        if paused is not None:
+            data["paused"] = paused
 
+        await self._node.update_player(self._guild.id, data=data, no_replace=not replace)
+
+    async def search_play(
+        self,
+        search: str,
+        *,
+        volume: int | None = None,
+        paused: bool | None = None,
+        replace: bool = True,
+    ) -> Track:
+        if not self._guild or not self.channel:
+            raise InvalidPlayerState("Unable to play requested track. No connected Voice Channel.")
+
+        result = await self._node.search(search)
+        playable = result.first
+
+        if not playable:
+            # TODO: Exception
+            raise
+
+        data: UpdatePlayerReqT = {
+            "endTime": playable.end,
+            "position": playable.start,
+            "track": {"encoded": playable.encoded},
+        }
+
+        if volume is not None:
+            data["volume"] = volume
+        if paused is not None:
+            data["paused"] = paused
+
+        await self._node.update_player(self._guild.id, data=data, no_replace=not replace)
+        return playable
+
+    async def direct_play(
+        self,
+        *,
+        identifier: str | None = None,
+        encoded: str | None = None,
+        volume: int | None = None,
+        paused: bool | None = None,
+        replace: bool = True,
+    ) -> None:
+        if not identifier and not encoded:
+            # TODO: Exception
+            raise
+
+        elif identifier and encoded:
+            # TODO: Exception
+            raise
+
+        if not self._guild or not self.channel:
+            raise InvalidPlayerState("Unable to play requested track. No connected Voice Channel.")
+
+        data: UpdatePlayerReqT = {"track": {}}
+
+        if encoded:
+            data["track"]["encoded"] = encoded
+        elif identifier:
+            data["track"]["identifier"] = identifier
+
+        if volume is not None:
+            data["volume"] = volume
         if paused is not None:
             data["paused"] = paused
 
@@ -172,5 +241,3 @@ class Player(VoiceProtocol):
     async def deafen(self) -> ...: ...
 
     async def move(self) -> ...: ...
-
-    async def search_play(self) -> ...: ...
