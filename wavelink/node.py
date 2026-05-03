@@ -67,7 +67,7 @@ LOGGER: logging.Logger = logging.getLogger(__name__)
 
 class Route:
     PREFIX: ClassVar[str] = "/v4"
-    NO_PREFIX: ClassVar[tuple[str, ...]] = ("version",)  # Only one exists; tuple for future proofing?
+    NO_PREFIX: ClassVar[tuple[str, ...]] = ("version", "youtube")  # Only one exists; tuple for future proofing?
 
     def __init__(
         self,
@@ -86,7 +86,7 @@ class Route:
         self._extra_headers = extra_headers or {}
         self._params = params or {}
         self._data = data
-        self._url = f"{self._uri}{self.PREFIX if self._path not in self.NO_PREFIX else ''}/{self._path}"
+        self._url = f"{self._uri}{self.PREFIX if not self._path.startswith(self.NO_PREFIX) else ''}/{self._path}"
 
     def request(self, client: aiohttp.ClientSession, *, headers: MutableMapping[str, str]) -> _RequestContextManager:
         headers.update(self._extra_headers)
