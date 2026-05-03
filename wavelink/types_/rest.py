@@ -158,10 +158,10 @@ class UpdateSessionReqT(TypedDict, total=False):
     timeout: int
 
 
-class UpdateTrackT(TypedDict):
+class UpdateTrackT(TypedDict, total=False):
     encoded: str
-    identifier: NotRequired[str]
-    userData: NotRequired[Mapping[Any, Any]]
+    identifier: str
+    userData: Mapping[Any, Any]
 
 
 class UpdatePlayerReqT(TypedDict, total=False):
