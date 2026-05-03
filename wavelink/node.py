@@ -26,9 +26,9 @@ from urllib.parse import urlparse
 import aiohttp
 from async_utils import task_cache
 
-import wavelink
-from wavelink.types_.rest import InfoRespT
+import urllib.parse
 
+import wavelink
 from ._lib import commands
 from .backoff import Backoff
 from .data import *
@@ -57,6 +57,7 @@ if TYPE_CHECKING:
         UpdateSessionRespT,
     )
     from .types_.websocket import StatsDataT
+    from .types_.rest import InfoRespT
 
 
 __all__ = ("MusicBot", "Node", "Pool")
@@ -66,9 +67,6 @@ LOGGER: logging.Logger = logging.getLogger(__name__)
 
 
 class Route:
-    PREFIX: ClassVar[str] = "/v4"
-    NO_PREFIX: ClassVar[tuple[str, ...]] = ("version", "youtube")  # Only one exists; tuple for future proofing?
-
     def __init__(
         self,
         uri: str,
@@ -86,7 +84,7 @@ class Route:
         self._extra_headers = extra_headers or {}
         self._params = params or {}
         self._data = data
-        self._url = f"{self._uri}{self.PREFIX if not self._path.startswith(self.NO_PREFIX) else ''}/{self._path}"
+        self._url = f"{self._uri}/{self._path.removeprefix('/')}"
 
     def request(self, client: aiohttp.ClientSession, *, headers: MutableMapping[str, str]) -> _RequestContextManager:
         headers.update(self._extra_headers)
@@ -418,7 +416,8 @@ class Node:
         if not identifier:
             raise ValueError("The 'identifier' parameter cannot be empty.")
 
-        route = Route(self._uri, "/loadtracks", params={"identifier": identifier})
+        encoded = urllib.parse.quote_plus(identifier, safe=":")
+        route = Route(self._uri, "/v4/loadtracks", params={"identifier": encoded})
         data: LoadResultDataT = await self.request_json(route=route)
         return data
 
@@ -448,17 +447,17 @@ class Node:
 
     # GET /sessions/{sessionId}/players/{guildId}
     async def raw_fetch_player(self, guild_id: str | int, /) -> PlayerRespT:
-        route = Route(self._uri, f"/sessions/{self._session_id}/players/{guild_id}")
+        route = Route(self._uri, f"/v4/sessions/{self._session_id}/players/{guild_id}")
         return await self.request_json(route)
 
     # GET /sessions/{sessionId}/players
     async def raw_fetch_players(self) -> list[PlayerRespT]:
-        route = Route(self._uri, f"/sessions/{self._session_id}/players")
+        route = Route(self._uri, f"/v4/sessions/{self._session_id}/players")
         return await self.request_json(route)
 
     # PATCH /sessions/{sessionId}/players/{guildId}
     async def update_player(self, guild_id: str | int, /, *, data: UpdatePlayerReqT, no_replace: bool = True) -> PlayerRespT:
-        path = f"/sessions/{self._session_id}/players/{guild_id}"
+        path = f"/v4/sessions/{self._session_id}/players/{guild_id}"
         route = Route(self._uri, path, method="PATCH", params={"noReplace": str(no_replace).lower()}, data=data)
 
         result = await self.request_json(route)
@@ -466,19 +465,19 @@ class Node:
 
     # DELETE /sessions/{sessionId}/players/{guildId}
     async def destroy_player(self, guild_id: str | int, /) -> None:
-        route = Route(self._uri, f"sessions/{self._session_id}/players/{guild_id}")
+        route = Route(self._uri, f"/v4/sessions/{self._session_id}/players/{guild_id}")
         await self.request(route)
 
     # PATCH /sessions/{sessionId}
     async def update_session(self, data: UpdateSessionReqT) -> UpdateSessionRespT:
-        route = Route(self._uri, f"/sessions/{self._session_id}", method="PATCH", data=data)
+        route = Route(self._uri, f"/v4/sessions/{self._session_id}", method="PATCH", data=data)
 
         result = await self.request_json(route)
         return result
 
     # GET /info
     async def raw_fetch_info(self) -> InfoRespT:
-        route = Route(self._uri, "/info", method="GET")
+        route = Route(self._uri, "/v4/info", method="GET")
         return await self.request_json(route)
 
     # GET /version (no /v4/)
@@ -488,7 +487,7 @@ class Node:
 
     # GET /stats
     async def raw_fetch_stats(self) -> StatsDataT:
-        route = Route(self._uri, f"/stats", method="GET")
+        route = Route(self._uri, f"/v4/stats", method="GET")
         return await self.request_json(route)
 
     async def fetch_stats(self, *, update: bool = False) -> StatsData:
