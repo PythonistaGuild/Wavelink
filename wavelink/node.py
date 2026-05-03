@@ -465,7 +465,7 @@ class Node:
 
     # DELETE /sessions/{sessionId}/players/{guildId}
     async def destroy_player(self, guild_id: str | int, /) -> None:
-        route = Route(self._uri, f"/v4/sessions/{self._session_id}/players/{guild_id}")
+        route = Route(self._uri, f"/v4/sessions/{self._session_id}/players/{guild_id}", method="DELETE")
         await self.request(route)
 
     # PATCH /sessions/{sessionId}
