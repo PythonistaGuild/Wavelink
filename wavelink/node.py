@@ -135,7 +135,7 @@ class Node:
         self._players: MutableMapping[int, Player] = {}
         self._uri = uri
         self._password = password
-        self._identifier = identifier if identifier is not MISSING else secrets.token_hex(16)
+        self._identifier = identifier if identifier is not MISSING else secrets.token_hex(8)
         self._client_id = client_id
         self._client = client
         self._is_connected = False
@@ -156,7 +156,17 @@ class Node:
         self._tasks: set[asyncio.Task[None]] = set()
 
     def __repr__(self) -> str:
-        return f"Node(id={self._identifier!r}, session_id={self._session_id!r}, players={len(self._players)})"
+        return f"Node(identifier={self._identifier!r}, session_id={self._session_id!r}, players={len(self._players)})"
+
+    def __hash__(self) -> int:
+        return hash(self._identifier)
+
+    def _is_url(self, value: str, /) -> bool:
+        try:
+            result = urlparse(value)
+            return all((result.scheme, result.netloc))
+        except Exception:
+            return False
 
     def is_connected(self) -> bool:
         return self._is_connected
@@ -423,7 +433,12 @@ class Node:
 
         return Search(identifier, data=data)
 
-    search = load_tracks
+    async def search(self, search: str, /, *, source: Source | str = Source.youtube_music) -> Search:
+        if self._is_url(search) or source is Source.local:
+            return await self.load_tracks(search)
+
+        identifier = f"{source.removesuffix(':')}:{search}"
+        return await self.load_tracks(identifier)
 
     # GET /decodetrack
     async def raw_decode_track(self, encoded: str) -> ...: ...
@@ -569,13 +584,6 @@ class Pool:
         for node in self._nodes.values():
             await node.close()
 
-    def _is_url(self, value: str, /) -> bool:
-        try:
-            result = urlparse(value)
-            return all((result.scheme, result.netloc))
-        except Exception:
-            return False
-
     async def search(
         self,
         search: str,
@@ -587,13 +595,10 @@ class Pool:
         # TODO: Exception...
         node = node or self.get_node()
         if not node:
+            # TODO: Exception...
             raise
 
-        if self._is_url(search) or source is Source.local:
-            return await node.search(search)
-
-        identifier = f"{source.removesuffix(':')}:{search}"
-        return await node.search(identifier)
+        return await node.search(search, source=source)
 
 
 class MusicBot(commands.Bot, Pool):
