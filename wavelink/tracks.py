@@ -24,6 +24,8 @@ from .enums import LoadResult
 
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from .types_.rest import LoadResultDataT, TrackInfoRespT, TrackRespT
     from .types_.websocket import TrackT
 
@@ -166,6 +168,15 @@ class Search:
 
     def __repr__(self) -> str:
         return f"Search(query={self._query!r}, tracks={len(self._tracks)}, first={self._first})"
+
+    def __iter__(self) -> Iterator[Track]:
+        return iter(self._tracks)
+
+    def __len__(self) -> int:
+        return len(self._tracks)
+
+    def __bool__(self) -> bool:
+        return bool(self._tracks)
 
     @property
     def result(self) -> LoadResult:

@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, cast
 from ._lib import VoiceProtocol
 from .exceptions import InvalidPlayerState, NodeNotFound
 from .node import MusicBot
+from .queue import Queue
 from .tracks import Search, Track
 from .utils import MISSING, VoiceUpdateCondition
 
@@ -47,6 +48,7 @@ class Player(VoiceProtocol):
         self._should_reconnect = MISSING
 
         self._is_playing: bool = False
+        self.queue: Queue = Queue()
 
     def __repr__(self) -> str:
         return f"Player(guild={self._guild}, channel={self.channel})"

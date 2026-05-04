@@ -20,3 +20,5 @@ __copyright__ = "Copyright 2019-Present (c) PythonistaGuild, EvieePy"
 __version__ = "4.0.0a"
 
 from .node import Node as Node, Pool as Pool
+from .queue import Queue as Queue
+from .tracks import Search as Search, Track as Track
