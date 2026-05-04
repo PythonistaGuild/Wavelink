@@ -118,6 +118,5 @@ dev = [
     "discord-py>=2.7.1",
     "nextcord>=3.1.1",
     "disnake>=2.12.0",
-    "py-cord>=2.7.2",
 ]
 speed = ["orjson"]
