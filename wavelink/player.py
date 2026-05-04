@@ -133,6 +133,8 @@ class Player(VoiceProtocol):
 
     async def disconnect(self, *, force: bool) -> None: ...
 
+    async def destroy(self) -> None: ...
+
     async def play(
         self,
         track: Track | Search,
@@ -203,11 +205,8 @@ class Player(VoiceProtocol):
         paused: bool | None = None,
         replace: bool = True,
     ) -> None:
-        if not identifier and not encoded:
-            # TODO: Exception
-            raise
-
-        elif identifier and encoded:
+        if (not identifier and not encoded) or (identifier and encoded):
+            # TODO: Ruff keeps combining these (assumingly because raise is ambiguous) (raise specific exceptions for each check)
             # TODO: Exception
             raise
 
