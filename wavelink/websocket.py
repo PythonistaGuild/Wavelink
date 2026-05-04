@@ -113,8 +113,7 @@ class WebsocketFrame(WSListener):
         t.add_done_callback(self._tasks.discard)
 
     async def _possible_heartbeat_failure(self, transport: WSTransport) -> None:
-        await asyncio.sleep(5)
-
+        await asyncio.sleep(1)
         if self._has_code:
             return
 
