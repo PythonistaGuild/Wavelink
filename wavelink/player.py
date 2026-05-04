@@ -15,9 +15,8 @@ limitations under the License.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast, Any, Concatenate, ParamSpec, TypeVar
-from collections.abc import Awaitable, Callable
 from functools import wraps
+from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar, cast
 
 from ._lib import VoiceProtocol
 from .exceptions import InvalidPlayerState, NodeNotFound
@@ -28,6 +27,8 @@ from .utils import MISSING, VoiceUpdateCondition
 
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from ._lib import Client, Connectable, Guild, GuildVoiceStatePayload, VoiceChannel, VoiceServerUpdatePayload
     from .node import Node
     from .types_.rest import UpdatePlayerReqT
@@ -38,7 +39,7 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
-def has_channel(func: Callable[Concatenate[Any, P], Awaitable[R]]) -> Callable[Concatenate[Any, P], Awaitable[R]]:
+def has_channel[**P, R](func: Callable[Concatenate[Any, P], Awaitable[R]]) -> Callable[Concatenate[Any, P], Awaitable[R]]:
     @wraps(func)
     async def wrapper(self: Any, *args: P.args, **kwargs: P.kwargs) -> R:
         if not self._guild or not self.channel:
