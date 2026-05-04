@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import secrets
+import urllib.parse
 from functools import cached_property
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -26,9 +27,8 @@ from urllib.parse import urlparse
 import aiohttp
 from async_utils import task_cache
 
-import urllib.parse
-
 import wavelink
+
 from ._lib import commands
 from .backoff import Backoff
 from .data import *
@@ -50,6 +50,7 @@ if TYPE_CHECKING:
     from .player import Player
     from .types_.rest import (
         HTTPMethod,
+        InfoRespT,
         LoadResultDataT,
         PlayerRespT,
         UpdatePlayerReqT,
@@ -57,7 +58,6 @@ if TYPE_CHECKING:
         UpdateSessionRespT,
     )
     from .types_.websocket import StatsDataT
-    from .types_.rest import InfoRespT
 
 
 __all__ = ("MusicBot", "Node", "Pool")
@@ -126,9 +126,10 @@ class Node:
         identifier: str = MISSING,
         http_session: aiohttp.ClientSession | None = None,
         reconnect: bool = True,
-        max_reconnects: int | None = 5,
+        max_reconnects: int | None = None,
         resume: bool = True,
         resume_timeout: int = 60,
+        heartbeat: float = 15,
     ) -> None:
         self._players: MutableMapping[int, Player] = {}
         self._uri = uri
@@ -144,13 +145,16 @@ class Node:
         self._penalty_compound: int = 0
 
         self._should_reconnect = reconnect
-        self._max_reconnects: int | None = max(0, max_reconnects) if max_reconnects else None
+        self._max_reconnects: int | None = max(0, max_reconnects) if max_reconnects is not None else None
         self._ua = f"Wavelink/{wavelink.__version__} ({client_id})"
         self._session_id: str | None = None
         self._should_resume = resume
         self._resume_timeout = min(max(1, resume_timeout), self.MAX_RESUME)
+        self._heartbeat = max(5, heartbeat)
         self._is_closing: bool = False
+        self._is_reconnecting: bool = False
 
+        self._session_event: asyncio.Event = asyncio.Event()
         self._tasks: set[asyncio.Task[None]] = set()
 
     def __repr__(self) -> str:
@@ -217,9 +221,35 @@ class Node:
         self._socket = ws
         self._is_connected = True
 
-    async def _reconnect(self) -> None:
+        try:
+            async with asyncio.timeout(5):
+                await self._session_event.wait()
+        except TimeoutError:
+            # TODO: Reraise exception...
+            await self.close()
+            return
+
+        self._session_event.clear()
+
+        if self._should_resume and not soft:
+            await self.update_session(data={"resuming": self._should_resume, "timeout": self._resume_timeout})
+
+    async def _reconnect(self, *, resume: bool = False) -> None:
+        if self._is_reconnecting:
+            return
+
+        if not self._should_reconnect:
+            LOGGER.warning("Reconnecting for %r has been disabled. Disconnecting.", self)
+            if self._socket:
+                await self._socket.close()
+
+            return
+
+        self._is_reconnecting = True
+        LOGGER.warning("Attempting reconnect logic on %r.", self)
+
         backoff = Backoff(maximum_time=20)
-        headers = self.ws_headers(session_id=self._session_id if self._should_resume else None)
+        headers = self.ws_headers(session_id=self._session_id if (self._should_resume and resume) else None)
 
         if self._socket:
             await self._socket.close()
@@ -231,9 +261,9 @@ class Node:
         while tries is None or tries != 0:
             try:
                 await self.connect(headers, soft=True)
-            except Exception:
-                # TODO: Catch proper exceptions...
-                ...
+            except Exception as e:
+                # TODO: Check for Auth errors etc...
+                LOGGER.debug("Failed to connect on %r: %s", self, e)
             else:
                 break
 
@@ -241,7 +271,10 @@ class Node:
                 tries -= 1
 
             delay = backoff.calculate()
+            LOGGER.warning("Reconnection on %r failed... Attempting again in %d seconds.", self, delay)
             await asyncio.sleep(delay)
+
+        self._is_reconnecting = False
 
         if not self._is_connected:
             # TODO: Proper exception...
@@ -270,6 +303,15 @@ class Node:
         self._session_id = None
         self._is_connected = False
         self._is_closing = False
+
+    async def _cleanup_stale(self) -> ...:
+        players = list(self._players.values())
+        for player in players:
+            try:
+                await player.destroy()
+            except Exception:
+                # TODO: Logging...
+                pass
 
     def _update_stats(self, stats: StatsDataT, *, update: bool = True) -> StatsData:
         # General
@@ -421,7 +463,7 @@ class Node:
         data: LoadResultDataT = await self.request_json(route=route)
         return data
 
-    @task_cache.taskcache(ttl=60 * 60)
+    @task_cache.taskcache(ttl=60 * 60, evict_on_exception=True)
     async def load_tracks(self, identifier: str, /) -> Search:
         data: LoadResultDataT = await self.raw_load_tracks(identifier)
 
@@ -487,7 +529,7 @@ class Node:
 
     # GET /stats
     async def raw_fetch_stats(self) -> StatsDataT:
-        route = Route(self._uri, f"/v4/stats", method="GET")
+        route = Route(self._uri, "/v4/stats", method="GET")
         return await self.request_json(route)
 
     async def fetch_stats(self, *, update: bool = False) -> StatsData:
