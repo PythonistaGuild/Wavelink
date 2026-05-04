@@ -15,7 +15,9 @@ limitations under the License.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, Any, Concatenate, ParamSpec, TypeVar
+from collections.abc import Awaitable, Callable
+from functools import wraps
 
 from ._lib import VoiceProtocol
 from .exceptions import InvalidPlayerState, NodeNotFound
@@ -32,6 +34,21 @@ if TYPE_CHECKING:
     from .types_.websocket import WebSocketClosedEventT
 
 
+P = ParamSpec("P")
+R = TypeVar("R")
+
+
+def has_channel(func: Callable[Concatenate[Any, P], Awaitable[R]]) -> Callable[Concatenate[Any, P], Awaitable[R]]:
+    @wraps(func)
+    async def wrapper(self: Any, *args: P.args, **kwargs: P.kwargs) -> R:
+        if not self._guild or not self.channel:
+            raise InvalidPlayerState("Unable to update player. No connected Voice Channel.")
+
+        return await func(self, *args, **kwargs)
+
+    return wrapper
+
+
 class Player(VoiceProtocol):
     def __init__(self, client: Client, channel: Connectable, *, node: Node | None = None) -> None:
         super().__init__(client, channel)
@@ -39,6 +56,11 @@ class Player(VoiceProtocol):
         node = node or self._get_node()
         if not node:
             raise NodeNotFound(f"No Node was provided or could be found and used for {self!r}.")
+
+        # Passing the Client to Node is optional; since we get Client here we can take advantage of this to set
+        # Client if it was never originally set...
+        if not node._client and client.application_id == node._client_id:
+            node._client = client
 
         self._node: Node = node
         self._guild: Guild | None = None
@@ -48,6 +70,7 @@ class Player(VoiceProtocol):
         self._should_reconnect = MISSING
 
         self._is_playing: bool = False
+        self._is_paused: bool = False
         self.queue: Queue = Queue()
 
     def __repr__(self) -> str:
@@ -133,10 +156,12 @@ class Player(VoiceProtocol):
 
         self._node._players[self._guild.id] = self
 
-    async def disconnect(self, *, force: bool) -> None: ...
+    @has_channel
+    async def disconnect(self, *, force: bool) -> None: ...  # type: ignore
 
     async def destroy(self) -> None: ...
 
+    @has_channel
     async def play(
         self,
         track: Track | Search,
@@ -145,13 +170,11 @@ class Player(VoiceProtocol):
         paused: bool | None = None,
         replace: bool = True,
     ) -> None:
+        assert self._guild
         playable = track.first if isinstance(track, Search) else track
         if not playable:
             # TODO: Exception
             raise
-
-        if not self._guild or not self.channel:
-            raise InvalidPlayerState("Unable to play requested track. No connected Voice Channel.")
 
         data: UpdatePlayerReqT = {
             "endTime": playable.end,
@@ -166,6 +189,7 @@ class Player(VoiceProtocol):
 
         await self._node.update_player(self._guild.id, data=data, no_replace=not replace)
 
+    @has_channel
     async def search_play(
         self,
         search: str,
@@ -174,8 +198,7 @@ class Player(VoiceProtocol):
         paused: bool | None = None,
         replace: bool = True,
     ) -> Track:
-        if not self._guild or not self.channel:
-            raise InvalidPlayerState("Unable to play requested track. No connected Voice Channel.")
+        assert self._guild
 
         result = await self._node.search(search)
         playable = result.first
@@ -198,6 +221,7 @@ class Player(VoiceProtocol):
         await self._node.update_player(self._guild.id, data=data, no_replace=not replace)
         return playable
 
+    @has_channel
     async def direct_play(
         self,
         *,
@@ -207,13 +231,12 @@ class Player(VoiceProtocol):
         paused: bool | None = None,
         replace: bool = True,
     ) -> None:
+        assert self._guild
+
         if (not identifier and not encoded) or (identifier and encoded):
             # TODO: Ruff keeps combining these (assumingly because raise is ambiguous) (raise specific exceptions for each check)
             # TODO: Exception
             raise
-
-        if not self._guild or not self.channel:
-            raise InvalidPlayerState("Unable to play requested track. No connected Voice Channel.")
 
         data: UpdatePlayerReqT = {"track": {}}
 
@@ -229,16 +252,46 @@ class Player(VoiceProtocol):
 
         await self._node.update_player(self._guild.id, data=data, no_replace=not replace)
 
-    async def pause(self) -> ...: ...
+    @has_channel
+    async def pause(self) -> None:
+        assert self._guild
 
+        data: UpdatePlayerReqT = {"paused": True}
+        await self._node.update_player(self._guild.id, data=data)
+        self._is_paused = True
+
+    @has_channel
+    async def resume(self) -> None:
+        assert self._guild
+
+        data: UpdatePlayerReqT = {"paused": False}
+        await self._node.update_player(self._guild.id, data=data)
+        self._is_paused = False
+
+    @has_channel
+    async def toggle_pause(self) -> None:
+        assert self._guild
+
+        paused = not self._is_paused
+        data: UpdatePlayerReqT = {"paused": paused}
+
+        await self._node.update_player(self._guild.id, data=data)
+        self._is_paused = paused
+
+    @has_channel
     async def skip(self) -> ...: ...
 
+    @has_channel
     async def stop(self) -> ...: ...
 
+    @has_channel
     async def set_volume(self) -> ...: ...
 
+    @has_channel
     async def mute(self) -> ...: ...
 
+    @has_channel
     async def deafen(self) -> ...: ...
 
+    @has_channel
     async def move(self) -> ...: ...
