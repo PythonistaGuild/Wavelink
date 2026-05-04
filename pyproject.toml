@@ -31,6 +31,7 @@ classifiers = [
         "Topic :: Utilities",
 ]
 dependencies = [
+    "mikeshardmind-async-utils>=2026.5.3",
     "picows>=1.17.0",
 ]
 
