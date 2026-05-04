@@ -16,7 +16,7 @@ limitations under the License.
 from __future__ import annotations
 
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar
 
 from ._lib import VoiceProtocol
 from .exceptions import InvalidPlayerState, NodeNotFound
@@ -51,6 +51,8 @@ def has_channel[**P, R](func: Callable[Concatenate[Any, P], Awaitable[R]]) -> Ca
 
 
 class Player(VoiceProtocol):
+    channel: VoiceChannel
+
     def __init__(self, client: Client, channel: Connectable, *, node: Node | None = None) -> None:
         super().__init__(client, channel)
 
@@ -72,6 +74,9 @@ class Player(VoiceProtocol):
 
         self._is_playing: bool = False
         self._is_paused: bool = False
+        self._is_deaf: bool = False
+        self._is_mute: bool = False
+
         self.queue: Queue = Queue()
 
     def __repr__(self) -> str:
@@ -123,6 +128,9 @@ class Player(VoiceProtocol):
         self._condition.channelId = channel_id
         self._condition.sessionId = data["session_id"]
 
+        self._is_deaf = data["self_deaf"]
+        self._is_mute = data["self_mute"]
+
         if original != channel_id:
             await self._dispatch_voice()
 
@@ -147,13 +155,12 @@ class Player(VoiceProtocol):
         if self.channel is MISSING:
             raise InvalidPlayerState(f"No valid channel could be found to connect for {self!r}.")
 
-        channel = cast("VoiceChannel", self.channel)
         if not self._guild:
-            self._guild = channel.guild
+            self._guild = self.channel.guild
 
         self._should_reconnect = reconnect
         async with self._condition.timeout(timeout):
-            await self._guild.change_voice_state(channel=channel, self_mute=self_mute, self_deaf=self_deaf)
+            await self._guild.change_voice_state(channel=self.channel, self_mute=self_mute, self_deaf=self_deaf)
 
         self._node._players[self._guild.id] = self
 
@@ -289,10 +296,16 @@ class Player(VoiceProtocol):
     async def set_volume(self) -> ...: ...
 
     @has_channel
-    async def mute(self) -> ...: ...
+    async def mute(self) -> None:
+        assert self._guild and self.channel
+
+        await self._guild.change_voice_state(channel=self.channel, self_mute=True, self_deaf=self._is_deaf)
 
     @has_channel
-    async def deafen(self) -> ...: ...
+    async def deafen(self) -> None:
+        assert self._guild and self.channel
+
+        await self._guild.change_voice_state(channel=self.channel, self_deaf=True, self_mute=self._is_mute)
 
     @has_channel
     async def move(self) -> ...: ...
