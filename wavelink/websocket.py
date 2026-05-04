@@ -18,10 +18,10 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
-from typing import TYPE_CHECKING, Any, cast, no_type_check
+from typing import TYPE_CHECKING, Any, ClassVar, cast, no_type_check
 
 from picows import (
-    WSCloseCode,
+    WSAutoPingStrategy,
     WSFrame,
     WSListener,
     WSMsgType,
@@ -49,11 +49,14 @@ PY_314: bool = sys.version_info >= (3, 14)
 
 
 class WebsocketFrame(WSListener):
+    HEARTBEAT_FAILURE: ClassVar[int] = 3008
+    RECONNECT_CODES: ClassVar[tuple[int, ...]] = (1001, 1005, 1006, 1011, 1012, 1013)
+
     def __init__(self, socket: Websocket, /) -> None:
         self._socket = socket
         self._loop = socket._loop
         self._eager = self.has_eager()
-
+        self._has_code: bool = False
         self._tasks: set[asyncio.Task[None]] = set()
 
     def has_eager(self) -> bool:
@@ -79,6 +82,14 @@ class WebsocketFrame(WSListener):
 
         return coro
 
+    def on_ws_disconnected(self, transport: WSTransport) -> None:
+        if self._has_code:
+            return
+
+        t = asyncio.create_task(self._possible_heartbeat_failure(transport))
+        self._tasks.add(t)
+        t.add_done_callback(self._tasks.discard)
+
     @no_type_check  # asyncio has bad typing for the tasks in 3.14
     def on_ws_frame(self, transport: WSTransport, frame: WSFrame) -> None:
         if frame.msg_type is WSMsgType.PING:
@@ -91,7 +102,7 @@ class WebsocketFrame(WSListener):
             data = JSON_LOADS(frame.get_payload_as_bytes())
             coro = self._get_method(data)
         elif frame.msg_type is WSMsgType.CLOSE:
-            coro = self.on_close_code(transport, frame.get_close_code())
+            coro = self.on_close_code(transport, frame.get_close_code().value)
 
         if not coro:
             LOGGER.debug("Unable to find suitable callback for Websocket message: %s", data)
@@ -101,9 +112,35 @@ class WebsocketFrame(WSListener):
         self._tasks.add(t)
         t.add_done_callback(self._tasks.discard)
 
-    async def on_close_code(self, transport: WSTransport, code: WSCloseCode) -> ...:
-        # TODO: ...
-        print(code.value)
+    async def _possible_heartbeat_failure(self, transport: WSTransport) -> None:
+        await asyncio.sleep(5)
+
+        if self._has_code:
+            return
+
+        await self.on_close_code(transport, code=3008)
+
+    async def on_close_code(self, transport: WSTransport, code: int) -> None:
+        self._has_code = True
+
+        if code == 1000:
+            LOGGER.info("%r gracefully closed. No reconnect attempt will be made.", self._socket)
+            return await self._socket.close()
+
+        if code == self.HEARTBEAT_FAILURE:
+            LOGGER.warning("Heartbeat stopped responding on %r... Attempting to re-establish connection.", self._socket)
+            return await self._socket._node._reconnect(resume=True)
+
+        elif code in self.RECONNECT_CODES:
+            LOGGER.warning(
+                "%s has disconnected with close code %d. Attempting to reconnect if possible.",
+                self._socket,
+                code,
+            )
+            return await self._socket._node._reconnect(resume=code != 1001)
+
+        else:
+            LOGGER.error("Unhandled websocket close code %d on %s. Disconnecting...", code, self._socket)
 
 
 class Websocket:
@@ -116,6 +153,10 @@ class Websocket:
         self._session_id: str = MISSING
         self._connected: bool = False
         self._closing: bool = False
+        self._heartbeat = node._heartbeat
+
+    def __repr__(self) -> str:
+        return f"{self._node!r}::<Websocket>"
 
     def listener_factory(self) -> WebsocketFrame:
         listener = WebsocketFrame(self)
@@ -126,38 +167,60 @@ class Websocket:
 
         uri = f"{self._node._uri.removesuffix('/')}/v4/websocket"
         uri = uri.replace("https://", "wss://").replace("http://", "ws://")
-        transport, listener = await ws_connect(self.listener_factory, uri, extra_headers=headers)
+        transport, listener = await ws_connect(
+            self.listener_factory,
+            uri,
+            extra_headers=headers,
+            enable_auto_ping=True,
+            enable_auto_pong=True,
+            auto_ping_strategy=WSAutoPingStrategy.PING_PERIODICALLY,
+            auto_ping_idle_timeout=self._heartbeat,
+        )
 
         self._transport = transport
         self._frame_listener = cast("WebsocketFrame", listener)
         self._connected = True
 
-        LOGGER.debug("Successfully connected %s Websocket.", self)
+        LOGGER.info("Successfully connected %s.", self)
 
     async def close(self) -> None:
         if self._closing:
             return
 
-        LOGGER.debug("Attempting to gracefully close %s Websocket.", self)
-
+        LOGGER.debug("Attempting to gracefully close %s.", self)
         self._closing = True
-        self._transport.disconnect(graceful=True)
+
+        try:
+            self._transport.disconnect(graceful=True)
+        except Exception as e:
+            LOGGER.debug("Unable to gracefully close %s connection: %s", self, e)
 
         try:
             async with asyncio.timeout(3):
                 await self._transport.wait_disconnected()
         except TimeoutError:
-            LOGGER.warning("Unable to gracefully close %s Websocket connection.", self)
+            LOGGER.debug("Unable to gracefully close %s connection.", self)
 
         self._connected = False
         self._frame_listener = MISSING
         self._transport = MISSING
 
     async def ws_ready(self, data: ReadyMsgT) -> None:
+        # TODO: Check if session was resumed; if not destroy active discord voice clients on ready...
         LOGGER.debug("%s received websocket READY message: %s", self, data)
 
         session = data["sessionId"]
         self._node._session_id = session
+        self._node._session_event.set()
+
+        resumed = data["resumed"]
+        if resumed:
+            return
+
+        if not self._node._players:
+            return
+
+        await self._node._cleanup_stale()
 
     async def ws_player_update(self, data: PlayerUpdateMsgT) -> None:
         LOGGER.debug("%s received websocket PLAYER_UPDATE message: %s", self, data)
