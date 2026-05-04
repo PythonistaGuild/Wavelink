@@ -57,6 +57,9 @@ class Queue:
 
         return self._items[index]
 
+    def __call__(self, item: Track | Search) -> None:
+        self.put(item)
+
     @property
     def is_empty(self) -> bool:
         return not self._items
@@ -72,22 +75,23 @@ class Queue:
 
             getter.set_result(self._items.popleft())
 
-    def append(self, track: Track | Search) -> None:
-        if isinstance(track, Search):
-            if track.first is None:
+    # TODO accommodate Search returning Playlist once implemented using .extend()
+    def put(self, item: Track | Search) -> None:
+        if isinstance(item, Search):
+            if item.first is None:
                 return
-            self._items.append(track.first)
+            self._items.append(item.first)
         else:
-            self._items.append(track)
+            self._items.append(item)
         self._wake_getters()
 
-    def prepend(self, track: Track | Search) -> None:
-        if isinstance(track, Search):
-            if track.first is None:
+    def prepend(self, item: Track | Search) -> None:
+        if isinstance(item, Search):
+            if item.first is None:
                 return
-            self._items.appendleft(track.first)
+            self._items.appendleft(item.first)
         else:
-            self._items.appendleft(track)
+            self._items.appendleft(item)
         self._wake_getters()
 
     def extend(self, tracks: Iterable[Track] | Search) -> None:
@@ -99,7 +103,7 @@ class Queue:
         self._items.extendleft(reversed(buffered))
         self._wake_getters()
 
-    async def get(self) -> Track:
+    async def get_wait(self) -> Track:
         if self._items:
             return self._items.popleft()
 
@@ -120,7 +124,7 @@ class Queue:
 
             raise
 
-    def get_nowait(self) -> Track:
+    def get(self) -> Track:
         return self.popleft()
 
     def peek(self, index: int = 0) -> Track:
