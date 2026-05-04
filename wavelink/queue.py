@@ -16,8 +16,8 @@ limitations under the License.
 from __future__ import annotations
 
 import asyncio
+import random
 from collections import deque
-from random import Random
 from typing import TYPE_CHECKING
 
 from .tracks import Search
@@ -164,7 +164,7 @@ class Queue:
             return
 
         items = list(self._items)
-        Random().shuffle(items)
+        random.shuffle(items)
         self._items = deque(items)
 
     def to_list(self) -> list[Track]:
