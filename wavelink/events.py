@@ -23,8 +23,10 @@ from .tracks import Track
 
 if TYPE_CHECKING:
     from ._lib import Guild
+    from .data import StatsData
     from .node import Node
     from .types_.websocket import (
+        PlayerUpdateMsgT,
         TrackEndEventT,
         TrackEndReasonT,
         TrackExceptionEventT,
@@ -110,9 +112,39 @@ class WebsocketClosedPayload(_BasePayload):
     __slots__ = ("by_discord", "code", "guild", "node", "player", "reason")
 
     def __init__(self, node: Node, *, data: WebSocketClosedEventT) -> None:
+        super().__init__()
+
         self.node = node
         self.reason: str = data["reason"]
         self.code: int = data["code"]
         self.player = node.get_player(int(data["guildId"]))
         self.guild: Guild | None = self.player._guild if self.player else None
         self.by_discord: bool = data["byRemote"]
+
+
+class PlayerUpdatePayload(_BasePayload):
+    _event_name = "player_update"
+    __slots__ = ("connected", "guild", "node", "ping", "player", "position", "raw_state", "time")
+
+    def __init__(self, node: Node, *, data: PlayerUpdateMsgT) -> None:
+        super().__init__()
+        self.node = node
+        self.player = node.get_player(int(data["guildId"]))
+        self.guild: Guild | None = self.player._guild if self.player else None
+
+        state = data["state"]
+        self.connected: bool = state["connected"]
+        self.position: int = state["position"]
+        self.ping: int = state["ping"]
+        self.time: int = state["time"]
+        self.raw_state = state
+
+
+class NodeStatsPayload(_BasePayload):
+    _event_name = "node_stats"
+    __slots__ = ()
+
+    def __init__(self, node: Node, *, stats: StatsData) -> None:
+        super().__init__()
+        self.node = node
+        self.stats = stats
