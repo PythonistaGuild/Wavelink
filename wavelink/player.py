@@ -19,7 +19,7 @@ from functools import wraps
 from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar
 
 from ._lib import VoiceProtocol
-from .exceptions import InvalidPlayerState, NodeNotFound
+from .exceptions import InvalidPlayerState, InvalidTrackError, NodeNotFound
 from .node import MusicBot
 from .queue import Queue
 from .tracks import Search, Track
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from ._lib import Client, Connectable, Guild, GuildVoiceStatePayload, VoiceChannel, VoiceServerUpdatePayload
     from .node import Node
     from .types_.rest import UpdatePlayerReqT
-    from .types_.websocket import WebSocketClosedEventT
+    from .types_.websocket import PlayerStateT, WebSocketClosedEventT
 
 
 P = ParamSpec("P")
@@ -72,15 +72,36 @@ class Player(VoiceProtocol):
         self._condition = VoiceUpdateCondition()
         self._should_reconnect = MISSING
 
+        self._volume: int = 100
         self._is_playing: bool = False
         self._is_paused: bool = False
         self._is_deaf: bool = False
         self._is_mute: bool = False
+        self._lava_connected: bool = False
+        self._ping: int = -1
+        self._position: int = 0
+        self._last_update: int | None = 0
 
         self.queue: Queue = Queue()
 
     def __repr__(self) -> str:
         return f"Player(guild={self._guild}, channel={self.channel})"
+
+    @property
+    def is_playing(self) -> bool:
+        return self._is_playing
+
+    @property
+    def is_paused(self) -> bool:
+        return self._is_paused
+
+    @property
+    def is_deaf(self) -> bool:
+        return self._is_deaf
+
+    @property
+    def is_mute(self) -> bool:
+        return self._is_mute
 
     def _get_node(self) -> Node | None:
         if isinstance(self.client, MusicBot):
@@ -96,6 +117,12 @@ class Player(VoiceProtocol):
             pass
 
     async def _node_close(self, data: WebSocketClosedEventT) -> None: ...
+
+    def _lavalink_update(self, data: PlayerStateT) -> None:
+        self._lava_connected = data["connected"]
+        self._ping = data["ping"]
+        self._position = data["position"]
+        self._last_update = data["time"]
 
     async def on_voice_server_update(self, data: VoiceServerUpdatePayload) -> None:
         endpoint = data["endpoint"]
@@ -180,9 +207,11 @@ class Player(VoiceProtocol):
     ) -> None:
         assert self._guild
         playable = track.first if isinstance(track, Search) else track
+
         if not playable:
-            # TODO: Exception
-            raise
+            raise InvalidTrackError(
+                f"Could not determine playable from {track}. Excpected {type(Track).__name__!r}, got {playable!r}."
+            )
 
         data: UpdatePlayerReqT = {
             "endTime": playable.end,
@@ -212,8 +241,7 @@ class Player(VoiceProtocol):
         playable = result.first
 
         if not playable:
-            # TODO: Exception
-            raise
+            raise InvalidTrackError(f"Could not find tracks for search {search!r}. {result} was empty.")
 
         data: UpdatePlayerReqT = {
             "endTime": playable.end,
@@ -241,10 +269,10 @@ class Player(VoiceProtocol):
     ) -> None:
         assert self._guild
 
-        if (not identifier and not encoded) or (identifier and encoded):
-            # TODO: Ruff keeps combining these (assumingly because raise is ambiguous) (raise specific exceptions for each check)
-            # TODO: Exception
-            raise
+        if not identifier and not encoded:
+            raise ValueError("The 'identifier' and 'encoded' parameters are missing. One must be provided.")
+        elif identifier and encoded:
+            raise ValueError("Only one of 'indentifier' and 'encoded' can be provided.")
 
         data: UpdatePlayerReqT = {"track": {}}
 
@@ -293,7 +321,19 @@ class Player(VoiceProtocol):
     async def stop(self) -> ...: ...
 
     @has_channel
-    async def set_volume(self) -> ...: ...
+    async def set_volume(self, volume: int = 100, /) -> int:
+        assert self._guild
+
+        if not 0 <= volume <= 1000:
+            raise ValueError(f"'volume' parameter must be an integer between 1 and 1000. Got {volume}.")
+
+        data: UpdatePlayerReqT = {"volume": volume}
+        old = self._volume
+
+        await self._node.update_player(self._guild.id, data=data)
+        self._volume = volume
+
+        return old
 
     @has_channel
     async def mute(self) -> None:
