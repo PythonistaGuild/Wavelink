@@ -60,6 +60,9 @@ class PlayerError(WavelinkException): ...
 class InvalidPlayerState(PlayerError): ...
 
 
+class InvalidTrackError(PlayerError): ...
+
+
 class TrackException(WavelinkException):
     def __init__(self, msg: str = "", /, *, data: TrackExceptionT) -> None:
         super().__init__(msg)
