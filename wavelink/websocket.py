@@ -117,7 +117,7 @@ class WebsocketFrame(WSListener):
         if self._has_code:
             return
 
-        await self.on_close_code(transport, code=3008)
+        await self.on_close_code(transport, code=self.HEARTBEAT_FAILURE)
 
     async def on_close_code(self, transport: WSTransport, code: int) -> None:
         self._has_code = True
@@ -205,7 +205,6 @@ class Websocket:
         self._transport = MISSING
 
     async def ws_ready(self, data: ReadyMsgT) -> None:
-        # TODO: Check if session was resumed; if not destroy active discord voice clients on ready...
         LOGGER.debug("%s received websocket READY message: %s", self, data)
 
         session = data["sessionId"]
@@ -223,6 +222,12 @@ class Websocket:
 
     async def ws_player_update(self, data: PlayerUpdateMsgT) -> None:
         LOGGER.debug("%s received websocket PLAYER_UPDATE message: %s", self, data)
+        player = self._node.get_player(int(data["guildId"]))
+        if not player:
+            return
+
+        player._lavalink_update(data["state"])
+        self._node._dispatch("player_update", data=dict(data))
 
     async def ws_stats(self, data: StatsMsgT) -> None:
         LOGGER.debug("%s received websocket STATS message: %s", self, data)
@@ -230,7 +235,8 @@ class Websocket:
         data.pop("op")
         updated: Any = data
 
-        self._node._update_stats(updated)
+        stats = self._node._update_stats(updated)
+        self._node._dispatch("node_stats", data=stats)
 
     async def ws_event(self, data: EventT) -> None:
         LOGGER.debug("%s received websocket EVENT message: %s", self, data)
