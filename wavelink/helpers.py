@@ -36,8 +36,4 @@ class NodeStrategy(Protocol):
 
 class LoadBalancingStrategy(NodeStrategy):
     def select(self, nodes: Mapping[str, Node]) -> Node | None:
-        return min(
-            (n for n in nodes.values() if not n.is_disqualified()),
-            key=lambda n: n.penalty(),
-            default=None,
-        )
+        return min((n for n in nodes.values() if not n.is_disqualified()), key=lambda n: n.penalty(), default=None)
