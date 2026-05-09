@@ -35,6 +35,7 @@ from .data import *
 from .enums import Source
 from .events import *
 from .exceptions import *
+from .player import Player
 from .tracks import Search
 from .utils import JSON_LOADS, MISSING, NodeMapping
 from .websocket import Websocket
@@ -45,9 +46,8 @@ if TYPE_CHECKING:
 
     from aiohttp.client import _RequestContextManager
 
-    from ._lib import Client
+    from ._lib import Client, Connectable
     from .helpers import NodeStrategy
-    from .player import Player
     from .types_.rest import (
         HTTPMethod,
         InfoRespT,
@@ -584,10 +584,17 @@ class Node:
 
 
 # TODO: Correct arg typings...
+# TODO: Default strategy
 class Pool:
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._nodes: NodeMapping = NodeMapping()
         self._is_closing: bool = False
+
+    def __call__(self, client: Client, channel: Connectable) -> Player:
+        # NOTE: Allows passing Pool to Channel.connect(cls=...)
+
+        node = self.get_node()
+        return Player(client, channel, node=node)
 
     def add_node(self, node: Node) -> None:
         # TODO: Exception...
