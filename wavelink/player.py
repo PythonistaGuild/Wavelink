@@ -15,12 +15,14 @@ limitations under the License.
 
 from __future__ import annotations
 
+import datetime
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar
+from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, Self, TypeVar
+
+import wavelink
 
 from ._lib import VoiceProtocol
 from .exceptions import InvalidPlayerState, InvalidTrackError, NodeNotFound
-from .node import MusicBot
 from .queue import Queue
 from .tracks import Search, Track
 from .utils import MISSING, VoiceUpdateCondition
@@ -53,7 +55,7 @@ def has_channel[**P, R](func: Callable[Concatenate[Any, P], Awaitable[R]]) -> Ca
 class Player(VoiceProtocol):
     channel: VoiceChannel
 
-    def __init__(self, client: Client, channel: Connectable, *, node: Node | None = None) -> None:
+    def __init__(self, client: Client, channel: Connectable, /, *, node: Node | None = None) -> None:
         super().__init__(client, channel)
 
         node = node or self._get_node()
@@ -87,6 +89,35 @@ class Player(VoiceProtocol):
     def __repr__(self) -> str:
         return f"Player(guild={self._guild}, channel={self.channel})"
 
+    @classmethod
+    def factory(cls, client: Client, channel: Connectable, *args: Any, **kwargs: Any) -> Self:
+        # NOTE: Allows customizing the player when passed to Channel.connect(cls=...)
+        return cls(client, channel, *args, **kwargs)
+
+    @property
+    def node(self) -> Node:
+        return self._node
+
+    @property
+    def guild(self) -> Guild | None:
+        return self._guild
+
+    @property
+    def volume(self) -> int:
+        return self._volume
+
+    @property
+    def ping(self) -> int:
+        return self._ping
+
+    @property
+    def position(self) -> int:
+        return self._position
+
+    @property
+    def last_update(self) -> datetime.datetime | None:
+        return datetime.datetime.fromtimestamp(self._last_update) if self._last_update else None
+
     @property
     def is_playing(self) -> bool:
         return self._is_playing
@@ -104,7 +135,7 @@ class Player(VoiceProtocol):
         return self._is_mute
 
     def _get_node(self) -> Node | None:
-        if isinstance(self.client, MusicBot):
+        if isinstance(self.client, wavelink.MusicBot):
             return self.client.get_node()
 
         pool = getattr(self.client, "pool", None)
@@ -145,8 +176,7 @@ class Player(VoiceProtocol):
         channel_id = str(data["channel_id"]) if data["channel_id"] else None
 
         if not channel_id:
-            # TODO: ...
-            ...
+            return await self.destroy()
 
         if self._guild:
             self.channel = self._guild.get_channel(int(channel_id))  # type: ignore
@@ -338,14 +368,37 @@ class Player(VoiceProtocol):
     @has_channel
     async def mute(self) -> None:
         assert self._guild and self.channel
+        if self._is_mute:
+            return
 
         await self._guild.change_voice_state(channel=self.channel, self_mute=True, self_deaf=self._is_deaf)
 
     @has_channel
     async def deafen(self) -> None:
         assert self._guild and self.channel
+        if self._is_deaf:
+            return
 
         await self._guild.change_voice_state(channel=self.channel, self_deaf=True, self_mute=self._is_mute)
 
     @has_channel
-    async def move(self) -> ...: ...
+    async def move(
+        self,
+        channel: VoiceChannel,
+        *,
+        timeout: float = 10.0,
+        self_deaf: bool | None = None,
+        self_mute: bool | None = None,
+    ) -> None:
+        assert self._guild
+        if self.channel.id == channel.id:
+            return
+
+        async with self._condition.timeout(timeout):
+            await self._guild.change_voice_state(
+                channel=channel,
+                self_mute=self_mute or self._is_mute,
+                self_deaf=self_deaf or self._is_deaf,
+            )
+
+        self._node._players[self._guild.id] = self
