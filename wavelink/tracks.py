@@ -15,7 +15,8 @@ limitations under the License.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Self
+from types import MappingProxyType
+from typing import TYPE_CHECKING, Any, Self
 
 from .enums import LoadResult
 
@@ -24,14 +25,14 @@ from .enums import LoadResult
 
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Mapping
 
-    from .types_.rest import LoadResultDataT, TrackInfoRespT, TrackRespT
+    from .types_.rest import LoadResultDataT, PlaylistResultDataT, TrackInfoRespT, TrackRespT
     from .types_.websocket import TrackT
 
 
 class Track:
-    def __init__(self, data: TrackRespT | TrackT) -> None:
+    def __init__(self, data: TrackRespT | TrackT, *, playlist: Playlist | None = None) -> None:
         self._encoded: str = data["encoded"]
 
         info: TrackInfoRespT = data["info"]
@@ -49,6 +50,7 @@ class Track:
         self._start = self._position
         self._end: int = self._length
         self._user_data = data["userData"]
+        self._playlist = playlist
 
         # TODO: Plugin stuff...
 
@@ -143,13 +145,14 @@ class Track:
 
 
 class Search:
-    __slots__ = ("_first", "_query", "_result", "_tracks")
+    __slots__ = ("_first", "_playlist_info", "_query", "_result", "_tracks")
 
     def __init__(self, query: str | None = None, *, data: LoadResultDataT) -> None:
         self._query = query
         self._result: LoadResult = LoadResult(data["loadType"])
         self._first: Track | None = None
         self._tracks: list[Track] = []
+        self._playlist_info: Playlist | None = None
 
         match data:
             case {"loadType": "track"}:
@@ -160,10 +163,12 @@ class Search:
                 self._tracks = [Track(data=d) for d in data["data"]]
                 self._first = self._tracks[0]
             case {"loadType": "playlist"}:
-                # TODO: ...
-                ...
+                playlist = Playlist(data["data"])
+                self._first = playlist.first
+                self._tracks = playlist.tracks
+                self._playlist_info = playlist
             case _:
-                # NOTE: Covered at request + default
+                # NOTE: Covered at request + defaults
                 pass
 
     def __repr__(self) -> str:
@@ -189,3 +194,32 @@ class Search:
     @property
     def first(self) -> Track | None:
         return self._first
+
+
+class PlaylistInfo:
+    __slots__ = ("_info", "_raw", "artwork", "author", "name", "selected", "type", "url")
+
+    def __init__(self, data: PlaylistResultDataT) -> None:
+        self._raw = data
+        self._info = data["info"]
+        self.name: str = self._info["name"]
+        self.selected: int = self._info["selectedTrack"]
+
+        plugin: Mapping[Any, Any] = data["pluginInfo"]
+        self.type: str | None = plugin.get("type")
+        self.url: str | None = plugin.get("url")
+        self.artwork: str | None = plugin.get("artworkUrl")
+        self.author: str | None = plugin.get("author")
+
+    @property
+    def info(self) -> Mapping[str, object]:
+        return MappingProxyType(self._info)
+
+
+class Playlist(PlaylistInfo):
+    __slots__ = ("first", "tracks")
+
+    def __init__(self, data: PlaylistResultDataT) -> None:
+        super().__init__(data)
+        self.tracks: list[Track] = [Track(d, playlist=self) for d in data["tracks"]]
+        self.first = self.tracks[self.selected]
