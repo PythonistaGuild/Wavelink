@@ -23,7 +23,9 @@ from ._lib import commands
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
+    from .events import EventT
     from .node import Node, Pool
+    from .player import Player
 
 
 class Context(commands.Context[Any]):
@@ -37,3 +39,9 @@ class NodeStrategy(Protocol):
 class LoadBalancingStrategy(NodeStrategy):
     def select(self, nodes: Mapping[str, Node]) -> Node | None:
         return min((n for n in nodes.values() if not n.is_disqualified()), key=lambda n: n.penalty(), default=None)
+
+
+class InactivityStrategy(Protocol):
+    async def check(self, player: Player, event: EventT) -> bool: ...
+
+    async def action(self, player: Player, event: EventT) -> None: ...
