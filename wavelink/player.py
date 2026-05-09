@@ -402,5 +402,5 @@ class Player(VoiceProtocol):
             )
 
         self._node._players[self._guild.id] = self
-        
+
     move_to = move
