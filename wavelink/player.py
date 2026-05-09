@@ -402,14 +402,5 @@ class Player(VoiceProtocol):
             )
 
         self._node._players[self._guild.id] = self
-
-    @has_channel
-    async def move_to(
-        self,
-        channel: VoiceChannel,
-        *,
-        timeout: float = 10.0,
-        self_deaf: bool | None = None,
-        self_mute: bool | None = None,
-    ) -> None:
-        await self.move(channel, timeout=timeout, self_deaf=self_deaf, self_mute=self_mute)
+        
+    move_to = move
