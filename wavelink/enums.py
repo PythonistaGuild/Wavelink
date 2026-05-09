@@ -13,11 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from enum import StrEnum
+import enum
 
 
 # fmt: off
-class TrackEndReason(StrEnum):
+class TrackEndReason(enum.StrEnum):
     finished   = "finished"    # The track finished playing. Can start next: True
     loadFailed = "loadFailed"  # The track failed to load. Can start next: True
     stopped    = "stopped"     # The track was stopped. Can start next: False
@@ -25,7 +25,7 @@ class TrackEndReason(StrEnum):
     cleanup    = "cleanup"     # The track was cleaned up. Can start next: False
 
 
-class LoadResult(StrEnum):
+class LoadResult(enum.StrEnum):
     track    = "track"     # A track has been loaded
     playlist = "playlist"  # A playlist has been loaded
     search   = "search"    # A search result has been loaded
@@ -33,9 +33,15 @@ class LoadResult(StrEnum):
     error    = "error"     # Loading has failed with an error
 
 
-class Source(StrEnum):
+class Source(enum.StrEnum):
     youtube       = "ytsearch"
     youtube_music = "ytmsearch"
     soundcloud    = "scsearch"
     spotify       = "spsearch"
     local         = "local"
+
+
+class AutoPlay(enum.Enum):
+    disabled = enum.auto()
+    enabled = enum.auto()
+    with_recommendations = enum.auto()
