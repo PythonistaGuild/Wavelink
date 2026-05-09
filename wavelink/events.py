@@ -37,12 +37,26 @@ if TYPE_CHECKING:
 
 
 __all__ = (
+    "EventT",
+    "NodeStatsPayload",
+    "PlayerUpdatePayload",
     "TrackEndPayload",
     "TrackExceptionPayload",
     "TrackStartPayload",
     "TrackStuckPayload",
     "WebsocketClosedPayload",
     "_BasePayload",
+)
+
+
+type EventT = (
+    TrackEndPayload
+    | TrackExceptionPayload
+    | TrackStartPayload
+    | TrackStuckPayload
+    | WebsocketClosedPayload
+    | PlayerUpdatePayload
+    | NodeStatsPayload
 )
 
 
@@ -142,9 +156,9 @@ class PlayerUpdatePayload(_BasePayload):
 
 class NodeStatsPayload(_BasePayload):
     _event_name = "node_stats"
-    __slots__ = ()
+    __slots__ = ("node", "stats")
 
-    def __init__(self, node: Node, *, stats: StatsData) -> None:
+    def __init__(self, node: Node, *, data: StatsData) -> None:
         super().__init__()
         self.node = node
-        self.stats = stats
+        self.stats = data
