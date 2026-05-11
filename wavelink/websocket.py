@@ -140,6 +140,7 @@ class WebsocketFrame(WSListener):
 
         else:
             LOGGER.error("Unhandled websocket close code %d on %s. Disconnecting...", code, self._socket)
+            await self._socket.close()
 
 
 class Websocket:
@@ -200,6 +201,7 @@ class Websocket:
         except TimeoutError:
             LOGGER.debug("Unable to gracefully close %s connection.", self)
 
+        await self._node._cleanup_stale()
         self._connected = False
         self._frame_listener = MISSING
         self._transport = MISSING
