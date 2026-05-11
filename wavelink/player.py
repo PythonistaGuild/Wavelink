@@ -138,8 +138,11 @@ class Player(VoiceProtocol):
         if isinstance(self.client, wavelink.MusicBot):
             return self.client.get_node()
 
-        pool = getattr(self.client, "pool", None)
+        pool = getattr(self, "wave", getattr(self, "pool", None))
         if not pool:
+            return
+
+        if not isinstance(pool, wavelink.Pool):
             return
 
         try:
