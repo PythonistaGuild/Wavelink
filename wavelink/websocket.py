@@ -206,6 +206,7 @@ class Websocket:
 
     async def ws_ready(self, data: ReadyMsgT) -> None:
         LOGGER.debug("%s received websocket READY message: %s", self, data)
+        self._node._dispatch("node_ready", data)
 
         session = data["sessionId"]
         self._node._session_id = session

@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from .node import Node
     from .types_.websocket import (
         PlayerUpdateMsgT,
+        ReadyMsgT,
         TrackEndEventT,
         TrackEndReasonT,
         TrackExceptionEventT,
@@ -162,3 +163,13 @@ class NodeStatsPayload(_BasePayload):
         super().__init__()
         self.node = node
         self.stats = data
+
+
+class NodeReadyPayload(_BasePayload):
+    _event_name = "node_ready"
+    __slots__ = ("node", "resumed", "session_id")
+
+    def __init__(self, node: Node, *, data: ReadyMsgT) -> None:
+        self.node = node
+        self.resumed: bool = data["resumed"]
+        self.session_id: str = data["sessionId"]
