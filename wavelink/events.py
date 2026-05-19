@@ -39,6 +39,7 @@ if TYPE_CHECKING:
 
 __all__ = (
     "EventT",
+    "NodeReadyPayload",
     "NodeStatsPayload",
     "PlayerUpdatePayload",
     "TrackEndPayload",
