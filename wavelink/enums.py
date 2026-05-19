@@ -13,7 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from __future__ import annotations
+
 import enum
+
+
+__all__ = ("AutoPlay", "EventType", "LoadResult", "Source", "TrackEndReason")
 
 
 # fmt: off
@@ -45,3 +50,22 @@ class AutoPlay(enum.Enum):
     disabled = enum.auto()
     enabled = enum.auto()
     with_recommendations = enum.auto()
+
+
+class EventType(enum.StrEnum):
+    TrackStart = "track_start"
+    TrackEnd = "track_end"
+    TrackException = "track_exception"
+    TrackStuck = "track_stuck"
+    WebsocketClosed = "websocket_closed"
+    PlayerUpdate = "player_update"
+    NodeStats = "node_stats"
+    NodeReady = "node_ready"
+
+    @classmethod
+    def all(cls) -> tuple[EventType, ...]:
+        return tuple(m for m in cls)
+
+    @classmethod
+    def all_track(cls) -> tuple[EventType, ...]:
+        return tuple(m for m in cls if m.startswith("track_"))
