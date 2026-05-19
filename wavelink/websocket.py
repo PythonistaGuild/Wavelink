@@ -136,6 +136,7 @@ class WebsocketFrame(WSListener):
                 self._socket,
                 code,
             )
+            # NOTE: 1001 likely means Lavalink crashed or was forcibly stopped...
             return await self._socket._node._reconnect(resume=code != 1001)
 
         else:
@@ -225,11 +226,10 @@ class Websocket:
 
     async def ws_player_update(self, data: PlayerUpdateMsgT) -> None:
         LOGGER.debug("%s received websocket PLAYER_UPDATE message: %s", self, data)
-        player = self._node.get_player(int(data["guildId"]))
-        if not player:
-            return
 
-        player._lavalink_update(data["state"])
+        if player := self._node.get_player(int(data["guildId"])):
+            player._lavalink_update(data["state"])
+
         self._node._dispatch("player_update", data=dict(data))
 
     async def ws_stats(self, data: StatsMsgT) -> None:
