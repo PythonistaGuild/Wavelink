@@ -15,17 +15,21 @@ limitations under the License.
 
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING, Any, Protocol
 
 from ._lib import commands
+from .enums import EventType
 
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from .events import EventT
     from .node import Node, Pool
     from .player import Player
+
+
+__all__ = ("Context", "DefaultInactivityStrategy", "InactivityStrategy", "LoadBalancingStrategy", "NodeStrategy")
 
 
 class Context(commands.Context[Any]):
@@ -42,6 +46,35 @@ class LoadBalancingStrategy(NodeStrategy):
 
 
 class InactivityStrategy(Protocol):
-    async def check(self, player: Player, event: EventT) -> bool: ...
+    async def check(self, player: Player, event: EventType) -> bool: ...
 
-    async def action(self, player: Player, event: EventT) -> None: ...
+    async def action(self, player: Player, event: EventType) -> None: ...
+
+
+class DefaultInactivityStrategy(InactivityStrategy):
+    def __init__(self) -> None:
+        self._tasks: set[asyncio.Task[None]] = set()
+
+    async def _grace(self, player: Player, event: EventType) -> None:
+        await asyncio.sleep(5)
+
+        if await self.check(player, event):
+            await player.destroy()
+
+    async def check(self, player: Player, event: EventType) -> bool:
+        if player.is_paused:
+            return False
+
+        if player.ping == -1:
+            return False
+
+        members = [m for m in player.channel.members if not m.bot]
+        if len(members) > 0:
+            return False
+
+        return event in (EventType.TrackEnd, EventType.TrackException, EventType.TrackStuck)
+
+    async def action(self, player: Player, event: EventType) -> None:
+        task = asyncio.create_task(self._grace(player, event))
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)

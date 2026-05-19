@@ -32,7 +32,7 @@ import wavelink
 from ._lib import commands
 from .backoff import Backoff
 from .data import *
-from .enums import Source
+from .enums import EventType, Source
 from .events import *
 from .exceptions import *
 from .player import Player
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     from aiohttp.client import _RequestContextManager
 
     from ._lib import Client, Connectable
-    from .helpers import NodeStrategy
+    from .helpers import InactivityStrategy, NodeStrategy
     from .types_.rest import (
         HTTPMethod,
         InfoRespT,
@@ -130,6 +130,7 @@ class Node:
         resume: bool = True,
         resume_timeout: int = 60,
         heartbeat: float = 15,
+        inactivity_strategy: InactivityStrategy | type[InactivityStrategy] | None = None,
     ) -> None:
         self._players: MutableMapping[int, Player] = {}
         self._uri = uri
@@ -156,6 +157,10 @@ class Node:
 
         self._session_event: asyncio.Event = asyncio.Event()
         self._tasks: set[asyncio.Task[None]] = set()
+        self._inactivity = inactivity_strategy
+
+    def __call__(self, client: Client, channel: Connectable) -> Player:
+        return Player(client, channel, node=self)
 
     def __repr__(self) -> str:
         return f"Node(identifier={self._identifier!r}, session_id={self._session_id!r}, players={len(self._players)})"
@@ -552,13 +557,27 @@ class Node:
 
         return cls(self, data=data)
 
+    def _player_dispatch(self, event: str) -> None:
+        event_type = EventType(event)
+
+        for player in self._players.values():
+            task = asyncio.create_task(player._event_dispatched(event_type), name=f"Wavelink:PlayerEvent-{event}")
+            self._tasks.add(task)
+            task.add_done_callback(self._tasks.discard)
+
     def _dispatch(self, name: str, data: Any) -> None:
+        # Event data payload...
         payload = self._event_factory(name, data)
 
+        # Dispatch to Client/Bot if Node has one...
         if self._client is not MISSING:
             event = f"wavelink_{name}"
             self._client.dispatch(event, payload) if payload else self._client.dispatch(event)
 
+        # Dispatch to Player for Inactivity checks etc...
+        self._player_dispatch(name)
+
+        # Check if we can dispatch to Node built-in events...
         func = getattr(self, f"on_{name}", None)
         if not func:
             return

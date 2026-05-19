@@ -16,6 +16,7 @@ limitations under the License.
 from __future__ import annotations
 
 import datetime
+import inspect
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, Self, TypeVar
 
@@ -32,6 +33,8 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
     from ._lib import Client, Connectable, Guild, GuildVoiceStatePayload, VoiceChannel, VoiceServerUpdatePayload
+    from .enums import EventType
+    from .helpers import InactivityStrategy
     from .node import Node
     from .types_.rest import UpdatePlayerReqT
     from .types_.websocket import PlayerStateT, WebSocketClosedEventT
@@ -66,6 +69,8 @@ class Player(VoiceProtocol):
         # Client if it was never originally set...
         if not node._client and client.application_id == node._client_id:
             node._client = client
+
+        self._inactivity: InactivityStrategy | type[InactivityStrategy] | None = node._inactivity
 
         self._node: Node = node
         self._guild: Guild | None = None
@@ -133,6 +138,24 @@ class Player(VoiceProtocol):
     @property
     def is_mute(self) -> bool:
         return self._is_mute
+
+    @property
+    def inactivity_strategy(self) -> InactivityStrategy | type[InactivityStrategy] | None:
+        return self._inactivity
+
+    @inactivity_strategy.setter
+    def inactivity_strategy(self, value: InactivityStrategy | type[InactivityStrategy] | None) -> None:
+        self._inactivity = value
+
+    async def _event_dispatched(self, event: EventType) -> None:
+        if self._inactivity is None:
+            return
+
+        inst = self._inactivity() if inspect.isclass(self._inactivity) else self._inactivity
+        if not await inst.check(self, event):
+            return
+
+        await inst.action(self, event)
 
     def _get_node(self) -> Node | None:
         if isinstance(self.client, wavelink.MusicBot):
