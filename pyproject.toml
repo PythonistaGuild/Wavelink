@@ -130,6 +130,5 @@ docs = [
     "sphinxcontrib-websupport",
     "Pygments",
     "discord.py>=2.0.1",
-    "sphinx-hoverxref",
     "sphinxcontrib_trio",
 ]
