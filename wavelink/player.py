@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import datetime
 import inspect
+import logging
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, Self, TypeVar
 
@@ -42,6 +43,9 @@ if TYPE_CHECKING:
 
 P = ParamSpec("P")
 R = TypeVar("R")
+
+
+LOGGER: logging.Logger = logging.getLogger(__name__)
 
 
 def has_channel[**P, R](func: Callable[Concatenate[Any, P], Awaitable[R]]) -> Callable[Concatenate[Any, P], Awaitable[R]]:
@@ -248,9 +252,31 @@ class Player(VoiceProtocol):
         self._node._players[self._guild.id] = self
 
     @has_channel
-    async def disconnect(self, *, force: bool) -> None: ...  # type: ignore
+    async def disconnect(self, *, force: bool = False) -> None:  # type: ignore
+        await self.destroy()
 
-    async def destroy(self) -> None: ...
+    async def destroy(self) -> None:
+        assert self._guild_id
+        node = self._node
+
+        if self._guild:
+            try:
+                await self._guild.change_voice_state(channel=None)
+            except Exception as e:
+                LOGGER.debug("Unable to disconnect player. Possibly already disconnected: %s. Disregarding.", e)
+
+        if node.get_player(self._guild_id):
+            try:
+                await node.destroy_player(self._guild_id)
+            except Exception as e:
+                LOGGER.debug("Unable to destroy player on Lavalink: %s. Disregarding.", e)
+
+        node._players.pop(self._guild_id, None)
+        self._condition.reset()
+        self.queue.clear()
+
+        super().cleanup()
+        LOGGER.debug("Successfully disconnected and destroyed player %r.", self)
 
     @has_channel
     async def play(
@@ -371,7 +397,11 @@ class Player(VoiceProtocol):
         self._is_paused = paused
 
     @has_channel
-    async def skip(self) -> ...: ...
+    async def skip(self) -> None:
+        assert self._guild_id
+
+        data: UpdatePlayerReqT = {"track": {"encoded": None}}
+        await self.node.update_player(self._guild_id, data=data, no_replace=False)
 
     @has_channel
     async def stop(self) -> ...: ...

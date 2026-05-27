@@ -159,8 +159,8 @@ class UpdateSessionReqT(TypedDict, total=False):
 
 
 class UpdateTrackT(TypedDict, total=False):
-    encoded: str
-    identifier: str
+    encoded: str | None
+    identifier: str | None
     userData: Mapping[Any, Any]
 
 

@@ -114,10 +114,22 @@ pythonVersion = "3.12"
 
 [dependency-groups]
 dev = [
-    "ruff>=0.15.7",
+    "ruff>=0.15.14",
     "pyright>=1.1.408",
     "discord-py>=2.7.1",
-    "nextcord>=3.1.1",
+    "nextcord>=3.2.0",
     "disnake>=2.12.0",
 ]
 speed = ["orjson"]
+docs = [
+    "shibuya>=2026.5.19",
+    "sphinx",
+    "docutils",
+    "sphinxcontrib-napoleon",
+    "sphinxcontrib-asyncio",
+    "sphinxcontrib-websupport",
+    "Pygments",
+    "discord.py>=2.0.1",
+    "sphinx-hoverxref",
+    "sphinxcontrib_trio",
+]

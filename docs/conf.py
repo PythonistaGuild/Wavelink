@@ -28,8 +28,8 @@ sys.path.append(os.path.abspath("extensions"))
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 project = "Wavelink"
-copyright = "2023, PythonistaGuild, EvieePy"
-author = "PythonistaGuild, EvieePy"
+copyright = "2026, EvieePy, Chillymosh, PythonistaGuild"
+author = "EvieePy, Chillymosh, PythonistaGuild"
 
 # The full version, including alpha/beta/rc tags
 release = ""
@@ -43,7 +43,6 @@ version = release
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "prettyversion",
     "sphinx.ext.autodoc",
     "sphinx.ext.extlinks",
     "sphinx.ext.napoleon",
@@ -68,10 +67,14 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "furo"
+html_theme = "shibuya"
 # html_logo = "logo.png"
 
-html_theme_options = {"sidebar_hide_name": True, "light_logo": "logo.png", "dark_logo": "wl_dark.png"}
+html_theme_options = {
+    "github_url": "https://github.com/PythonistaGuild/Wavelink",
+    "light_logo": "logo.png",
+    "dark_logo": "wl_dark.png"
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -81,7 +84,7 @@ html_static_path = ["_static"]
 
 # These paths are either relative to html_static_path
 # or fully qualified paths (eg. https://...)
-html_css_files = ["styles/furo.styles"]
+html_css_files = ["styles/custom.css"]
 html_js_files = ["js/custom.js"]
 
 napoleon_google_docstring = False

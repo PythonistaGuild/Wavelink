@@ -1,3 +1,5 @@
+:layout: landing
+
 .. raw:: html
 
    <img src="_static/logo.png" class="featuring-logo only-light">
@@ -51,24 +53,6 @@
    <a href="https://discord.gg/RAKc3HF"><img src="https://discordapp.com/api/guilds/490948346773635102/widget.png?style=banner2"></a><br><br>
 
    <b>For issues and contributing with the library, visit:</b> <a href="https://github.com/PythonistaGuild/Wavelink">GitHub</a>
-
-
-.. rst-class:: index-display-none
-.. toctree::
-   :maxdepth: 1
-   :caption: Getting Started:
-
-   installing
-   migrating
-   recipes
-
-
-.. rst-class:: index-display-none
-.. toctree::
-   :maxdepth: 1
-   :caption: API Reference
-
-   wavelink
 
 
 .. raw:: html
