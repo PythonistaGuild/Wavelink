@@ -24,7 +24,7 @@ jobs:
 
       - name: Build Sphinx Documentation
         run: |
-          sphinx-build -b html docs docs/_build/html
+          uv run sphinx-build -b html docs docs/_build/html
 
       - name: Publish to Cloudflare Pages
         env:
