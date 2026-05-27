@@ -27,7 +27,7 @@ jobs:
           sphinx-build -b html docs docs/_build/html
 
       - name: Publish to Cloudflare Pages
-        uses: https://github.com/cloudflare/wrangler-action
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
