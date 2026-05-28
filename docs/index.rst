@@ -3,8 +3,8 @@
 .. raw:: html
 
    <div class="sy-head-brand">
-      <img class="dark-logo big-logo" src="_static/logo-dark.png" alt="Wavelink" height="256" loading="lazy">
-      <img class="light-logo big-logo" src="_static/logo-light.png" alt="Wavelink" height="256" loading="lazy">
+      <img class="dark-logo big-logo" src="_static/logo-dark.png" alt="Wavelink" loading="lazy">
+      <img class="light-logo big-logo" src="_static/logo-light.png" alt="Wavelink" loading="lazy">
    </div>
 
 
