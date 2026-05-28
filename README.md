@@ -23,13 +23,13 @@ that's intuitive and easy to use.
 - **pycord**
 - **nextcord**
 - **disnake**
-- **Others may be supported**
+- **Others may be supported** *
 
 
 ### Features
 
 - Stateful, event-driven design
-- Asychronous first with faster websockets using Picows.
+- Asynchronous first with faster websockets using Picows.
 - Lavalink v4+ and Nodelink support; including plugins.
 - All popular discord libraries supported.
 - Advanced AutoPlay and track recommendations for continuous play.
