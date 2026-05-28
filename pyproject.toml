@@ -119,6 +119,7 @@ dev = [
     "discord-py>=2.7.1",
     "nextcord>=3.2.0",
     "disnake>=2.12.0",
+    "sphinx-autobuild>=2025.8.25",
 ]
 speed = ["orjson"]
 docs = [
