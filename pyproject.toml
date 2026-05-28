@@ -111,17 +111,34 @@ typeCheckingMode = "strict"
 reportImportCycles = false
 reportPrivateUsage = false
 pythonVersion = "3.12"
+venvPath = "."
+venv = ".venv"
 
 [dependency-groups]
 dev = [
+    { include-group = "lint" },
+    { include-group = "docs-dev" },
+    { include-group = "compat" },
+]
+
+lint = [
     "ruff>=0.15.14",
-    "pyright>=1.1.408",
+]
+
+compat = [
     "discord-py>=2.7.1",
     "nextcord>=3.2.0",
     "disnake>=2.12.0",
+]
+
+speed = [
+    "orjson",
+]
+
+docs-dev = [
     "sphinx-autobuild>=2025.8.25",
 ]
-speed = ["orjson"]
+
 docs = [
     "shibuya>=2026.5.19",
     "sphinx",

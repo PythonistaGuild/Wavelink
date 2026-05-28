@@ -15,11 +15,10 @@ jobs:
           fetch-depth: 1
 
       - name: Install uv and set Python
-        uses: astral-sh/setup-uv@v8.0.0
+        uses: astral-sh/setup-uv@v8.1.0
         with:
           python-version: "3.12"
           enable-cache: true
-          version: "0.8.22"
 
       - name: Install Requirements
         run: uv sync --all-groups
