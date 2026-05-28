@@ -111,8 +111,6 @@ typeCheckingMode = "strict"
 reportImportCycles = false
 reportPrivateUsage = false
 pythonVersion = "3.12"
-venvPath = "."
-venv = ".venv"
 
 [dependency-groups]
 dev = [
