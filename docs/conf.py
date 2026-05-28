@@ -67,19 +67,17 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # a list of builtin themes.
 #
 html_theme = "shibuya"
-# html_logo = "logo.png"
-
-html_theme_options = {
-    "github_url": "https://github.com/PythonistaGuild/Wavelink",
-    "light_logo": "logo.png",
-    "dark_logo": "wl_dark.png"
-}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.styles" will overwrite the builtin "default.styles".
 # These folders are copied to the documentation's HTML output
 html_static_path = ["_static"]
+html_theme_options = {
+    "light_logo": "_static/logo-light.png",
+    "dark_logo": "_static/logo-dark.png",
+    "github_url": "https://github.com/PythonistaGuild/Wavelink",
+}
 
 # These paths are either relative to html_static_path
 # or fully qualified paths (eg. https://...)

@@ -1,0 +1,48 @@
+:root {
+    --color-error: rgb(221, 46, 46);
+    --color-success: rgb(32, 158, 105);
+    --color-warning: #ebcc00;
+}
+
+.big-logo {
+    height: 196px!important;
+}
+
+.error-wl {
+	font-weight: 600;
+	color: var(--color-error);
+}
+
+.error-wl::before {
+	/* biome-ignore lint/a11y/useGenericFontNames: ... */
+	font-family: "Font Awesome 5 Free";
+	font-weight: 900;
+	content: "\f06a";
+	margin-right: 0.5rem;
+}
+
+.success-wl {
+	font-weight: 600;
+	color: var(--color-success);
+}
+
+.success-wl::before {
+	/* biome-ignore lint/a11y/useGenericFontNames: ... */
+	font-family: "Font Awesome 5 Free";
+	font-weight: 900;
+	content: "\f00c";
+	margin-right: 0.5rem;
+}
+
+.warn-wl {
+	font-weight: 600;
+	color: var(--color-warning);
+}
+
+.warn-wl::before {
+	/* biome-ignore lint/a11y/useGenericFontNames: ... */
+	font-family: "Font Awesome 5 Free";
+	font-weight: 900;
+	content: "\f059";
+	margin-right: 0.5rem;
+}

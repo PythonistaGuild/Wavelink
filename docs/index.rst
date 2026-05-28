@@ -2,10 +2,31 @@
 
 .. raw:: html
 
-   <img src="_static/logo.png" class="featuring-logo only-light">
-   <img src="_static/wl_dark.png" class="featuring-logo only-dark">
-   <hr class="featuring-hr">
+   <div class="sy-head-brand">
+      <img class="dark-logo big-logo" src="_static/logo-dark.png" alt="Wavelink" height="256" loading="lazy">
+      <img class="light-logo big-logo" src="_static/logo-light.png" alt="Wavelink" height="256" loading="lazy">
+   </div>
 
+
+
+.. image:: https://img.shields.io/pypi/v/wavelink?style=flat-square
+   :alt: PyPI - Version
+
+.. image:: https://img.shields.io/pypi/pyversions/wavelink?style=flat-square
+   :alt: PyPI - Python Version
+
+.. image:: https://img.shields.io/pypi/l/wavelink?style=flat-square
+   :alt: PyPI - License
+
+.. image:: https://img.shields.io/readthedocs/wavelink?style=flat-square
+   :alt: Read the Docs
+
+.. image:: https://img.shields.io/badge/Lavalink-4.0.0%2B-pink
+   :alt: Static Badge
+
+.. raw:: html
+
+   <hr class="featuring-hr">
    <p class="index-featuring">
 
       <b>A fully asynchronous <a href="https://www.python.org/">Python</a> Lavalink wrapper for discord.py</b>
@@ -59,6 +80,14 @@
 
    <h3 class="index-section-header">Table of Contents</h3>
    <hr class="featuring-hr">
+
+.. toctree::
+   :caption: Getting Started
+   :titlesonly:
+
+   getting-started/installing
+
+
 
 * :ref:`genindex`
 * :ref:`search`
