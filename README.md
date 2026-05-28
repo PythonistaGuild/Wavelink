@@ -1,10 +1,3 @@
-# Important:
-
-Wavelink is no longer maintained. Visit [Lavalink Client](https://lavalink.dev/clients) for a list of current libraries.
-
-
-
-
 <div align="center">
 
 
@@ -20,35 +13,66 @@ Wavelink is no longer maintained. Visit [Lavalink Client](https://lavalink.dev/c
 </div>
 
 
-Wavelink is a robust and powerful Lavalink wrapper for [Discord.py](https://github.com/Rapptz/discord.py)
-Wavelink features a fully asynchronous API that's intuitive and easy to use.
+Wavelink is a powerful Lavalink wrapper for Python discord libraries featuring a stateful, event-driven design
+that's intuitive and easy to use.
 
 
-# Migrating from Version 2 to Version 3:
+### Supported Libraries
 
-[Migrating Guide](https://wavelink.dev/en/latest/migrating.html)
+- **discord.py**
+- **pycord**
+- **nextcord**
+- **disnake**
+- **Others may be supported**
 
 
 ### Features
 
-- Full asynchronous design.
-- Lavalink v4+ Supported with REST API.
-- discord.py v2.0.0+ Support.
+- Stateful, event-driven design
+- Asychronous first with faster websockets using Picows.
+- Lavalink v4+ and Nodelink support; including plugins.
+- All popular discord libraries supported.
 - Advanced AutoPlay and track recommendations for continuous play.
-- Object orientated design with stateful objects and payloads.
 - Fully annotated and complies with Pyright strict typing.
+
+
+## Migrating from Version 3 to Version 4:
+
+[Migrating Guide](https://wavelink.rtfd.cc)
 
 
 ## Getting Started
 
-**See Examples:** [Examples](https://github.com/PythonistaGuild/Wavelink/tree/main/examples)
-
-**Lavalink:** [GitHub](https://github.com/lavalink-devs/Lavalink/releases), [Webpage](https://lavalink.dev)
+...
 
 
 ## Documentation
 
-[Official Documentation](https://wavelink.dev/en/latest)
+[Official Documentation](https://wavelink.rtfd.cc)
+
+
+## Installation
+
+**UV**
+
+```shell
+uv add wavelink
+```
+
+**pip**
+
+```shell
+pip install -U wavelink
+```
+
+
+## Lavalink
+
+**Lavalink v4+** is required.
+See: [Lavalink](https://github.com/lavalink-devs/Lavalink/releases)
+
+For spotify support, simply install and use [LavaSrc](https://github.com/topi314/LavaSrc)
+
 
 ## Support
 
@@ -57,41 +81,3 @@ For support using WaveLink, please join the official [Support Server](https://di
 
 [![Discord Banner](https://discordapp.com/api/guilds/490948346773635102/widget.png?style=banner2)](https://discord.gg/RAKc3HF)
 
-
-## Installation
-
-**WaveLink 3 requires Python 3.10+**
-
-**Windows**
-
-
-```sh
-py -3.10 -m pip install -U wavelink
-```
-
-**Linux**
-
-```sh
-python3.10 -m pip install -U wavelink
-```
-
-**Virtual Environments**
-
-```sh
-pip install -U wavelink
-```
-
-
-## Lavalink
-
-Wavelink **3** requires **Lavalink v4**.
-See: [Lavalink](https://github.com/lavalink-devs/Lavalink/releases)
-
-For spotify support, simply install and use [LavaSrc](https://github.com/topi314/LavaSrc) with your `wavelink.Playable`
-
-
-### Notes
-
-- Wavelink **3** is compatible with Lavalink **v4+**.
-- Wavelink has built in support for Lavalink Plugins including LavaSrc and SponsorBlock.
-- Wavelink is fully typed in compliance with Pyright Strict, though some nuances remain between discord.py and wavelink.

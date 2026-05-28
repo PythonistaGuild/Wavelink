@@ -28,7 +28,7 @@ sys.path.append(os.path.abspath("extensions"))
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
 project = "Wavelink"
-copyright = "2026, EvieePy, Chillymosh, PythonistaGuild"
+copyright = "© 2026, EvieePy, Chillymosh, PythonistaGuild"
 author = "EvieePy, Chillymosh, PythonistaGuild"
 
 # The full version, including alpha/beta/rc tags
