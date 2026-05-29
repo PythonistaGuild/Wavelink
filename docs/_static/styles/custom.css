@@ -51,6 +51,18 @@
 	border-bottom: 1px solid var(--yue-c-link-border)!important;
 }
 
+body {
+	font-size: 0.9rem;
+}
+
+.sy-main {
+	font-size: 0.9em;
+}
+
+.yue {
+	font-size: 0.9rem;
+}
+
 html.dark {
 	&body {
 		background-color: #0B1215!important;
