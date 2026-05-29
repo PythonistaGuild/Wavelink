@@ -22,7 +22,18 @@ if TYPE_CHECKING:
     from .types_.rest import ErrorRespT, TrackExceptionT
 
 
-__all__ = ("HTTPException", "LavalinkError", "NodeDisconnectedError", "TrackException", "WavelinkException")
+__all__ = (
+    "HTTPException",
+    "InvalidPlayerState",
+    "InvalidTrackError",
+    "LavalinkError",
+    "NodeDisconnectedError",
+    "NodeError",
+    "NodeNotFound",
+    "PlayerError",
+    "TrackException",
+    "WavelinkException",
+)
 
 
 class WavelinkException(Exception): ...
