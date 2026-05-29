@@ -1,5 +1,5 @@
 .. _FAQ:
 
 
-Frequently asked Questions
-##########################
+FAQ
+###
