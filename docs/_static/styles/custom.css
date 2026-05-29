@@ -50,3 +50,11 @@
 .special-a {
 	border-bottom: 1px solid var(--yue-c-link-border)!important;
 }
+
+body {
+	background-color: #110B0D!important;
+}
+
+.sy-head-blur {
+	background-color: #1C1216!important;
+}
