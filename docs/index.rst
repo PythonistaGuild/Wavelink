@@ -8,7 +8,6 @@
    </div>
 
 
-
 .. image:: https://img.shields.io/pypi/v/wavelink?style=flat-square
    :alt: PyPI - Version
 
@@ -24,70 +23,69 @@
 .. image:: https://img.shields.io/badge/Lavalink-4.0.0%2B-pink
    :alt: Static Badge
 
+
+Wavelink is a powerful Lavalink and Nodelink wrapper for Python discord libraries featuring a stateful, event-driven design that's intuitive and easy to use.
+
+
 .. raw:: html
 
-   <hr class="featuring-hr">
-   <p class="index-featuring">
-
-      <b>A fully asynchronous <a href="https://www.python.org/">Python</a> Lavalink wrapper for discord.py</b>
-
-      <h4>Featuring:</h4>
-      <ul class="index-featuring-list">
-         <li>Full asynchronous design.</li>
-         <li>Lavalink v4+ Supported with REST API.</li>
-         <li>discord.py v2.0.0+ Support.</li>
-         <li>Advanced AutoPlay and track recommendations for continuous play.</li>
-         <li>Object orientated design with stateful objects and payloads.</li>
-         <li>Fully annotated and complies with Pyright strict typing.</li>
+   <div class="toctree-wrapper compound">
+      <p class="caption" role="heading"><span class="caption-text">Featuring</span></p>
+      <ul>
+         <li class="toctree-l1"><span>Stateful, event-driven design.</span></li>
+         <li class="toctree-l1"><span>Asynchronous first with faster websockets using Picows.</span></li>
+         <li class="toctree-l1"><span>Lavalink v4+ and Nodelink support; including plugins.</span></li>
+         <li class="toctree-l1"><span>All popular discord libraries supported.</span></li>
+         <li class="toctree-l1"><span>Advanced AutoPlay and track recommendations for continuous play.</span></li>
+         <li class="toctree-l1"><span>Fully annotated and complies with Pyright strict typing.</span></li>
       </ul>
-
-      <h4>Migrating from version 2 to 3:</h4>
-      <ul class="index-featuring-list">
-         <li><a href="migrating.html" class="reference internal">Migrating Guide</a></li>
-      </ul>
-   </p>
-
-   <h3 class="index-section-header">Getting Started</h3>
-   <hr class="featuring-hr">
-   For help with getting started with the library for the first time.
-
-   <ul class="index-featuring-list">
-      <li><b>For help with installing visit:</b> <a href="installing.html" class="reference internal">Installing</a>
-   </ul>
-
-   <h3 class="index-section-header">API Reference</h3>
-   <hr class="featuring-hr">
-   The API References of Wavelink.
-
-   <div class="index-apis-wrapper">
-      <div class="index-apis-section">
-         <b>Wavelink Reference:</b>
-         <ul class="index-featuring-list">
-            <li><a href="wavelink.html" class="reference internal">API Reference</a></li>
-         </ul>
-      </div>
    </div>
 
-   <h3 class="index-section-header">Getting Help</h3>
-   <hr class="featuring-hr">
-   Consider joining the Official Discord server for a fast response to help.<br>
-   <a href="https://discord.gg/RAKc3HF"><img src="https://discordapp.com/api/guilds/490948346773635102/widget.png?style=banner2"></a><br><br>
+   <div class="toctree-wrapper compound">
+      <p class="caption" role="heading"><span class="caption-text">Supported Libraries</span></p>
+      <ul>
+         <li class="toctree-l1"><a class="special-a" href="getting-started/installing.html">discord.py</a></li>
+         <li class="toctree-l1"><a class="special-a" href="getting-started/installing.html">pycord</a></li>
+         <li class="toctree-l1"><a class="special-a" href="getting-started/installing.html">nextcord</a></li>
+         <li class="toctree-l1"><a class="special-a" href="getting-started/installing.html">disnake</a></li>
+      </ul>
+   </div>
 
-   <b>For issues and contributing with the library, visit:</b> <a href="https://github.com/PythonistaGuild/Wavelink">GitHub</a>
 
+.. toctree::
+   :caption: References
+   :titlesonly:
 
-.. raw:: html
+   reference
 
-   <h3 class="index-section-header">Table of Contents</h3>
-   <hr class="featuring-hr">
 
 .. toctree::
    :caption: Getting Started
    :titlesonly:
 
    getting-started/installing
+   getting-started/FAQ
+   getting-started/lavalink
 
 
 
-* :ref:`genindex`
-* :ref:`search`
+.. toctree::
+   :caption: Changelogs
+   :titlesonly:
+
+   getting-started/migrating
+   getting-started/changelog
+
+
+.. raw:: html
+
+   <div class="toctree-wrapper compound">
+      <p class="caption" role="heading"><span class="caption-text">Getting Help</span></p>
+      <p>Consider joining the official discord server for a fast response to help.</p>
+      <a href="https://discord.gg/RAKc3HF"><img src="https://discordapp.com/api/guilds/490948346773635102/widget.png?style=banner2"></a>
+   </div>
+
+   <div class="toctree-wrapper compound">
+      <p class="caption" role="heading"><span class="caption-text">Issues and Bugs</span></p>
+      For issues with and for contributing to the library, visit: <a class="special-a" href="https://github.com/PythonistaGuild/Wavelink">GitHub</a>
+   </div>

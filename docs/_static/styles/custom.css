@@ -46,3 +46,7 @@
 	content: "\f059";
 	margin-right: 0.5rem;
 }
+
+.special-a {
+	border-bottom: 1px solid var(--yue-c-link-border)!important;
+}

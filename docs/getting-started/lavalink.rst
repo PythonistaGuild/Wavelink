@@ -1,0 +1,5 @@
+.. _lavalink:
+
+
+Lavalink Guide
+##############
