@@ -56,7 +56,7 @@ if TYPE_CHECKING:
     from .types_.rest import VoiceStateT
 
 
-__all__ = ("JSON_LOADS", "MISSING")
+__all__ = ("JSON_LOADS", "MISSING", "NodeMapping", "VoiceUpdateCondition")
 
 
 try:
