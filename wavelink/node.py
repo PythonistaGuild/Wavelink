@@ -185,6 +185,10 @@ class Node:
     def identifier(self) -> str:
         return self._identifier
 
+    @property
+    def inactivity_strategy(self) -> InactivityStrategy | type[InactivityStrategy] | None:
+        return self._inactivity
+
     @cached_property
     def headers(self) -> MutableMapping[str, str]:
         return {"Authorization": self._password}
@@ -608,12 +612,17 @@ class Pool:
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._nodes: NodeMapping = NodeMapping()
         self._is_closing: bool = False
+        self._inactivity: InactivityStrategy | type[InactivityStrategy] | None = kwargs.pop("inactivity_strategy", None)
 
     def __call__(self, client: Client, channel: Connectable) -> Player:
         # NOTE: Allows passing Pool to Channel.connect(cls=...)
 
         node = self.get_node()
         return Player(client, channel, node=node)
+
+    @property
+    def inactivity_strategy(self) -> InactivityStrategy | type[InactivityStrategy] | None:
+        return self._inactivity
 
     def add_node(self, node: Node) -> None:
         # TODO: Exception...
