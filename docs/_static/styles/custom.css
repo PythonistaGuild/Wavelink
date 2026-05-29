@@ -51,10 +51,44 @@
 	border-bottom: 1px solid var(--yue-c-link-border)!important;
 }
 
-body {
-	background-color: #110B0D!important;
+html.dark {
+	&body {
+		background-color: #0B1215!important;
+	}
+
+	&.sy-head-blur {
+		background-color: #131C21!important;
+	}
 }
 
-.sy-head-blur {
-	background-color: #1C1216!important;
+
+/* Attributable stuff */
+.py-attribute-table {
+    display: flex;
+    flex-wrap: wrap;
+    border-radius: 0 0 3px 3px;
+    border-left: #0e84b5 solid 3px;
+	font-size: 0.85em;
+	margin-left: 1.5rem;
+	margin-bottom: 2rem;
 }
+
+.py-attribute-table-entry {
+    list-style: None;
+	font-weight: 400;
+}
+
+.py-attribute-table-column {
+    flex: .5;
+}
+
+.py-attribute-table-column > span {
+    font-weight: bold;
+    margin-left: 1rem;
+}
+
+.py-attribute-table-badge {
+    font-weight: bold;
+    margin-right: .5rem;
+}
+

@@ -77,7 +77,7 @@ html_theme_options = {
     "light_logo": "_static/logo-light.png",
     "dark_logo": "_static/logo-dark.png",
     "github_url": "https://github.com/PythonistaGuild/Wavelink",
-    "accent_color": "yellow",
+    "accent_color": "cyan",
 }
 
 # These paths are either relative to html_static_path
