@@ -145,42 +145,117 @@ class Player(VoiceProtocol):
 
     @property
     def node(self) -> Node:
+        """Property returning the :class:`~.Node` associated with the player.
+
+        Returns
+        -------
+        Node
+        """
         return self._node
 
     @property
     def guild(self) -> Guild | None:
+        """Property returning the :class:`~discord.Guild` associated with the player.
+
+        Returns
+        -------
+        discord.Guild
+        """
         return self._guild
 
     @property
     def volume(self) -> int:
+        """Property returning the current volume of the player. Defaults to ``100``.
+
+        Returns
+        -------
+        int
+        """
         return self._volume
 
     @property
     def ping(self) -> int:
+        """Property returning the ping of Lavalink to Discord.
+
+        If the ping is ``-1`` the player is disconnected.
+
+        Returns
+        -------
+        int
+        """
         return self._ping
 
     @property
     def position(self) -> int:
+        """Property returning the current playing track position in ``ms``.
+
+        Returns
+        -------
+        int
+        """
         return self._position
 
     @property
     def last_update(self) -> datetime.datetime | None:
+        """Property return the datetime the player was last updated via Lavalink.
+
+        Could be ``None`` if the player has not been updated.
+
+        Returns
+        -------
+        datetime.datetime
+            The time the player was last updated.
+        None
+            The player has not been updated.
+        """
         return datetime.datetime.fromtimestamp(self._last_update) if self._last_update else None
 
     @property
     def is_playing(self) -> bool:
+        """Property returning a :class:`bool` indicating whether the player is currently playing a track.
+
+        .. note::
+
+            Pausing the player has no effect on this property.
+
+        Returns
+        -------
+        bool
+        """
         return self._is_playing
 
     @property
     def is_paused(self) -> bool:
+        """Property returning a :class:`bool` indicating whether the player is currently paused.
+
+        Returns
+        -------
+        bool
+        """
         return self._is_paused
 
     @property
     def is_deaf(self) -> bool:
+        """Property returning a :class:`bool` indicating whether the player is currently self deafened.
+
+        Returns
+        -------
+        bool
+        """
         return self._is_deaf
 
     @property
     def is_mute(self) -> bool:
+        """Property returning a :class:`bool` indicating whether the player is self muted.
+
+        .. note::
+
+            This is not the same as turning down the volume to ``0``.
+
+        Returns
+        -------
+        bool
+        """
         return self._is_mute
 
     @property
