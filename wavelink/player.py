@@ -60,6 +60,46 @@ def has_channel[**P, R](func: Callable[Concatenate[Any, P], Awaitable[R]]) -> Ca
 
 
 class Player(VoiceProtocol):
+    """Wavelink Player class which inherits from your libraries ``VoiceProtocol``.
+
+    The :class:`~.Player` class is usually not constructed manually, instead you pass it to your libraries
+    ``channel.connect(cls=wavelink.Player)`` method instead; e.g. :meth:`discord.VoiceChannel.connect`.
+
+    Since the :class:`~.Player` requires a :class:`~.Node`, there are a few options available to allow
+    :class:`~.Player` to work.
+
+    - Use :class:`~.MusicBot`. This will automatically pass the best :class:`~.Node` to this player.
+
+    - Use :class:`~.Pool` and assign it to your ``Client`` as the ``.wave`` attribute.
+      This will automatically pass the best :class:`~.Node` to this player.
+
+    - Use either :class:`~.Pool` or a standalone :class:`~.Node` and pass that to :meth:`discord.VoiceChannel.connect`.
+      This will construct a :class:`~.Player` for you based on what you provide. e.g. ``Channel.connect(cls=self.node)``
+
+    Players are unique to each :class:`discord.Guild`. You may only have one :class:`~.Player` connected per
+    :class:`discord.Guild` at any given time.
+
+    The :class:`~.Player` will automatically attempt to re-establish connection to discord in cases where disconnection
+    was not intended. You should not and do not need to implement re-connection logic on this class. Doing so may interfere
+    or conflict with the internal logic. If you would like to implement you own activity/inactivity checks on this player,
+    please refer to :attr:`.inactivity_strategy`.
+
+    .. note::
+
+        Any :class:`~.MusicBot`, :class:`~.Pool` or :class:`~.Node` can be passed to :meth:`discord.VoiceChannel.connect`
+        to create a :class:`~.Player` and assign it an appropriate :class:`~.Node`.
+
+    Parameters
+    ----------
+    client: :class:`discord.Client`
+        The :class:`discord.Client` currently running.
+    channel: :class:`discord.Connectable`
+        The voice channel this :class:`~.Player` has connected to.
+    node: :class:`~.Node` | ``None``
+        An optional :class:`~.Node` to pass to use for this :class:`~.Player`. Defaults to ``None``. See above for more
+        details.
+    """
+
     channel: VoiceChannel
 
     def __init__(self, client: Client, channel: Connectable, /, *, node: Node | None = None) -> None:
