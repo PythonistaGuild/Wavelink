@@ -1,5 +1,7 @@
 .. _refernce:
 
+.. currentmodule:: wavelink
+
 
 API Reference
 #############
@@ -28,6 +30,12 @@ Nodes
 
 Player
 ------
+
+.. attributetable:: Player
+
+.. autoclass:: Player
+    :members:
+
 
 Search and Tracks
 -----------------
