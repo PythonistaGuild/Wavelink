@@ -475,7 +475,7 @@ Exceptions
     ----------
     status: int
         The response status code.
-    reason: str | None
+    error: str | None
         The response reason. Could be ``None`` if no reason was provided.
 
 .. py:exception:: LavalinkLoadException
