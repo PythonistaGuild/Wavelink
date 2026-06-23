@@ -35,7 +35,7 @@ from .tracks import PlaylistPayload, TrackPayload
 class ErrorResponse(TypedDict):
     timestamp: int
     status: int
-    error: str
+    error: None | str
     trace: NotRequired[str]
     message: str
     path: str
