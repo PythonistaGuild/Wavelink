@@ -404,6 +404,7 @@ class Player(VoiceProtocol):
         paused: bool | None = None,
         replace: bool = True,
     ) -> None:
+        """|coro|"""
         assert self._guild
         playable = track.first if isinstance(track, Search) else track
 
