@@ -24,7 +24,7 @@ __all__ = ("AutoPlay", "EventType", "LoadResult", "Source", "TrackEndReason")
 # fmt: off
 class TrackEndReason(enum.StrEnum):
     """:class:`enum.StrEnum` representing the Track End Reason received by Lavalink.
-    
+
     Attributes
     ----------
     finished: str
@@ -38,16 +38,19 @@ class TrackEndReason(enum.StrEnum):
     cleanup: str
         The track was cleaned up. Cannot start the next track.
     """
-    finished   = "finished"    # The track finished playing. Can start next: True
-    load_failed = "loadFailed"  # The track failed to load. Can start next: True
-    stopped    = "stopped"     # The track was stopped. Can start next: False
-    replaced   = "replaced"    # The track was replaced. Can start next: False
-    cleanup    = "cleanup"     # The track was cleaned up. Can start next: False
+    finished    = "finished"     # The track finished playing. Can start next: True
+    load_failed = "loadFailed"   # The track failed to load. Can start next: True
+    stopped     = "stopped"      # The track was stopped. Can start next: False
+    replaced    = "replaced"     # The track was replaced. Can start next: False
+    cleanup     = "cleanup"      # The track was cleaned up. Can start next: False
+
+    def may_start_next(self) -> bool:
+        return self in ("finished", "loadFailed")
 
 
 class LoadResult(enum.StrEnum):
     """:class:`enum.StrEnum` representing the load result from the /loadtracks endpoint.
-    
+
     Attributes
     ----------
     track: str
@@ -70,7 +73,7 @@ class LoadResult(enum.StrEnum):
 
 class Source(enum.StrEnum):
     """:class:`enum.StrEnum` representing a music source to search from. E.g. Youtube or Spotify.
-    
+
     Attributes
     ----------
     youtube: Literal["ytsearch"]
@@ -100,7 +103,7 @@ class AutoPlay(enum.Enum):
 
 class EventType(enum.StrEnum):
     """:class:`enum.StrEnum` representing the event types dispatched via the Websocket.
-    
+
     Attributes
     ----------
     TrackStart: Literal["track_start"]
