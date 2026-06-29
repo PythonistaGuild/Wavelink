@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from .enums import TrackEndReason
 from .exceptions import TrackException
 from .tracks import Track
 
@@ -102,7 +103,8 @@ class TrackEndPayload(_BaseTrackPayload):
 
     def __init__(self, node: Node, *, data: TrackEndEventT) -> None:
         super().__init__(node, data=data)
-        self.reason: TrackEndReasonT = data["reason"]
+        reason: TrackEndReasonT = data["reason"]
+        self.reason: TrackEndReason = TrackEndReason(reason)
 
 
 class TrackStuckPayload(_BaseTrackPayload):
