@@ -33,6 +33,8 @@ from .utils import MISSING, VoiceUpdateCondition
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
+    from wavelink.enums import Source
+
     from ._lib import Client, Connectable, Guild, GuildVoiceStatePayload, VoiceChannel, VoiceServerUpdatePayload
     from .enums import EventType
     from .helpers import InactivityStrategy
@@ -428,10 +430,46 @@ class Player(VoiceProtocol):
         self,
         search: str,
         *,
+        source: Source,
         volume: int | None = None,
         paused: bool | None = None,
         replace: bool = True,
     ) -> Track:
+        """|coro|
+
+        Method to search for and play a track with the provided search term.
+
+        Unlike :meth:`.play` you do not pass a :class:`~.wavelink.Track`; rather a search term to lookup and directly play a
+        track from.
+
+        This method is useful when receving a :class:`~.wavelink.Track` before making a play request is not required.
+
+        .. versionadded:: 4.0.0
+
+        Parameters
+        ----------
+        search: str
+            The search to use to search for and play a track, provided a track is found.
+        source: :class:`~.wavelink.Source`
+            The source to use to execute the search. Defaults to :attr:`~.wavelink`
+        volume: int | None
+            An optional :class:`int` of a volume between ``1`` and ``1000`` to set when starting the track.
+            Defaults to ``None`` which keeps the currently set volume.
+        paused: bool | None
+            An optional :class:`bool` indicating whether the player should be placed into or out of a paused state
+            upon loading this track. Defaults to ``None`` which keeps the player in the current pause state.
+        replace: bool
+            An optional :class:`bool` indicating whether to directly replace the currently playing track. If set to
+            ``False``, the player will not start playing the requested track if a track is currently playing.
+            Defaults to ``True``.
+
+        Raises
+        ------
+        HTTPException
+            An error occurred making the play request to Lavalink.
+        LavalinkException
+            An error occurred on Lavalink.
+        """
         assert self._guild
 
         result = await self._node.search(search)
@@ -464,6 +502,47 @@ class Player(VoiceProtocol):
         paused: bool | None = None,
         replace: bool = True,
     ) -> None:
+        """|coro|
+
+        Method to start playing a track directly based on the provided ``identifier`` or ``encoded`` parameters.
+
+        Unlike :meth:`.play` you do not pass a :class:`~wavelink.Track`; rather the encoded or identifier string received via
+        Lavalink.
+
+        This method is useful for applications that store track data persistently.
+
+        .. note::
+
+            Only one of ``identifier`` or ``encoded`` can be passed.
+
+        .. versionadded:: 4.0.0
+
+        Parameters
+        ----------
+        identifier: str | None
+            An optional :class:`str`, which is the identifier of the track as received via Lavalink. Defaults to ``None``.
+            If this parameter is not passed or ``None``, ``encoded`` must be used.
+        encoded: str | None
+            An optional :class:`str`, which is the encoded string o the track received via Lavalink. Defaults to ``None``.
+            If this parameter is not passed or ``None``, ``identifier`` must be used.
+        volume: int | None
+            An optional :class:`int` of a volume between ``1`` and ``1000`` to set when starting the track.
+            Defaults to ``None`` which keeps the currently set volume.
+        paused: bool | None
+            An optional :class:`bool` indicating whether the player should be placed into or out of a paused state
+            upon loading this track. Defaults to ``None`` which keeps the player in the current pause state.
+        replace: bool
+            An optional :class:`bool` indicating whether to directly replace the currently playing track. If set to
+            ``False``, the player will not start playing the requested track if a track is currently playing.
+            Defaults to ``True``.
+
+        Raises
+        ------
+        HTTPException
+            An error occurred making the play request to Lavalink.
+        LavalinkException
+            An error occurred on Lavalink.
+        """
         assert self._guild
 
         if not identifier and not encoded:
@@ -487,7 +566,27 @@ class Player(VoiceProtocol):
 
     @has_channel
     async def pause(self) -> None:
+        """|coro|
+
+        Method which pauses the player.
+
+        .. note::
+
+            This method will cause the player to be in a paused state; even if no track is currently playing.
+
+        .. versionchanged:: 4.0.0
+
+            This method no longer accepts a bool and no longer acts as a toggle.
+
+        Raises
+        ------
+        HTTPException
+            The request to pause the song failed.
+        """
         assert self._guild
+
+        if self._is_paused:
+            return
 
         data: UpdatePlayerReqT = {"paused": True}
         await self._node.update_player(self._guild.id, data=data)
@@ -495,7 +594,21 @@ class Player(VoiceProtocol):
 
     @has_channel
     async def resume(self) -> None:
+        """|coro|
+
+        Method which resumes playback of the player.
+
+        .. versionadded:: 4.0.0
+
+        Raises
+        ------
+        HTTPException
+            The request to resume the player failed.
+        """
         assert self._guild
+
+        if not self._is_paused:
+            return
 
         data: UpdatePlayerReqT = {"paused": False}
         await self._node.update_player(self._guild.id, data=data)
@@ -503,6 +616,14 @@ class Player(VoiceProtocol):
 
     @has_channel
     async def toggle_pause(self) -> None:
+        """|coro|
+
+        Method to toggle the pause state of the player.
+
+        Unlike :meth:`.pause` and :meth:`.resume` this method instead acts as a switch between the two states.
+
+        .. versionadded:: 4.0.0
+        """
         assert self._guild
 
         paused = not self._is_paused
@@ -513,16 +634,75 @@ class Player(VoiceProtocol):
 
     @has_channel
     async def skip(self) -> None:
+        """|coro|
+
+        Method which skips the currently playing :class:`~.wavelink.Track`. If no track is in the queue, the
+        :class:`~wavelink.Player` is effectively stopped.
+
+        .. note::
+
+            A new :class:`~.wavelink.Track` should not be started automatically after skip is called.
+
+        .. versionchanged:: 4.0.0
+
+            This method now truly "skips" a track insted of simply stopping the player.
+
+        Raises
+        ------
+        HTTPException
+            The request to skip the track failed.
+        """
+        assert self._guild_id
+
+        encoded: str | None = f"{self.queue.get():b64}" if self.queue else None
+        data: UpdatePlayerReqT = {"track": {"encoded": encoded}}
+
+        await self.node.update_player(self._guild_id, data=data, no_replace=False)
+
+    @has_channel
+    async def stop(self) -> None:
+        """|coro|
+
+        Method to stop the currently playing :class:`~.wavelink.Track`.
+
+        .. note::
+
+            A new :class:`~.wavelink.Track` should not be started automatically after stop is called.
+
+        Raises
+        ------
+        HTTPException
+            The request to stop the player failed.
+        """
         assert self._guild_id
 
         data: UpdatePlayerReqT = {"track": {"encoded": None}}
         await self.node.update_player(self._guild_id, data=data, no_replace=False)
 
     @has_channel
-    async def stop(self) -> ...: ...
-
-    @has_channel
     async def set_volume(self, volume: int = 100, /) -> int:
+        """|coro|
+
+        Method to set the volume of the :class:`~wavelink.Player`.
+
+        Parameters
+        ----------
+        volume: int
+            The new volume of the :class:`~wavelink.Player`. Must be between ``1`` and ``1000``.
+
+
+        Returns
+        -------
+        int
+            The volume before the player was updated.
+
+        Raises
+        -------
+        HTTPException
+            The request to update the volume failed.
+        ValueError
+            The ``volume`` parameter must be an :class:`int` between ``1`` and ``1000``.
+        """
         assert self._guild
 
         if not 0 <= volume <= 1000:
@@ -538,6 +718,17 @@ class Player(VoiceProtocol):
 
     @has_channel
     async def mute(self) -> None:
+        """|coro|
+
+        Method which self mutes the :class:`~wavelink.Player`.
+
+        .. versionadded: 4.0.0
+
+        Raises
+        ------
+        discord.HTTPException
+            The request to self mute failed.
+        """
         assert self._guild and self.channel
         if self._is_mute:
             return
@@ -546,6 +737,17 @@ class Player(VoiceProtocol):
 
     @has_channel
     async def deafen(self) -> None:
+        """|coro|
+
+        Method which self deafens the :class:`~wavelink.Player`.
+
+        .. versionadded:: 4.0.0
+
+        Raises
+        ------
+        discord.HTTPException
+            The request to self deafen failed.
+        """
         assert self._guild and self.channel
         if self._is_deaf:
             return
@@ -561,6 +763,34 @@ class Player(VoiceProtocol):
         self_deaf: bool | None = None,
         self_mute: bool | None = None,
     ) -> None:
+        """|coro|
+
+        Method which attempts to move a currently connected :class:`~.wavelink.Player` to the provided channel.
+
+        .. note::
+
+            :meth:`.move_to` is an alias to this method.
+
+        Parameters
+        ----------
+        channel: :class:`discord.VoiceChannel`
+            The channel to move the :class:`~wavelink.Player` to.
+        timeout: float
+            The amount of seconds before the request will timeout. Defaults to ``10.0``.
+        self_deaf: bool | None
+            Whether the :class:`~wavelink.Player` should be deafened on move. Defaults to ``None`` which keeps the current
+            state.
+        self_mute: bool | None
+            Whether the :class:`~wavelink.Player` should be muted on move. Defaults to ``None`` which keeps the current
+            state.
+
+        Raises
+        ------
+        TimeoutError
+            Moving to the provided channel failed.
+        discord.HTTPException
+            The request to move to the provided chanel failed.
+        """
         assert self._guild
         if self.channel.id == channel.id:
             return
