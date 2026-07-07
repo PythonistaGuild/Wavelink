@@ -94,14 +94,14 @@ class LavalinkException(WavelinkException):
     ----------
     status: int
         The response status code.
-    error: str | None
-        The response reason. Could be ``None`` if no reason was provided.
+    error: str
+        The HTTP status code message.
     """
 
     def __init__(self, msg: str | None = None, /, *, data: ErrorResponse) -> None:
         self.timestamp: int = data["timestamp"]
         self.status: int = data["status"]
-        self.error: str | None = data["error"]
+        self.error: str = data["error"]
         self.trace: str | None = data.get("trace")
         self.path: str = data["path"]
 
