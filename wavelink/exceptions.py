@@ -101,7 +101,7 @@ class LavalinkException(WavelinkException):
     def __init__(self, msg: str | None = None, /, *, data: ErrorResponse) -> None:
         self.timestamp: int = data["timestamp"]
         self.status: int = data["status"]
-        self.error: None | str = data["error"]
+        self.error: str | None = data["error"]
         self.trace: str | None = data.get("trace")
         self.path: str = data["path"]
 
