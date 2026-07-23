@@ -20,7 +20,7 @@ jobs:
     name: "Type Coverage and Linting @ ${{ matrix.python-version }}"
     steps:
       - name: "Checkout Repository"
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
