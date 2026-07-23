@@ -126,7 +126,7 @@ class EventType(enum.StrEnum):
 
     @classmethod
     def all(cls) -> tuple[EventType, ...]:
-        return tuple(m for m in cls)
+        return tuple(cls)
 
     @classmethod
     def all_track(cls) -> tuple[EventType, ...]:

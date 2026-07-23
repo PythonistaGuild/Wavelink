@@ -69,7 +69,7 @@ class DefaultInactivityStrategy(InactivityStrategy):
             return False
 
         members = [m for m in player.channel.members if not m.bot]
-        if len(members) > 0:
+        if members:
             return False
 
         return event in (EventType.TrackEnd, EventType.TrackException, EventType.TrackStuck)
